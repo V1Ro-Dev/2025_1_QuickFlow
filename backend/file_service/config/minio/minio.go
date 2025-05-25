@@ -62,7 +62,7 @@ func newMinioConfig(config loadableConfig) *MinioConfig {
 		PostsBucketName:        getenv.GetEnv("MINIO_POSTS_BUCKET_NAME", defaultPostsBucketName),
 		ProfileBucketName:      getenv.GetEnv("MINIO_PROFILE_BUCKET_NAME", defaultProfileBucketName),
 		AttachmentsBucketName:  getenv.GetEnv("MINIO_ATTACHMENTS_BUCKET_NAME", defaultAttachmentsBucketName),
-		StickerBuckerName:      getenv.GetEnv("MINIO_STICKER_BUCKET_NAME", defaultStickerBuckerName),
+		StickerBuckerName:      getenv.GetEnv("MINIO_STICKERS_BUCKET_NAME", defaultStickerBuckerName),
 		MinioRootUser:          getenv.GetEnv("MINIO_ROOT_USER", defaultMinioRootUser),
 		MinioRootPassword:      getenv.GetEnv("MINIO_ROOT_PASSWORD", defaultMinioRootPassword),
 		Scheme:                 getenv.GetEnv("MINIO_SCHEME", defaultScheme),
