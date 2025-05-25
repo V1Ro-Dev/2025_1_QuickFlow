@@ -99,6 +99,7 @@ func Run(cfg *config.Config) error {
 	FriendsService := friendsService.NewFriendsClient(grpcConnFriendsService)
 	communityService := community_service.NewCommunityServiceClient(grcpConnCommunityService)
 	commentService := postService.NewCommentClient(grpcConnPostService)
+	stickerService := messenger_service.NewStickerServiceClient(grpcConnMessengerService)
 
 	connManager := ws.NewWSConnectionManager()
 	sanitizerPolicy := bluemonday.UGCPolicy()
@@ -114,6 +115,7 @@ func Run(cfg *config.Config) error {
 	newSearchHandler := qfhttp.NewSearchHandler(UserService, communityService, profileService)
 	newCommunityHandler := qfhttp.NewCommunityHandler(communityService, profileService, connManager, UserService, sanitizerPolicy)
 	newFileHandler := qfhttp.NewFileHandler(fileService, sanitizerPolicy)
+	newStickerHandler := qfhttp.NewStickerHandler(stickerService, sanitizerPolicy)
 
 	CSRFHandler := qfhttp.NewCSRFHandler()
 	FeedbackHandler := qfhttp.NewFeedbackHandler(feedbackService, profileService, sanitizerPolicy)
@@ -182,6 +184,7 @@ func Run(cfg *config.Config) error {
 	protectedPost.HandleFunc("/communities/{id:[0-9a-fA-F-]{36}}/members/{user_id:{id:[0-9a-fA-F-]{36}}", newCommunityHandler.ChangeUserRole).Methods(http.MethodPost)
 	protectedPost.HandleFunc("/upload", newFileHandler.AddFiles).Methods(http.MethodPost)
 	protectedPost.HandleFunc("/posts/{post_id:[0-9a-fA-F-]{36}}/comment", newCommentHandler.AddComment).Methods(http.MethodPost)
+	protectedPost.HandleFunc("/sticker_packs/add", newStickerHandler.AddStickerPack).Methods(http.MethodPost)
 
 	protectedGet := apiGetRouter.PathPrefix("/").Subrouter()
 	protectedGet.Use(middleware.SessionMiddleware(UserService))
@@ -205,6 +208,9 @@ func Run(cfg *config.Config) error {
 	protectedGet.HandleFunc("/posts/{post_id:[0-9a-fA-F-]{36}}", newPostHandler.GetPost).Methods(http.MethodGet)
 	protectedGet.HandleFunc("/posts/{post_id:[0-9a-fA-F-]{36}}/comments", newCommentHandler.FetchCommentsForPost).Methods(http.MethodGet)
 	protectedGet.HandleFunc("/chats/unread", newChatHandler.GetNumUnreadChats).Methods(http.MethodGet)
+	protectedGet.HandleFunc("/sticker_packs/{pack_id:[0-9a-fA-F-]{36}}", newStickerHandler.GetStickerPack).Methods(http.MethodGet)
+	protectedGet.HandleFunc("/sticker_packs", newStickerHandler.GetStickerPacks).Methods(http.MethodGet)
+	protectedGet.HandleFunc("/sticker_packs/{pack_name}", newStickerHandler.GetStickerPackByName).Methods(http.MethodGet)
 
 	wsProtected := protectedGet.PathPrefix("/").Subrouter()
 	wsProtected.Use(middleware.WebSocketMiddleware(connManager, pingHandler))
@@ -220,6 +226,7 @@ func Run(cfg *config.Config) error {
 	apiDeleteRouter.HandleFunc("/follow", newFriendsHandler.Unfollow).Methods(http.MethodDelete)
 	apiDeleteRouter.HandleFunc("/communities/{id:[0-9a-fA-F-]{36}}", newCommunityHandler.DeleteCommunity).Methods(http.MethodDelete)
 	apiDeleteRouter.HandleFunc("/comments/{comment_id:[0-9a-fA-F-]{36}}", newCommentHandler.DeleteComment).Methods(http.MethodDelete)
+	apiDeleteRouter.HandleFunc("/sticker_packs/{pack_id:[0-9a-fA-F-]{36}}", newStickerHandler.DeleteStickerPack).Methods(http.MethodDelete)
 
 	server := http.Server{
 		Addr:         cfg.ServerConfig.Addr,

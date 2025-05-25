@@ -75,6 +75,10 @@ func main() {
 	messageUseCase := usecase.NewMessageService(messageRepo, fileService, chatRepo, messageValidator)
 	chatUseCase := usecase.NewChatUseCase(chatRepo, fileService, profileService, messageRepo, chatValidator)
 
+	stickerValidator := validation.NewStickerValidator()
+	stickerRepo := postgres.NewPostgresStickerRepository(db)
+	stickerUseCase := usecase.NewStickerService(stickerRepo, fileService, stickerValidator)
+
 	messengerMetrics := metrics.NewMetrics("QuickFlow")
 
 	server := grpc.NewServer(
@@ -100,6 +104,7 @@ func main() {
 	log.Printf("Server is listening on %s", listener.Addr().String())
 	proto.RegisterChatServiceServer(server, grpc2.NewChatServiceServer(chatUseCase))
 	proto.RegisterMessageServiceServer(server, grpc2.NewMessageServiceServer(messageUseCase))
+	proto.RegisterStickerServiceServer(server, grpc2.NewStickerServiceServer(stickerUseCase))
 	if err = server.Serve(listener); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}

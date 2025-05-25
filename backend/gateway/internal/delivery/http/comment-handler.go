@@ -271,7 +271,7 @@ func (c *CommentHandler) FetchCommentsForPost(w http.ResponseWriter, r *http.Req
 
 	ts, err := time.Parse(time2.TimeStampLayout, feedForm.Ts)
 	if err != nil {
-		ts = time.Now()
+		ts = time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
 	}
 
 	// Получаем комментарии для поста

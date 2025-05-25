@@ -33,3 +33,4 @@ create_and_set_public_policy() {
 create_and_set_public_policy "$MINIO_POSTS_BUCKET_NAME"
 create_and_set_public_policy "$MINIO_PROFILE_BUCKET_NAME"
 create_and_set_public_policy "$MINIO_ATTACHMENTS_BUCKET_NAME"
+create_and_set_public_policy "$MINIO_STICKERS_BUCKET_NAME"

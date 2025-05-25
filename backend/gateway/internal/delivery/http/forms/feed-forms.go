@@ -22,6 +22,7 @@ type PostForm struct {
 	Media       []string  `form:"media" json:"media,omitempty"`
 	Audio       []string  `form:"audio" json:"audio,omitempty"`
 	File        []string  `form:"files" json:"files,omitempty"`
+	Stickers    []string  `form:"stickers" json:"stickers,omitempty"`
 	IsRepost    bool      `json:"is_repost,omitempty"`
 	CreatorId   uuid.UUID `json:"author_id,omitempty"`
 	CreatorType string    `json:"author_type,omitempty"`
@@ -58,6 +59,13 @@ func (p *PostForm) ToPostModel(userId uuid.UUID) (models.Post, error) {
 		attachments = append(attachments, &models.File{
 			URL:         file,
 			DisplayType: models.DisplayTypeFile,
+		})
+	}
+
+	for _, sticker := range p.Stickers {
+		attachments = append(attachments, &models.File{
+			URL:         sticker,
+			DisplayType: models.DisplayTypeSticker,
 		})
 	}
 	var postModel models.Post
@@ -143,6 +151,7 @@ type PostOut struct {
 	MediaURLs    []FileOut   `json:"media,omitempty"`
 	AudioURLs    []FileOut   `json:"audio,omitempty"`
 	FileURLs     []FileOut   `json:"files,omitempty"`
+	StickerURLs  []FileOut   `json:"stickers,omitempty"`
 	CreatedAt    string      `json:"created_at"`
 	UpdatedAt    string      `json:"updated_at"`
 	LikeCount    int         `json:"like_count"`
@@ -157,12 +166,15 @@ func (p *PostOut) FromPost(post models.Post) {
 	mediaURLs := make([]FileOut, 0)
 	audioURLs := make([]FileOut, 0)
 	fileURLs := make([]FileOut, 0)
+	stickerUrls := make([]FileOut, 0)
 
 	for _, file := range post.Files {
 		if file.DisplayType == models.DisplayTypeMedia {
 			mediaURLs = append(mediaURLs, ToFileOut(*file))
 		} else if file.DisplayType == models.DisplayTypeAudio {
 			audioURLs = append(audioURLs, ToFileOut(*file))
+		} else if file.DisplayType == models.DisplayTypeSticker {
+			stickerUrls = append(stickerUrls, ToFileOut(*file))
 		} else {
 			fileURLs = append(fileURLs, ToFileOut(*file))
 		}
@@ -173,6 +185,7 @@ func (p *PostOut) FromPost(post models.Post) {
 	p.MediaURLs = mediaURLs
 	p.AudioURLs = audioURLs
 	p.FileURLs = fileURLs
+	p.StickerURLs = stickerUrls
 	p.CreatedAt = post.CreatedAt.Format(time2.TimeStampLayout)
 	p.UpdatedAt = post.UpdatedAt.Format(time2.TimeStampLayout)
 	p.Creator = &PublicUserInfoOut{

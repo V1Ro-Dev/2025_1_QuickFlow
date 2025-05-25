@@ -13,10 +13,11 @@ import (
 )
 
 type CommentForm struct {
-	Text  string   `json:"text"`
-	Media []string `json:"media,omitempty"`
-	Audio []string `json:"audio,omitempty"`
-	Files []string `json:"files,omitempty"`
+	Text     string   `json:"text"`
+	Media    []string `json:"media,omitempty"`
+	Audio    []string `json:"audio,omitempty"`
+	Files    []string `json:"files,omitempty"`
+	Stickers []string `form:"stickers" json:"stickers,omitempty"`
 }
 
 func (f *CommentForm) ToCommentModel() models.Comment {
@@ -39,6 +40,13 @@ func (f *CommentForm) ToCommentModel() models.Comment {
 		attachments = append(attachments, &models.File{
 			URL:         file,
 			DisplayType: models.DisplayTypeAudio,
+		})
+	}
+
+	for _, sticker := range f.Stickers {
+		attachments = append(attachments, &models.File{
+			URL:         sticker,
+			DisplayType: models.DisplayTypeSticker,
 		})
 	}
 
@@ -95,6 +103,7 @@ type CommentOut struct {
 	Media     []FileOut         `json:"media,omitempty"`
 	Audio     []FileOut         `json:"audio,omitempty"`
 	Files     []FileOut         `json:"files,omitempty"`
+	Stickers  []FileOut         `form:"stickers" json:"stickers,omitempty"`
 	Creator   PublicUserInfoOut `json:"author"`
 	PostId    uuid.UUID         `json:"post_id"`
 	LikeCount int               `json:"like_count"`
@@ -102,7 +111,7 @@ type CommentOut struct {
 }
 
 func (c *CommentOut) FromComment(comment models.Comment, userInfo models.PublicUserInfo) {
-	var files, media, audio []FileOut
+	var files, media, audio, stickers []FileOut
 	for _, file := range comment.Images {
 		switch file.DisplayType {
 		case models.DisplayTypeFile:
@@ -111,6 +120,8 @@ func (c *CommentOut) FromComment(comment models.Comment, userInfo models.PublicU
 			media = append(media, ToFileOut(*file))
 		case models.DisplayTypeAudio:
 			audio = append(audio, ToFileOut(*file))
+		case models.DisplayTypeSticker:
+			stickers = append(stickers, ToFileOut(*file))
 		default:
 			files = append(files, ToFileOut(*file))
 		}
@@ -123,6 +134,7 @@ func (c *CommentOut) FromComment(comment models.Comment, userInfo models.PublicU
 	c.Media = media
 	c.Audio = audio
 	c.Files = files
+	c.Stickers = stickers
 	c.PostId = comment.PostId
 	c.Creator = PublicUserInfoToOut(userInfo, models.RelationNone)
 	c.LikeCount = comment.LikeCount

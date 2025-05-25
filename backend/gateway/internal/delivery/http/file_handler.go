@@ -79,6 +79,17 @@ func (p *FileHandler) AddFiles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	stickers, err := http2.GetFiles(r, "stickers")
+	if errors.Is(err, http2.TooManyFilesErr) {
+		logger.Error(ctx, fmt.Sprintf("Too many sticker files requested: %s", err.Error()))
+		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Too many sticker files requested", http.StatusBadRequest))
+		return
+	} else if err != nil {
+		logger.Error(ctx, fmt.Sprintf("Failed to get sticker files: %s", err.Error()))
+		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get sticker files", http.StatusBadRequest))
+		return
+	}
+
 	// Handle other files
 	otherFiles, err := http2.GetFiles(r, "files")
 	if errors.Is(err, http2.TooManyFilesErr) {
@@ -104,6 +115,15 @@ func (p *FileHandler) AddFiles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	res.FileURLs, err = p.fileService.UploadManyFiles(ctx, otherFiles)
+	if err != nil {
+		http2.WriteJSONError(w, err)
+		return
+	}
+
+	for i := range stickers {
+		stickers[i].DisplayType = models.DisplayTypeSticker
+	}
+	res.StickerURLs, err = p.fileService.UploadManyFiles(ctx, stickers)
 	if err != nil {
 		http2.WriteJSONError(w, err)
 		return

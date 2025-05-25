@@ -29,7 +29,7 @@ const (
     getFilesQuery = `
         SELECT mf.file_url, mf.file_type, f.filename
         FROM message_file mf 
-            join files f 
+            left join files f 
             on mf.file_url = f.file_url
         WHERE message_id = $1
 `

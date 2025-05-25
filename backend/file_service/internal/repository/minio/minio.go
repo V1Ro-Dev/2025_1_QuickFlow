@@ -20,6 +20,7 @@ type MinioRepository struct {
 	PostsBucketName       string
 	AttachmentsBucketName string
 	ProfileBucketName     string
+	StickerBuckerName     string
 	PublicUrlRoot         string
 }
 
@@ -50,16 +51,24 @@ func NewMinioRepository(cfg *minioconfig.MinioConfig) (*MinioRepository, error) 
 		PostsBucketName:       cfg.PostsBucketName,
 		AttachmentsBucketName: cfg.AttachmentsBucketName,
 		ProfileBucketName:     cfg.ProfileBucketName,
+		StickerBuckerName:     cfg.StickerBuckerName,
 		PublicUrlRoot:         fmt.Sprintf("%s://%s", cfg.Scheme, cfg.MinioPublicEndpoint),
 	}, nil
 }
 
 // UploadFile uploads file to MinIO and returns a public URL.
 func (m *MinioRepository) UploadFile(ctx context.Context, file *models.File) (string, error) {
+	var err error
 	uuID := uuid.New()
 	fileName := uuID.String() + file.Ext
 
-	_, err := m.client.PutObject(ctx, m.PostsBucketName, fileName, file.Reader, file.Size, minio.PutObjectOptions{
+	var bucketName string
+	if file.DisplayType == models.DisplayTypeSticker {
+		bucketName = m.StickerBuckerName
+	} else {
+		bucketName = m.PostsBucketName
+	}
+	_, err = m.client.PutObject(ctx, bucketName, fileName, file.Reader, file.Size, minio.PutObjectOptions{
 		ContentType: file.MimeType,
 	})
 	if err != nil {
@@ -67,12 +76,11 @@ func (m *MinioRepository) UploadFile(ctx context.Context, file *models.File) (st
 		return "", fmt.Errorf("could not upload file: %v", err)
 	}
 
-	publicURL := fmt.Sprintf("%s/%s/%s", m.PublicUrlRoot, m.PostsBucketName, fileName)
+	publicURL := fmt.Sprintf("%s/%s/%s", m.PublicUrlRoot, bucketName, fileName)
 	logger.Info(ctx, fmt.Sprintf("File successfully loaded: %v, url: %v", file.Name, publicURL))
 	return publicURL, nil
 }
 
-// UploadManyFiles uploads multiple files and returns a map of public URLs.
 func (m *MinioRepository) UploadManyImages(ctx context.Context, files []*models.File) ([]string, error) {
 	urls := threadsafeslice.NewThreadSafeSliceN[string](len(files))
 
@@ -88,14 +96,22 @@ func (m *MinioRepository) UploadManyImages(ctx context.Context, files []*models.
 		fileName := uuID.String() + file.Ext
 
 		wg.Go(func() error {
-			_, err := m.client.PutObject(ctx, m.PostsBucketName, fileName, file.Reader, file.Size, minio.PutObjectOptions{
+			var err error
+			var bucketName string
+			if file.DisplayType == models.DisplayTypeSticker {
+				bucketName = m.StickerBuckerName
+			} else {
+				bucketName = m.PostsBucketName
+			}
+			_, err = m.client.PutObject(ctx, bucketName, fileName, file.Reader, file.Size, minio.PutObjectOptions{
 				ContentType: file.MimeType,
 			})
 			if err != nil {
-				return fmt.Errorf("could not upload file: %v, err: %v", file.Name, err)
+				logger.Error(ctx, fmt.Sprintf("could not upload file %v: %v", file.Name, err))
+				return fmt.Errorf("could not upload file: %v", err)
 			}
 
-			publicURL := fmt.Sprintf("%s/%s/%s", m.PublicUrlRoot, m.PostsBucketName, fileName)
+			publicURL := fmt.Sprintf("%s/%s/%s", m.PublicUrlRoot, bucketName, fileName)
 			err = urls.SetByIdx(i, publicURL)
 			if err != nil {
 				return fmt.Errorf("could not upload file: %v, err: %v", file.Name, err)

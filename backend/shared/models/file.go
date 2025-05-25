@@ -11,9 +11,10 @@ const (
 	AccessPublic AccessMode = iota
 	AccessPrivate
 
-	DisplayTypeMedia = "media"
-	DisplayTypeAudio = "audio"
-	DisplayTypeFile  = "file"
+	DisplayTypeMedia   = "media"
+	DisplayTypeAudio   = "audio"
+	DisplayTypeFile    = "file"
+	DisplayTypeSticker = "sticker"
 )
 
 type File struct {
