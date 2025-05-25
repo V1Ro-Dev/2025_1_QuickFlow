@@ -60,7 +60,7 @@ func ErrorInterceptor(
 	case errors.Is(err, messenger_errors.ErrNotFound):
 		return nil, statusWithDetails(codes.NotFound, err.Error(), "NOT_FOUND")
 
-	case errors.Is(err, messenger_errors.ErrNotParticipant):
+	case errors.Is(err, messenger_errors.ErrNotParticipant) || errors.Is(err, messenger_errors.ErrNotOwnerOfStickerPack):
 		return nil, statusWithDetails(codes.PermissionDenied, err.Error(), "NOT_PARTICIPANT")
 
 	case errors.Is(err, messenger_errors.ErrInvalidChatCreationInfo):

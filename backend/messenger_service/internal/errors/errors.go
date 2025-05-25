@@ -18,3 +18,7 @@ var (
 	ErrAlreadyInChat           = fmt.Errorf("user already in chat")
 	ErrInvalidChatType         = fmt.Errorf("invalid chat type")
 )
+
+var (
+	ErrNotOwnerOfStickerPack = fmt.Errorf("user is not the owner of the sticker pack")
+)

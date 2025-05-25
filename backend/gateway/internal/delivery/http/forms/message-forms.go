@@ -55,13 +55,14 @@ func ToFileOut(file models.File) FileOut {
 }
 
 type MessageOut struct {
-	ID        uuid.UUID `json:"id,omitempty"`
-	Text      string    `json:"text"`
-	CreatedAt string    `json:"created_at"`
-	UpdatedAt string    `json:"updated_at"`
-	MediaURLs []FileOut `json:"media,omitempty"`
-	AudioURLs []FileOut `json:"audio,omitempty"`
-	FileURLs  []FileOut `json:"files,omitempty"`
+	ID          uuid.UUID `json:"id,omitempty"`
+	Text        string    `json:"text"`
+	CreatedAt   string    `json:"created_at"`
+	UpdatedAt   string    `json:"updated_at"`
+	MediaURLs   []FileOut `json:"media,omitempty"`
+	AudioURLs   []FileOut `json:"audio,omitempty"`
+	FileURLs    []FileOut `json:"files,omitempty"`
+	StickerUrls []FileOut `json:"stickers,omitempty"`
 
 	Sender PublicUserInfoOut `json:"sender"`
 	ChatId uuid.UUID         `json:"chat_id"`
@@ -71,25 +72,29 @@ func ToMessageOut(message models.Message, info models.PublicUserInfo) MessageOut
 	mediaURLs := make([]FileOut, 0)
 	audioURLs := make([]FileOut, 0)
 	fileURLs := make([]FileOut, 0)
+	stickerUrls := make([]FileOut, 0)
 
 	for _, file := range message.Attachments {
 		if file.DisplayType == models.DisplayTypeMedia {
 			mediaURLs = append(mediaURLs, ToFileOut(*file))
 		} else if file.DisplayType == models.DisplayTypeAudio {
 			audioURLs = append(audioURLs, ToFileOut(*file))
+		} else if file.DisplayType == models.DisplayTypeSticker {
+			stickerUrls = append(stickerUrls, ToFileOut(*file))
 		} else {
 			fileURLs = append(fileURLs, ToFileOut(*file))
 		}
 	}
 
 	return MessageOut{
-		ID:        message.ID,
-		Text:      message.Text,
-		CreatedAt: message.CreatedAt.Format(time2.TimeStampLayout),
-		UpdatedAt: message.UpdatedAt.Format(time2.TimeStampLayout),
-		MediaURLs: mediaURLs,
-		AudioURLs: audioURLs,
-		FileURLs:  fileURLs,
+		ID:          message.ID,
+		Text:        message.Text,
+		CreatedAt:   message.CreatedAt.Format(time2.TimeStampLayout),
+		UpdatedAt:   message.UpdatedAt.Format(time2.TimeStampLayout),
+		MediaURLs:   mediaURLs,
+		AudioURLs:   audioURLs,
+		FileURLs:    fileURLs,
+		StickerUrls: stickerUrls,
 
 		Sender: PublicUserInfoToOut(info, ""),
 		ChatId: message.ChatID,
@@ -116,6 +121,7 @@ type MessageForm struct {
 	Media      []string  `form:"media" json:"media,omitempty"`
 	Audio      []string  `form:"audio" json:"audio,omitempty"`
 	File       []string  `form:"files" json:"files,omitempty"`
+	Stickers   []string  `form:"stickers" json:"stickers,omitempty"`
 	ReceiverId uuid.UUID `json:"receiver_id,omitempty"`
 	SenderId   uuid.UUID `json:"-"`
 }
@@ -140,6 +146,13 @@ func (f *MessageForm) ToMessageModel() models.Message {
 		attachments = append(attachments, &models.File{
 			URL:         file,
 			DisplayType: models.DisplayTypeFile,
+		})
+	}
+
+	for _, file := range f.Stickers {
+		attachments = append(attachments, &models.File{
+			URL:         file,
+			DisplayType: models.DisplayTypeSticker,
 		})
 	}
 

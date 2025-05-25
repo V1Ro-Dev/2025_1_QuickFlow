@@ -14,6 +14,7 @@ const (
 	defaultMinioPublicEndpoint   = "quickflowapp.ru/minio"
 	defaultPostsBucketName       = "posts"
 	defaultProfileBucketName     = "profiles"
+	defaultStickerBuckerName     = "stickers"
 	defaultAttachmentsBucketName = "attachments"
 	defaultMinioRootUser         = "admin"
 	defaultMinioRootPassword     = "adminpassword"
@@ -21,13 +22,14 @@ const (
 )
 
 type MinioConfig struct {
-	MinioInternalEndpoint  string // Адрес конечной точки Minio
+	MinioInternalEndpoint  string
 	MinioPublicEndpoint    string
-	PostsBucketName        string // Название конкретного бакета в Minio
+	PostsBucketName        string
+	StickerBuckerName      string
 	ProfileBucketName      string
 	AttachmentsBucketName  string
-	MinioRootUser          string // Имя пользователя для доступа к Minio
-	MinioRootPassword      string // Пароль для доступа к Minio
+	MinioRootUser          string
+	MinioRootPassword      string
 	MinioUseSSL            bool
 	PresignedURLExpiration time.Duration
 	Scheme                 string
@@ -60,6 +62,7 @@ func newMinioConfig(config loadableConfig) *MinioConfig {
 		PostsBucketName:        getenv.GetEnv("MINIO_POSTS_BUCKET_NAME", defaultPostsBucketName),
 		ProfileBucketName:      getenv.GetEnv("MINIO_PROFILE_BUCKET_NAME", defaultProfileBucketName),
 		AttachmentsBucketName:  getenv.GetEnv("MINIO_ATTACHMENTS_BUCKET_NAME", defaultAttachmentsBucketName),
+		StickerBuckerName:      getenv.GetEnv("MINIO_STICKER_BUCKET_NAME", defaultStickerBuckerName),
 		MinioRootUser:          getenv.GetEnv("MINIO_ROOT_USER", defaultMinioRootUser),
 		MinioRootPassword:      getenv.GetEnv("MINIO_ROOT_PASSWORD", defaultMinioRootPassword),
 		Scheme:                 getenv.GetEnv("MINIO_SCHEME", defaultScheme),
