@@ -24,6 +24,7 @@ type FriendsUseCase interface {
 	DeleteFriend(ctx context.Context, user string, friend string) error
 	// GetUserRelation IsExistsFriendRequest(ctx context.Context, senderID string, receiverID string) (bool, error)
 	GetUserRelation(ctx context.Context, user1 uuid.UUID, user2 uuid.UUID) (models.UserRelation, error)
+	MarkRead(ctx context.Context, userID string, friendID string) error
 }
 
 type FriendHandler struct {
@@ -252,4 +253,36 @@ func (f *FriendHandler) Unfollow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logger.Info(ctx, fmt.Sprintf("Successfully unfollowed user %s", req.FriendID))
+}
+
+func (f *FriendHandler) MarkRead(w http.ResponseWriter, r *http.Request) {
+	ctx := http2.SetRequestId(r.Context())
+
+	user, ok := ctx.Value("user").(models.User)
+	if !ok {
+		logger.Error(ctx, "Failed to get user from context while unfollowing user")
+		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
+		return
+	}
+
+	logger.Info(ctx, "Trying to parse request body")
+
+	var req forms.FriendRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		logger.Error(ctx, fmt.Sprintf("Unable to decode request body: %s", err))
+		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Unable to decode request body", http.StatusBadRequest))
+		return
+	}
+
+	logger.Info(ctx, fmt.Sprintf("User %s trying to mark read friend request from user %s", user.Username, req.ReceiverID))
+
+	if err = f.FriendsUseCase.MarkRead(ctx, user.Id.String(), req.ReceiverID); err != nil {
+		err = errors2.FromGRPCError(err)
+		logger.Error(ctx, fmt.Sprintf("Unable to mark read friend request: %s", err))
+		http2.WriteJSONError(w, err)
+		return
+	}
+
+	logger.Info(ctx, fmt.Sprintf("Successfully marked read friend request from user %s", req.ReceiverID))
 }

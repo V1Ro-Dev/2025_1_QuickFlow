@@ -397,14 +397,15 @@ const file_friends_proto_rawDesc = "" +
 	"\x18IsRelationExistsResponse\x12\x1b\n" +
 	"\tis_exists\x18\x01 \x01(\bR\bisExists\".\n" +
 	"\x10RelationResponse\x12\x1a\n" +
-	"\brelation\x18\x01 \x01(\tR\brelation2\xf1\x03\n" +
+	"\brelation\x18\x01 \x01(\tR\brelation2\xc2\x04\n" +
 	"\x0eFriendsService\x12a\n" +
 	"\x0eGetFriendsInfo\x12&.friends_service.GetFriendsInfoRequest\x1a'.friends_service.GetFriendsInfoResponse\x12K\n" +
 	"\x11SendFriendRequest\x12\x1e.friends_service.FriendRequest\x1a\x16.google.protobuf.Empty\x12M\n" +
 	"\x13AcceptFriendRequest\x12\x1e.friends_service.FriendRequest\x1a\x16.google.protobuf.Empty\x12B\n" +
 	"\bUnfollow\x12\x1e.friends_service.FriendRequest\x1a\x16.google.protobuf.Empty\x12F\n" +
 	"\fDeleteFriend\x12\x1e.friends_service.FriendRequest\x1a\x16.google.protobuf.Empty\x12T\n" +
-	"\x0fGetUserRelation\x12\x1e.friends_service.FriendRequest\x1a!.friends_service.RelationResponseB8Z6quickflow/friends_service/internal/delivery/grpc/protob\x06proto3"
+	"\x0fGetUserRelation\x12\x1e.friends_service.FriendRequest\x1a!.friends_service.RelationResponse\x12O\n" +
+	"\x15MarkReadFriendRequest\x12\x1e.friends_service.FriendRequest\x1a\x16.google.protobuf.EmptyB8Z6quickflow/friends_service/internal/delivery/grpc/protob\x06proto3"
 
 var (
 	file_friends_proto_rawDescOnce sync.Once
@@ -436,14 +437,16 @@ var file_friends_proto_depIdxs = []int32{
 	0, // 4: friends_service.FriendsService.Unfollow:input_type -> friends_service.FriendRequest
 	0, // 5: friends_service.FriendsService.DeleteFriend:input_type -> friends_service.FriendRequest
 	0, // 6: friends_service.FriendsService.GetUserRelation:input_type -> friends_service.FriendRequest
-	3, // 7: friends_service.FriendsService.GetFriendsInfo:output_type -> friends_service.GetFriendsInfoResponse
-	6, // 8: friends_service.FriendsService.SendFriendRequest:output_type -> google.protobuf.Empty
-	6, // 9: friends_service.FriendsService.AcceptFriendRequest:output_type -> google.protobuf.Empty
-	6, // 10: friends_service.FriendsService.Unfollow:output_type -> google.protobuf.Empty
-	6, // 11: friends_service.FriendsService.DeleteFriend:output_type -> google.protobuf.Empty
-	5, // 12: friends_service.FriendsService.GetUserRelation:output_type -> friends_service.RelationResponse
-	7, // [7:13] is the sub-list for method output_type
-	1, // [1:7] is the sub-list for method input_type
+	0, // 7: friends_service.FriendsService.MarkReadFriendRequest:input_type -> friends_service.FriendRequest
+	3, // 8: friends_service.FriendsService.GetFriendsInfo:output_type -> friends_service.GetFriendsInfoResponse
+	6, // 9: friends_service.FriendsService.SendFriendRequest:output_type -> google.protobuf.Empty
+	6, // 10: friends_service.FriendsService.AcceptFriendRequest:output_type -> google.protobuf.Empty
+	6, // 11: friends_service.FriendsService.Unfollow:output_type -> google.protobuf.Empty
+	6, // 12: friends_service.FriendsService.DeleteFriend:output_type -> google.protobuf.Empty
+	5, // 13: friends_service.FriendsService.GetUserRelation:output_type -> friends_service.RelationResponse
+	6, // 14: friends_service.FriendsService.MarkReadFriendRequest:output_type -> google.protobuf.Empty
+	8, // [8:15] is the sub-list for method output_type
+	1, // [1:8] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
 	1, // [1:1] is the sub-list for extension extendee
 	0, // [0:1] is the sub-list for field type_name

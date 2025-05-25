@@ -62,6 +62,7 @@ type InternalWSMessageHandler struct {
 	MessageUseCase      http2.MessageService
 	profileUseCase      http2.ProfileUseCase
 	ChatUseCase         http2.ChatUseCase
+	FriendsUseCase      http2.FriendsUseCase
 }
 
 func NewInternalWSMessageHandler(wsConnManager *WSConnectionManager, messageUseCase http2.MessageService, profileUseCase http2.ProfileUseCase, chatUseCase http2.ChatUseCase) *InternalWSMessageHandler {

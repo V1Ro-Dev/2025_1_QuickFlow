@@ -9,10 +9,10 @@ import (
 	"net/http"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	addr "quickflow/config/micro-addr"
 	postgresConfig "quickflow/config/postgres"
 	grpc2 "quickflow/messenger_service/internal/delivery/grpc"

@@ -21,6 +21,7 @@ type FriendsUseCase interface {
 	DeleteFriend(ctx context.Context, user string, friend string) error
 	IsExistsFriendRequest(ctx context.Context, senderID string, receiverID string) (bool, error)
 	GetUserRelation(ctx context.Context, user1 uuid.UUID, user2 uuid.UUID) (models.UserRelation, error)
+	MarkRead(ctx context.Context, user1 string, user2 string) error
 }
 
 type FriendsServiceServer struct {
@@ -130,4 +131,16 @@ func (f *FriendsServiceServer) GetUserRelation(ctx context.Context, in *pb.Frien
 	return &pb.RelationResponse{
 		Relation: string(rel),
 	}, nil
+}
+
+func (f *FriendsServiceServer) MarkReadFriendRequest(ctx context.Context, in *pb.FriendRequest) (*emptypb.Empty, error) {
+	logger.Info(ctx, "Received mark read friend request")
+
+	if err := f.friendsUseCase.MarkRead(ctx, in.UserId, in.ReceiverId); err != nil {
+		logger.Error(ctx, "mark read failed: ", err)
+		return nil, err
+	}
+
+	logger.Info(ctx, "Successfully marked read user")
+	return &emptypb.Empty{}, nil
 }
