@@ -24,7 +24,7 @@ const getPostsQuery = `
 const getPhotosQuery = `
 	select pf.file_url, pf.file_type, f.filename
 	from post_file pf
-	join files f 
+	left join files f 
 	on pf.file_url = f.file_url
 	where post_id = $1
 	order by added_at;
