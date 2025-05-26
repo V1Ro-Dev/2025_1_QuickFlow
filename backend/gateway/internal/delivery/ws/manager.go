@@ -78,7 +78,7 @@ func (m *InternalWSMessageHandler) Handle(ctx context.Context, user models.User,
 	if err := json.Unmarshal(payload, &messageForm); err != nil {
 		return fmt.Errorf("failed to unmarshal payload: %w", err)
 	}
-	if len(messageForm.Text)+len(messageForm.Media)+len(messageForm.Audio)+len(messageForm.File) == 0 {
+	if len(messageForm.Text)+len(messageForm.Media)+len(messageForm.Audio)+len(messageForm.File)+len(messageForm.Stickers) == 0 {
 		return fmt.Errorf("message cannot be empty")
 	}
 
