@@ -266,6 +266,27 @@ func (p *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	lastComment, err := p.commentUseCase.GetLastPostComment(ctx, post.Id)
+	appErr := errors2.FromGRPCError(err)
+	if appErr != nil && appErr.HTTPStatus != http.StatusNotFound {
+		logger.Error(ctx, "Failed to get last comment")
+		http2.WriteJSONError(w, appErr)
+		return
+	}
+
+	if lastComment != nil {
+		userInfo, err := p.profileUseCase.GetPublicUserInfo(ctx, lastComment.UserId)
+		if err != nil {
+			logger.Error(ctx, fmt.Sprintf("Failed to get user info: %s", err.Error()))
+			http2.WriteJSONError(w, err)
+			return
+		}
+
+		var commentOut forms.CommentOut
+		commentOut.FromComment(*lastComment, userInfo)
+		postOut.LastComment = &commentOut
+	}
+
 	info := forms.PublicUserInfoToOut(publicUserInfo, models.RelationSelf)
 	postOut.Creator = &info
 
