@@ -61,7 +61,7 @@ const (
 	JOIN chat c ON cu.chat_id = c.id
 	JOIN message m ON c.id = m.chat_id
 	WHERE cu.user_id = $1
-    AND (cu.last_read IS NULL OR cu.last_read < c.updated_at)
+    AND (cu.last_read IS NULL OR cu.last_read::timestamptz(3) < c.updated_at::timestamptz(3))
 	AND (
 	    select m.sender_id
 	    from message m
