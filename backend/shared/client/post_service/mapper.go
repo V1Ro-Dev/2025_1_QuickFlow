@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	time_config "quickflow/config/time"
 	file_service2 "quickflow/shared/client/file_service"
 	shared_models "quickflow/shared/models"
 	pb "quickflow/shared/proto/post_service"
@@ -104,14 +105,24 @@ func ProtoCommentToModel(c *pb.Comment) (*shared_models.Comment, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	createdAt, err := time.Parse(time_config.TimeStampLayout, c.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedAt, err := time.Parse(time_config.TimeStampLayout, c.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
 	return &shared_models.Comment{
 		Id:        id,
 		PostId:    postId,
 		UserId:    userId,
 		Text:      c.Text,
 		Images:    file_service2.ProtoFilesToModels(c.Images),
-		CreatedAt: c.CreatedAt.AsTime(),
-		UpdatedAt: c.UpdatedAt.AsTime(),
+		CreatedAt: createdAt,
+		UpdatedAt: updatedAt,
 		LikeCount: int(c.LikeCount),
 		IsLiked:   c.IsLiked,
 	}, nil
@@ -138,8 +149,8 @@ func ModelCommentToProto(c *shared_models.Comment) *pb.Comment {
 		UserId:    c.UserId.String(),
 		Text:      c.Text,
 		Images:    file_service2.ModelFilesToProto(c.Images),
-		CreatedAt: timestamppb.New(c.CreatedAt),
-		UpdatedAt: timestamppb.New(c.UpdatedAt),
+		CreatedAt: c.CreatedAt.Format(time_config.TimeStampLayout),
+		UpdatedAt: c.UpdatedAt.Format(time_config.TimeStampLayout),
 		LikeCount: int64(c.LikeCount),
 		IsLiked:   c.IsLiked,
 	}

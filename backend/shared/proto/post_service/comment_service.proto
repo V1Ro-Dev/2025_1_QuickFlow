@@ -14,8 +14,8 @@ message Comment {
   string text = 4;
   repeated string images_url = 5;
   repeated file_service.File images = 6;
-  google.protobuf.Timestamp created_at = 7;
-  google.protobuf.Timestamp updated_at = 8;
+  string created_at = 7;
+  string updated_at = 8;
   int64 like_count = 9;
   bool is_liked = 10; // This will be used to indicate whether the current user liked this comment
 }
@@ -63,7 +63,7 @@ message UpdateCommentResponse {
 message FetchCommentsForPostRequest {
   string post_id = 1;
   int32 num_comments = 2;
-  google.protobuf.Timestamp timestamp = 3; // Timestamp for pagination
+  string timestamp = 3; // Timestamp for pagination
 }
 
 // FetchCommentsForPostResponse contains the list of comments for a specific post.

@@ -6,7 +6,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"quickflow/post_service/internal/delivery/grpc/dto"
+	time_config "quickflow/config/time"
+	dto "quickflow/shared/client/post_service"
 	"quickflow/shared/logger"
 	"quickflow/shared/models"
 	pb "quickflow/shared/proto/post_service"
@@ -99,7 +100,14 @@ func (c *CommentServiceServer) FetchCommentsForPost(ctx context.Context, req *pb
 		logger.Error(ctx, "Invalid post ID:", err)
 		return nil, err
 	}
-	comments, err := c.commentUseCase.FetchCommentsForPost(ctx, postId, int(req.NumComments), req.Timestamp.AsTime())
+
+	time_, err := time.Parse(time_config.TimeStampLayout, req.Timestamp)
+	if err != nil {
+		logger.Error(ctx, "Invalid timestamp format:", err)
+		return nil, err
+	}
+
+	comments, err := c.commentUseCase.FetchCommentsForPost(ctx, postId, int(req.NumComments), time_)
 	if err != nil {
 		logger.Error(ctx, "Failed to fetch comments for post:", err)
 		return nil, err
