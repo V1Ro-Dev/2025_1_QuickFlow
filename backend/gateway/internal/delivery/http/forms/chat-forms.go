@@ -17,6 +17,7 @@ type GetChatsForm struct {
 	Ts         time.Time `json:"ts,omitempty"`
 }
 
+//easyjson:json
 type ChatOut struct {
 	ID                string      `json:"id"`
 	Name              string      `json:"name,omitempty"`
@@ -33,10 +34,17 @@ type ChatOut struct {
 	NumUnreadMessages int         `json:"unread_messages"`
 }
 
+//easyjson:json
+type ChatsOut struct {
+	Chats []ChatOut
+}
+
+//easyjson:json
 type GetNumUnreadChatsForm struct {
 	ChatsCount int `json:"chats_count"`
 }
 
+//easyjson:json
 type PrivateChatInfo struct {
 	Username string   `json:"username,omitempty"`
 	Activity Activity `json:"activity,omitempty"`

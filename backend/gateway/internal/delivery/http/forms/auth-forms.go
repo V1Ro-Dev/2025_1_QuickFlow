@@ -2,6 +2,7 @@ package forms
 
 import "quickflow/shared/models"
 
+//easyjson:json
 type SignUpForm struct {
 	Login       string     `json:"username"`
 	Password    string     `json:"password"`
@@ -11,6 +12,7 @@ type SignUpForm struct {
 	DateOfBirth string     `json:"birth_date"`
 }
 
+//easyjson:json
 type AuthForm struct {
 	Login    string `json:"username"`
 	Password string `json:"password"`

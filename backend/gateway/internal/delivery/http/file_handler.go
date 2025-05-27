@@ -2,7 +2,6 @@ package http
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -130,10 +129,15 @@ func (p *FileHandler) AddFiles(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(forms.PayloadWrapper[forms.MessageAttachmentForm]{Payload: res})
+	out := forms.PayloadWrapper[forms.MessageAttachmentForm]{Payload: res}
+	js, err := out.MarshalJSON()
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to encode urls: %s", err.Error()))
-		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode urls", http.StatusInternalServerError))
+		logger.Error(ctx, "Failed to marshal json payload", err)
+		http2.WriteJSONError(w, err)
 		return
+	}
+	if _, err = w.Write(js); err != nil {
+		logger.Error(ctx, "Failed to encode feedback output", err)
+		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode feedback output", http.StatusInternalServerError))
 	}
 }

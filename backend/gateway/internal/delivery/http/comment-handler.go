@@ -2,13 +2,14 @@ package http
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/mailru/easyjson"
 	"github.com/microcosm-cc/bluemonday"
 
 	time2 "quickflow/config/time"
@@ -75,7 +76,16 @@ func (c *CommentHandler) AddComment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var commentForm forms.CommentForm
-	if err := json.NewDecoder(r.Body).Decode(&commentForm); err != nil {
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		logger.Error(ctx, fmt.Sprintf("Error reading request body: %s", err.Error()))
+		http2.WriteJSONError(w, errors2.New("BAD_REQUEST", fmt.Sprintf("Unable to read request body: %v", err), http.StatusBadRequest))
+		return
+	}
+	defer r.Body.Close()
+
+	if err = commentForm.UnmarshalJSON(body); err != nil {
 		logger.Error(ctx, fmt.Sprintf("Failed to parse comment form: %s", err.Error()))
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Invalid data", http.StatusBadRequest))
 		return
@@ -114,9 +124,8 @@ func (c *CommentHandler) AddComment(w http.ResponseWriter, r *http.Request) {
 	var commentOut forms.CommentOut
 	commentOut.FromComment(*newComment, publicUserInfo)
 
-	// Отправка ответа
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(commentOut); err != nil {
+	if _, err := easyjson.MarshalToWriter(commentOut, w); err != nil {
 		logger.Error(ctx, fmt.Sprintf("Failed to encode comment: %s", err.Error()))
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode comment", http.StatusInternalServerError))
 	}
@@ -198,11 +207,18 @@ func (c *CommentHandler) UpdateComment(w http.ResponseWriter, r *http.Request) {
 	// sanitize the text
 	commentIdStr = c.policy.Sanitize(commentIdStr)
 
-	// Декодируем данные комментария из JSON
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		logger.Error(ctx, fmt.Sprintf("Error reading request body: %s", err.Error()))
+		http2.WriteJSONError(w, errors2.New("BAD_REQUEST", fmt.Sprintf("Unable to read request body: %v", err), http.StatusBadRequest))
+		return
+	}
+	defer r.Body.Close()
+
 	var commentForm forms.CommentUpdateForm
-	if err := json.NewDecoder(r.Body).Decode(&commentForm); err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to decode comment data: %s", err.Error()))
-		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Invalid comment data", http.StatusBadRequest))
+	if err = commentForm.UnmarshalJSON(body); err != nil {
+		logger.Error(ctx, fmt.Sprintf("Failed to parse comment form: %s", err.Error()))
+		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Invalid data", http.StatusBadRequest))
 		return
 	}
 
@@ -228,11 +244,11 @@ func (c *CommentHandler) UpdateComment(w http.ResponseWriter, r *http.Request) {
 	var commentOut forms.CommentOut
 	commentOut.FromComment(*updatedComment, publicUserInfo)
 
-	// Отправка обновленного комментария
+	// Отправка ответа
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(commentOut); err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to encode updated comment: %s", err.Error()))
-		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode updated comment", http.StatusInternalServerError))
+	if _, err := easyjson.MarshalToWriter(commentOut, w); err != nil {
+		logger.Error(ctx, fmt.Sprintf("Failed to encode comment: %s", err.Error()))
+		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode comment", http.StatusInternalServerError))
 	}
 }
 
@@ -295,17 +311,16 @@ func (c *CommentHandler) FetchCommentsForPost(w http.ResponseWriter, r *http.Req
 			publicUserInfos[comment.UserId] = publicUserInfo
 		}
 	}
-	// Подготовка списка комментариев для ответа
-	var commentsOut []forms.CommentOut
+
+	var commentsOut forms.CommentsOut
 	for _, comment := range comments {
 		var commentOut forms.CommentOut
 		commentOut.FromComment(comment, publicUserInfos[comment.UserId])
-		commentsOut = append(commentsOut, commentOut)
+		commentsOut.Comments = append(commentsOut.Comments, commentOut)
 	}
 
-	// Отправка ответа
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(commentsOut); err != nil {
+	if _, err = easyjson.MarshalToWriter(commentsOut, w); err != nil {
 		logger.Error(ctx, fmt.Sprintf("Failed to encode comments: %s", err.Error()))
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode comments", http.StatusInternalServerError))
 	}

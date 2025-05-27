@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -74,8 +75,15 @@ func (a *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	logger.Info(ctx, "Got signup request")
 
 	var form forms.SignUpForm
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		logger.Error(ctx, fmt.Sprintf("Error reading request body: %s", err.Error()))
+		http2.WriteJSONError(w, errors2.New("BAD_REQUEST", fmt.Sprintf("Unable to read request body: %v", err), http.StatusBadRequest))
+		return
+	}
+	defer r.Body.Close()
 
-	if err := json.NewDecoder(r.Body).Decode(&form); err != nil {
+	if err = form.UnmarshalJSON(body); err != nil {
 		logger.Error(ctx, fmt.Sprintf("Decode error: %s", err.Error()))
 		http2.WriteJSONError(w, errors2.New("BAD_REQUEST", fmt.Sprintf("Unable to decode request body: %v", err), http.StatusBadRequest))
 		return
@@ -135,17 +143,6 @@ func (a *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 		Secure:   true,
 	})
-
-	// return response
-	//body := map[string]interface{}{
-	//	"user_id": id,
-	//}
-
-	//err = json.NewEncoder(w).Encode(&body)
-	//if err != nil {
-	//	logger.Error(ctx, fmt.Sprintf("Decode error: %s", err.Error()))
-	//	http2.WriteJSONError(w, errors2.New("INTERNAL", fmt.Sprintf("Unable to encode respond body: %v", err), http.StatusInternalServerError))
-	//}
 	logger.Info(ctx, "Successfully processed signup request")
 }
 
@@ -167,7 +164,15 @@ func (a *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	var form forms.AuthForm
 
-	if err := json.NewDecoder(r.Body).Decode(&form); err != nil {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		logger.Error(ctx, fmt.Sprintf("Error reading request body: %s", err.Error()))
+		http2.WriteJSONError(w, errors2.New("BAD_REQUEST", fmt.Sprintf("Unable to read request body: %v", err), http.StatusBadRequest))
+		return
+	}
+	defer r.Body.Close()
+
+	if err := form.UnmarshalJSON(body); err != nil {
 		logger.Error(ctx, fmt.Sprintf("Decode error: %s", err.Error()))
 		http2.WriteJSONError(w, errors2.New("BAD_REQUEST", fmt.Sprintf("Unable to decode request body: %v", err), http.StatusBadRequest))
 		return

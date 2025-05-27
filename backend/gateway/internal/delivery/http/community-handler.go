@@ -122,8 +122,16 @@ func (c *CommunityHandler) CreateCommunity(w http.ResponseWriter, r *http.Reques
 	communityOut.Role = string(models.CommunityRoleOwner)
 
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(forms.PayloadWrapper[forms.CommunityForm]{Payload: communityOut})
+
+	out := forms.PayloadWrapper[forms.CommunityForm]{Payload: communityOut}
+	js, err := out.MarshalJSON()
 	if err != nil {
+		logger.Error(ctx, fmt.Sprintf("Failed to marshal json response: %v", err))
+		http2.WriteJSONError(w, err)
+		return
+	}
+
+	if _, err = w.Write(js); err != nil {
 		logger.Error(ctx, fmt.Sprintf("Failed to encode community: %s", err.Error()))
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode community", http.StatusInternalServerError))
 		return
@@ -173,14 +181,21 @@ func (c *CommunityHandler) GetCommunityById(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	out := forms.ToCommunityForm(*community, info)
+	communityOut := forms.ToCommunityForm(*community, info)
 	if isMember && role != nil {
-		out.Role = string(*role)
+		communityOut.Role = string(*role)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(forms.PayloadWrapper[forms.CommunityForm]{Payload: out})
+	out := forms.PayloadWrapper[forms.CommunityForm]{Payload: communityOut}
+	js, err := out.MarshalJSON()
 	if err != nil {
+		logger.Error(ctx, fmt.Sprintf("Failed to marshal json response: %v", err))
+		http2.WriteJSONError(w, err)
+		return
+	}
+
+	if _, err = w.Write(js); err != nil {
 		logger.Error(ctx, fmt.Sprintf("Failed to encode community: %s", err.Error()))
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode community", http.StatusInternalServerError))
 		return
@@ -224,14 +239,21 @@ func (c *CommunityHandler) GetCommunityByName(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	out := forms.ToCommunityForm(*community, info)
+	communityOut := forms.ToCommunityForm(*community, info)
 	if isMember && role != nil {
-		out.Role = string(*role)
+		communityOut.Role = string(*role)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(forms.PayloadWrapper[forms.CommunityForm]{Payload: out})
+	out := forms.PayloadWrapper[forms.CommunityForm]{Payload: communityOut}
+	js, err := out.MarshalJSON()
 	if err != nil {
+		logger.Error(ctx, fmt.Sprintf("Failed to marshal json response: %v", err))
+		http2.WriteJSONError(w, err)
+		return
+	}
+
+	if _, err = w.Write(js); err != nil {
 		logger.Error(ctx, fmt.Sprintf("Failed to encode community: %s", err.Error()))
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode community", http.StatusInternalServerError))
 		return
@@ -292,7 +314,7 @@ func (c *CommunityHandler) GetCommunityMembers(w http.ResponseWriter, r *http.Re
 		publicInfoMap[info.Id] = info
 	}
 
-	var out []forms.CommunityMemberOut
+	var membersOut []forms.CommunityMemberOut
 	for _, member := range members {
 		formOut := forms.ToCommunityMemberOut(*member, publicInfoMap[member.UserID])
 		if _, isOnline := c.connService.IsConnected(member.UserID); isOnline {
@@ -300,14 +322,21 @@ func (c *CommunityHandler) GetCommunityMembers(w http.ResponseWriter, r *http.Re
 		} else {
 			formOut.IsOnline = nil
 		}
-		out = append(out, formOut)
+		membersOut = append(membersOut, formOut)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(forms.PayloadWrapper[[]forms.CommunityMemberOut]{Payload: out})
+	out := forms.PayloadWrapper[[]forms.CommunityMemberOut]{Payload: membersOut}
+	js, err := out.MarshalJSON()
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to encode community members: %s", err.Error()))
-		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode community members", http.StatusInternalServerError))
+		logger.Error(ctx, fmt.Sprintf("Failed to marshal json response: %v", err))
+		http2.WriteJSONError(w, err)
+		return
+	}
+
+	if _, err = w.Write(js); err != nil {
+		logger.Error(ctx, fmt.Sprintf("Failed to encode community: %s", err.Error()))
+		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode community", http.StatusInternalServerError))
 		return
 	}
 }
@@ -424,10 +453,18 @@ func (c *CommunityHandler) UpdateCommunity(w http.ResponseWriter, r *http.Reques
 		http2.WriteJSONError(w, err)
 		return
 	}
+	communityOut := forms.ToCommunityForm(*newCommunity, info)
 
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(forms.PayloadWrapper[forms.CommunityForm]{Payload: forms.ToCommunityForm(*newCommunity, info)})
+	out := forms.PayloadWrapper[forms.CommunityForm]{Payload: communityOut}
+	js, err := out.MarshalJSON()
 	if err != nil {
+		logger.Error(ctx, fmt.Sprintf("Failed to marshal json response: %v", err))
+		http2.WriteJSONError(w, err)
+		return
+	}
+
+	if _, err = w.Write(js); err != nil {
 		logger.Error(ctx, fmt.Sprintf("Failed to encode community: %s", err.Error()))
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode community", http.StatusInternalServerError))
 		return
@@ -532,7 +569,7 @@ func (c *CommunityHandler) GetUserCommunities(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	out := make([]forms.CommunityForm, len(communities))
+	communityOut := make([]forms.CommunityForm, len(communities))
 	for i, community := range communities {
 		info, err := c.profileService.GetPublicUserInfo(ctx, community.OwnerID)
 		if err != nil {
@@ -541,7 +578,7 @@ func (c *CommunityHandler) GetUserCommunities(w http.ResponseWriter, r *http.Req
 			return
 		}
 
-		out[i] = forms.ToCommunityForm(*community, info)
+		communityOut[i] = forms.ToCommunityForm(*community, info)
 		isMember, role, err := c.communityService.IsCommunityMember(ctx, user.Id, community.ID)
 		if err != nil {
 			logger.Error(ctx, fmt.Sprintf("Failed to check community membership: %s", err.Error()))
@@ -549,15 +586,22 @@ func (c *CommunityHandler) GetUserCommunities(w http.ResponseWriter, r *http.Req
 			return
 		}
 		if isMember && role != nil {
-			out[i].Role = string(*role)
+			communityOut[i].Role = string(*role)
 		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(forms.PayloadWrapper[[]forms.CommunityForm]{Payload: out})
+	out := forms.PayloadWrapper[[]forms.CommunityForm]{Payload: communityOut}
+	js, err := out.MarshalJSON()
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to encode user communities: %s", err.Error()))
-		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode user communities", http.StatusInternalServerError))
+		logger.Error(ctx, fmt.Sprintf("Failed to marshal json response: %v", err))
+		http2.WriteJSONError(w, err)
+		return
+	}
+
+	if _, err = w.Write(js); err != nil {
+		logger.Error(ctx, fmt.Sprintf("Failed to encode community: %s", err.Error()))
+		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode community", http.StatusInternalServerError))
 		return
 	}
 }
@@ -660,7 +704,7 @@ func (c *CommunityHandler) GetControlledCommunities(w http.ResponseWriter, r *ht
 		return
 	}
 
-	out := make([]forms.CommunityForm, len(communities))
+	communitiesOut := make([]forms.CommunityForm, len(communities))
 	for i, community := range communities {
 		info, err := c.profileService.GetPublicUserInfo(ctx, community.OwnerID)
 		if err != nil {
@@ -669,7 +713,7 @@ func (c *CommunityHandler) GetControlledCommunities(w http.ResponseWriter, r *ht
 			return
 		}
 
-		out[i] = forms.ToCommunityForm(*community, info)
+		communitiesOut[i] = forms.ToCommunityForm(*community, info)
 		isMember, role, err := c.communityService.IsCommunityMember(ctx, user.Id, community.ID)
 		if err != nil {
 			logger.Error(ctx, fmt.Sprintf("Failed to check community membership: %s", err.Error()))
@@ -677,15 +721,22 @@ func (c *CommunityHandler) GetControlledCommunities(w http.ResponseWriter, r *ht
 			return
 		}
 		if isMember && role != nil {
-			out[i].Role = string(*role)
+			communitiesOut[i].Role = string(*role)
 		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(forms.PayloadWrapper[[]forms.CommunityForm]{Payload: out})
+	out := forms.PayloadWrapper[[]forms.CommunityForm]{Payload: communitiesOut}
+	js, err := out.MarshalJSON()
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to encode user communities: %s", err.Error()))
-		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode user communities", http.StatusInternalServerError))
+		logger.Error(ctx, fmt.Sprintf("Failed to marshal json response: %v", err))
+		http2.WriteJSONError(w, err)
+		return
+	}
+
+	if _, err = w.Write(js); err != nil {
+		logger.Error(ctx, fmt.Sprintf("Failed to encode community: %s", err.Error()))
+		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode community", http.StatusInternalServerError))
 		return
 	}
 }

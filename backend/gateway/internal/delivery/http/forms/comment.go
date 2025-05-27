@@ -12,6 +12,7 @@ import (
 	"quickflow/shared/models"
 )
 
+//easyjson:json
 type CommentForm struct {
 	Text     string   `json:"text"`
 	Media    []string `json:"media,omitempty"`
@@ -20,6 +21,7 @@ type CommentForm struct {
 	Stickers []string `form:"stickers" json:"stickers,omitempty"`
 }
 
+//easyjson:json
 func (f *CommentForm) ToCommentModel() models.Comment {
 	var attachments []*models.File
 	for _, file := range f.Files {
@@ -61,6 +63,7 @@ func (f *CommentForm) ToCommentModel() models.Comment {
 	}
 }
 
+//easyjson:json
 type CommentUpdateForm struct {
 	CommentForm
 }
@@ -95,6 +98,7 @@ func (f *CommentUpdateForm) ToCommentUpdateModel(commentId uuid.UUID) models.Com
 	}
 }
 
+//easyjson:json
 type CommentOut struct {
 	ID        string            `json:"id"`
 	Text      string            `json:"text"`
@@ -108,6 +112,11 @@ type CommentOut struct {
 	PostId    uuid.UUID         `json:"post_id"`
 	LikeCount int               `json:"like_count"`
 	IsLiked   bool              `json:"is_liked"`
+}
+
+//easyjson:json
+type CommentsOut struct {
+	Comments []CommentOut
 }
 
 func (c *CommentOut) FromComment(comment models.Comment, userInfo models.PublicUserInfo) {
@@ -141,6 +150,7 @@ func (c *CommentOut) FromComment(comment models.Comment, userInfo models.PublicU
 	c.IsLiked = comment.IsLiked
 }
 
+//easyjson:json
 type CommentFetchForm struct {
 	Count int    `json:"count"`
 	Ts    string `json:"ts"`

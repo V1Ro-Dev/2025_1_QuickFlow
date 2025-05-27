@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/mailru/easyjson"
 
 	time2 "quickflow/config/time"
 	"quickflow/gateway/internal/delivery/http/forms"
@@ -108,12 +109,11 @@ func (c *ChatHandler) GetUserChats(w http.ResponseWriter, r *http.Request) {
 		lastMessageSenderInfo[info.Id] = info
 	}
 
-	// Convert chats to output format
 	var (
 		isOnline bool
 		username string
 		lastSeen time.Time
-		chatsOut []forms.ChatOut
+		chatsOut forms.ChatsOut
 	)
 	for _, chat := range chats {
 		if chat.Type != models.ChatTypePrivate {
@@ -156,32 +156,17 @@ func (c *ChatHandler) GetUserChats(w http.ResponseWriter, r *http.Request) {
 			Activity: forms.Activity{IsOnline: isOnline, LastSeen: lastSeen.Format(time2.TimeStampLayout)},
 		})
 		chatOut.NumUnreadMessages = numUnreadMessages
-		chatsOut = append(chatsOut, chatOut)
+		chatsOut.Chats = append(chatsOut.Chats, chatOut)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	_, err = easyjson.MarshalToWriter(chatsOut, w)
 	err = json.NewEncoder(w).Encode(chatsOut)
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("Failed to encode chats: %s", err.Error()))
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode chats", http.StatusInternalServerError))
 		return
 	}
-}
-
-func (c *ChatHandler) getOtherPrivateChatParticipant(ctx context.Context, chatId uuid.UUID, userId uuid.UUID) (uuid.UUID, error) {
-	participants, err := c.chatUseCase.GetChatParticipants(ctx, chatId)
-	if err != nil {
-		err := errors2.FromGRPCError(err)
-		logger.Error(ctx, fmt.Sprintf("Failed to get chat participants: %v", err))
-		return uuid.Nil, err
-	}
-
-	for _, participant := range participants {
-		if participant != userId {
-			return participant, nil
-		}
-	}
-	return uuid.Nil, errors.New("user not found")
 }
 
 func (c *ChatHandler) GetNumUnreadChats(w http.ResponseWriter, r *http.Request) {
@@ -203,10 +188,33 @@ func (c *ChatHandler) GetNumUnreadChats(w http.ResponseWriter, r *http.Request) 
 
 	logger.Info(ctx, fmt.Sprintf("Fetched %d unread chats for user %s", numUnreadChats, user.Username))
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(forms.PayloadWrapper[forms.GetNumUnreadChatsForm]{Payload: forms.GetNumUnreadChatsForm{ChatsCount: numUnreadChats}})
+	out := forms.PayloadWrapper[forms.GetNumUnreadChatsForm]{Payload: forms.GetNumUnreadChatsForm{ChatsCount: numUnreadChats}}
+	js, err := out.MarshalJSON()
+	if err != nil {
+		logger.Error(ctx, fmt.Sprintf("Failed to marshal json response: %v", err))
+		http2.WriteJSONError(w, err)
+		return
+	}
+	_, err = w.Write(js)
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("Failed to encode number of unread chats: %s", err.Error()))
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode number of unread chats", http.StatusInternalServerError))
 		return
 	}
+}
+
+func (c *ChatHandler) getOtherPrivateChatParticipant(ctx context.Context, chatId uuid.UUID, userId uuid.UUID) (uuid.UUID, error) {
+	participants, err := c.chatUseCase.GetChatParticipants(ctx, chatId)
+	if err != nil {
+		err := errors2.FromGRPCError(err)
+		logger.Error(ctx, fmt.Sprintf("Failed to get chat participants: %v", err))
+		return uuid.Nil, err
+	}
+
+	for _, participant := range participants {
+		if participant != userId {
+			return participant, nil
+		}
+	}
+	return uuid.Nil, errors.New("user not found")
 }

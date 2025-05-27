@@ -18,6 +18,7 @@ type CreateCommunityForm struct {
 	Cover       *models.File `json:"cover"`
 }
 
+//easyjson:json
 type CommunityInfo struct {
 	NickName    string `json:"nickname"`
 	Name        string `json:"name"`
@@ -36,6 +37,7 @@ func CommunityInfoFromModel(communityInfo models.BasicCommunityInfo, nickName st
 	}
 }
 
+//easyjson:json
 type CommunityForm struct {
 	Id        string             `json:"id"`
 	Owner     *PublicUserInfoOut `json:"owner"`
@@ -49,11 +51,13 @@ type CommunityForm struct {
 	ContactInfo   *ContactInfo   `json:"contact_info,omitempty"`
 }
 
+//easyjson:json
 type PaginationForm struct {
 	Count int       `json:"count"`
 	Ts    time.Time `json:"ts"`
 }
 
+//easyjson:json
 type CommunityMemberOut struct {
 	UserId      string `json:"user_id"`
 	CommunityId string `json:"community_id"`

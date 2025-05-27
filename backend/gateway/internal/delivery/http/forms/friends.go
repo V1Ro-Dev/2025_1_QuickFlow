@@ -6,14 +6,17 @@ import (
 	"quickflow/shared/models"
 )
 
+//easyjson:json
 type FriendRequest struct {
 	ReceiverID string `json:"receiver_id"`
 }
 
+//easyjson:json
 type FriendRequestDel struct {
 	FriendID string `json:"friend_id"`
 }
 
+//easyjson:json
 type FriendsInfoOut struct {
 	ID         uuid.UUID `json:"id"`
 	Username   string    `json:"username"`
