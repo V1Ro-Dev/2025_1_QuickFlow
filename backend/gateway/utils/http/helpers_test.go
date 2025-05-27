@@ -3,7 +3,6 @@ package http_test
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -11,35 +10,58 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"quickflow/gateway/internal/delivery/http/forms"
+	errors2 "quickflow/gateway/internal/errors"
 	customErr "quickflow/gateway/utils/http"
+	http2 "quickflow/gateway/utils/http"
 )
 
 func TestWriteJSONError_Table(t *testing.T) {
 	tests := []struct {
-		name       string
-		msg        string
-		statusCode int
+		name     string
+		err      error
+		wantCode int
+		wantErr  string
+		wantMsg  string
 	}{
-		{"bad request", "bad", http.StatusBadRequest},
-		{"not found", "not found", http.StatusNotFound},
-		{"internal error", "fail", http.StatusInternalServerError},
+		{
+			name:     "bad request",
+			err:      errors2.New("BAD_REQUEST", "bad", http.StatusBadRequest),
+			wantCode: http.StatusBadRequest,
+			wantErr:  "BAD_REQUEST",
+			wantMsg:  "bad",
+		},
+		{
+			name:     "not found",
+			err:      errors2.New("NOT_FOUND", "not found", http.StatusNotFound),
+			wantCode: http.StatusNotFound,
+			wantErr:  "NOT_FOUND",
+			wantMsg:  "not found",
+		},
+		{
+			name:     "internal error",
+			err:      errors2.New("INTERNAL", "fail", http.StatusInternalServerError),
+			wantCode: http.StatusInternalServerError,
+			wantErr:  "INTERNAL",
+			wantMsg:  "fail",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rec := httptest.NewRecorder()
-			customErr.WriteJSONError(rec, errors.New(tt.msg))
+			http2.WriteJSONError(rec, tt.err)
 
 			res := rec.Result()
 			defer res.Body.Close()
 
-			require.Equal(t, tt.statusCode, res.StatusCode)
+			require.Equal(t, tt.wantCode, res.StatusCode)
 			require.Equal(t, "application/json", res.Header.Get("Content-Type"))
 
-			var resp map[string]string
-			err := json.NewDecoder(res.Body).Decode(&resp)
-			require.NoError(t, err)
-			require.Equal(t, tt.msg, resp["error"])
+			var resp forms.ErrorForm
+			require.NoError(t, json.NewDecoder(res.Body).Decode(&resp))
+			require.Equal(t, tt.wantErr, resp.ErrorCode)
+			require.Equal(t, tt.wantMsg, resp.Message)
 		})
 	}
 }
