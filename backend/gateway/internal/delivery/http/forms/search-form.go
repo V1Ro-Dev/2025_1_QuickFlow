@@ -6,6 +6,7 @@ import (
 	"strconv"
 )
 
+//easyjson:json
 type SearchForm struct {
 	ToSearch string `json:"string" validate:"required"`
 	Count    uint   `json:"count" validate:"required"`

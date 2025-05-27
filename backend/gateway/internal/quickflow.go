@@ -125,8 +125,10 @@ func Run(cfg *config.Config) error {
 	pingHandler := ws.NewPingHandlerWS()
 
 	// register handlers
-	wsRouter.RegisterHandler("message", wsMessageHander.Handle)
-	wsRouter.RegisterHandler("message_read", wsMessageHander.MarkMessageRead)
+	wsRouter.RegisterHandler(ws.MessageEventSend, wsMessageHander.SendMessage)
+	wsRouter.RegisterHandler(ws.MessageEventRead, wsMessageHander.MarkMessageRead)
+	wsRouter.RegisterHandler(ws.MessageEventDeleted, wsMessageHander.DeleteMessage)
+	wsRouter.RegisterHandler(ws.ChatEventDeleted, wsMessageHander.DeleteChat)
 
 	newMessageHandlerWS := qfhttp.NewMessageListenerWS(profileService, connManager, wsRouter, sanitizerPolicy)
 

@@ -1,13 +1,13 @@
 package http
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/mailru/easyjson"
 	"github.com/microcosm-cc/bluemonday"
 
 	"quickflow/gateway/internal/delivery/http/forms"
@@ -66,7 +66,7 @@ func (p *PostHandler) AddPost(w http.ResponseWriter, r *http.Request) {
 
 	// parse the post form
 	var postForm forms.PostForm
-	if err := json.NewDecoder(r.Body).Decode(&postForm); err != nil {
+	if err := easyjson.UnmarshalFromReader(r.Body, &postForm); err != nil {
 		logger.Error(ctx, "Failed to decode request body for feedback", err)
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Bad request body", http.StatusBadRequest))
 		return
@@ -137,11 +137,16 @@ func (p *PostHandler) AddPost(w http.ResponseWriter, r *http.Request) {
 
 	// Return the response with the newly created post
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(forms.PayloadWrapper[forms.PostOut]{Payload: postOut})
+	out := forms.PayloadWrapper[forms.PostOut]{Payload: postOut}
+	js, err := out.MarshalJSON()
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to encode post: %s", err.Error()))
-		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode post", http.StatusInternalServerError))
+		logger.Error(ctx, "Failed to marshal json payload", err)
+		http2.WriteJSONError(w, err)
 		return
+	}
+	if _, err = w.Write(js); err != nil {
+		logger.Error(ctx, "Failed to encode feedback output", err)
+		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode feedback output", http.StatusInternalServerError))
 	}
 }
 
@@ -221,7 +226,7 @@ func (p *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var updatePostForm forms.UpdatePostForm
-	if err := json.NewDecoder(r.Body).Decode(&updatePostForm); err != nil {
+	if err := easyjson.UnmarshalFromReader(r.Body, &updatePostForm); err != nil {
 		logger.Error(ctx, "Failed to decode request body for feedback", err)
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Bad request body", http.StatusBadRequest))
 		return
@@ -291,11 +296,16 @@ func (p *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 	postOut.Creator = &info
 
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(forms.PayloadWrapper[forms.PostOut]{Payload: postOut})
+	out := forms.PayloadWrapper[forms.PostOut]{Payload: postOut}
+	js, err := out.MarshalJSON()
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to encode post: %s", err.Error()))
-		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode post", http.StatusInternalServerError))
+		logger.Error(ctx, "Failed to marshal json payload", err)
+		http2.WriteJSONError(w, err)
 		return
+	}
+	if _, err = w.Write(js); err != nil {
+		logger.Error(ctx, "Failed to encode feedback output", err)
+		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode feedback output", http.StatusInternalServerError))
 	}
 }
 
@@ -444,10 +454,15 @@ func (p *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(forms.PayloadWrapper[forms.PostOut]{Payload: postOut})
+	out := forms.PayloadWrapper[forms.PostOut]{Payload: postOut}
+	js, err := out.MarshalJSON()
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to encode post: %s", err.Error()))
-		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode post", http.StatusInternalServerError))
+		logger.Error(ctx, "Failed to marshal json payload", err)
+		http2.WriteJSONError(w, err)
 		return
+	}
+	if _, err = w.Write(js); err != nil {
+		logger.Error(ctx, "Failed to encode feedback output", err)
+		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode feedback output", http.StatusInternalServerError))
 	}
 }

@@ -1,19 +1,17 @@
 package http
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/mailru/easyjson"
 	"github.com/microcosm-cc/bluemonday"
 
 	time2 "quickflow/config/time"
 	"quickflow/gateway/internal/delivery/http/forms"
 	errors2 "quickflow/gateway/internal/errors"
-	"quickflow/gateway/pkg/sanitizer"
 	http2 "quickflow/gateway/utils/http"
 	"quickflow/shared/logger"
 	"quickflow/shared/models"
@@ -122,76 +120,9 @@ func (m *MessageHandler) GetMessagesForChat(w http.ResponseWriter, r *http.Reque
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(out)
-	if err != nil {
+	if _, err := easyjson.MarshalToWriter(out, w); err != nil {
 		logger.Error(ctx, fmt.Sprintf("Failed to encode feed: %s", err.Error()))
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode feed", http.StatusInternalServerError))
-		return
-	}
-}
-
-// SendMessageToUsername godoc
-// @Summary Send message to user
-// @Description Send message to user
-// @Tags Messages
-// @Accept json
-// @Produce json
-// @Param username path string true "ToSearch"
-// @Param request body forms.MessageForm true "Message data"
-// @Success 200 {object} forms.MessageOut "Message"
-// @Failure 400 {object} forms.ErrorForm "Invalid data"
-// @Failure 404 {object} forms.ErrorForm "User not found"
-// @Failure 500 {object} forms.ErrorForm "Server error"
-// @Router /api/messages/{username} [post]
-func (m *MessageHandler) SendMessageToUsername(w http.ResponseWriter, r *http.Request) {
-	ctx := http2.SetRequestId(r.Context())
-	user, ok := ctx.Value("user").(models.User)
-	if !ok {
-		logger.Error(ctx, "Failed to get user from context while sending message")
-		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
-		return
-	}
-
-	logger.Info(ctx, fmt.Sprintf("User %s requested to send message", user.Username))
-
-	username := mux.Vars(r)["username"]
-	if len(username) == 0 {
-		logger.Info(ctx, "Send message request without username")
-		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "username is required", http.StatusBadRequest))
-		return
-	}
-
-	userRecipient, err := m.authUseCase.GetUserByUsername(ctx, username)
-	if err != nil {
-		err := errors2.FromGRPCError(err)
-		logger.Info(ctx, fmt.Sprintf("User %s not found", username))
-		http2.WriteJSONError(w, err)
-		return
-	}
-
-	var messageForm forms.MessageForm
-	err = json.NewDecoder(r.Body).Decode(&messageForm)
-	if err != nil {
-		logger.Error(ctx, "Failed to parse message body")
-		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Failed to parse message body", http.StatusBadRequest))
-		return
-	}
-
-	if utf8.RuneCountInString(messageForm.Text) > 4000 {
-		logger.Error(ctx, fmt.Sprintf("Text length validation failed: length=%d", utf8.RuneCountInString(messageForm.Text)))
-		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Text must be between 1 and 4096 characters", http.StatusBadRequest))
-		return
-	}
-
-	sanitizer.SanitizeMessage(&messageForm, m.policy)
-	messageForm.SenderId = user.Id
-	messageForm.ReceiverId = userRecipient.Id
-
-	message := messageForm.ToMessageModel()
-	_, err = m.messageUseCase.SendMessage(ctx, &message, user.Id)
-	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to save message: %v", err))
-		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to save message", http.StatusInternalServerError))
 		return
 	}
 }
