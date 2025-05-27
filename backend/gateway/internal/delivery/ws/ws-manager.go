@@ -15,4 +15,6 @@ type IWebSocketManager interface {
 	SendMessageToChat(ctx context.Context, message models.Message, publicSenderInfo models.PublicUserInfo, chatParticipants []models.User) error
 	IsConnected(userId uuid.UUID) (*websocket.Conn, bool)
 	HandlePing(conn *websocket.Conn)
+	AddConnection(userId uuid.UUID, conn *websocket.Conn)
+	RemoveAndCloseConnection(userId uuid.UUID)
 }

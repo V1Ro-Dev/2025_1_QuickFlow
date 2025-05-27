@@ -36,10 +36,10 @@ func TestMessageValidator_ValidateMessage(t *testing.T) {
 		{
 			name: "too many attachments",
 			message: models.Message{
-				Text:           "Message with too many attachments",
-				ChatID:         uuid.New(),
-				SenderID:       uuid.New(),
-				AttachmentURLs: make([]string, 11),
+				Text:        "Message with too many attachments",
+				ChatID:      uuid.New(),
+				SenderID:    uuid.New(),
+				Attachments: []*models.File{},
 			},
 			expectError: true,
 		},

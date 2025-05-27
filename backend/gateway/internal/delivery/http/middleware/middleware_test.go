@@ -44,7 +44,7 @@ func TestContentTypeMiddleware(t *testing.T) {
 }
 
 func TestCORSMiddleware(t *testing.T) {
-	corsConfig := cors.CORSConfig{
+	corsConfig := &cors_config.CORSConfig{
 		AllowedMethods: []string{"GET", "POST"},
 		AllowedHeaders: []string{"Content-Type"},
 	}
