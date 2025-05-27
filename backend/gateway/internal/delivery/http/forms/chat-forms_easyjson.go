@@ -213,16 +213,8 @@ func (v ChatsOut) MarshalJSON() ([]byte, error) {
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
-func (chats ChatsOut) MarshalEasyJSON(w *jwriter.Writer) {
-	// Начинаем сериализацию среза
-	w.RawByte('[') // Начало массива JSON
-	for i, chat := range chats {
-		if i > 0 {
-			w.RawByte(',')
-		}
-		chat.MarshalEasyJSON(w) // Сериализация каждого элемента
-	}
-	w.RawByte(']') // Конец массива JSON
+func (v ChatsOut) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjson44a4302cEncodeQuickflowGatewayInternalDeliveryHttpForms2(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface

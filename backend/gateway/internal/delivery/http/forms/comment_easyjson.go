@@ -21,76 +21,44 @@ var (
 func easyjsonE9abebc9DecodeQuickflowGatewayInternalDeliveryHttpForms(in *jlexer.Lexer, out *CommentsOut) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
-		if isTopLevel {
-			in.Consumed()
-		}
 		in.Skip()
-		return
-	}
-	in.Delim('{')
-	for !in.IsDelim('}') {
-		key := in.UnsafeFieldName(false)
-		in.WantColon()
-		if in.IsNull() {
-			in.Skip()
-			in.WantComma()
-			continue
-		}
-		switch key {
-		case "Comments":
-			if in.IsNull() {
-				in.Skip()
-				out.Comments = nil
+		*out = nil
+	} else {
+		in.Delim('[')
+		if *out == nil {
+			if !in.IsDelim(']') {
+				*out = make(CommentsOut, 0, 0)
 			} else {
-				in.Delim('[')
-				if out.Comments == nil {
-					if !in.IsDelim(']') {
-						out.Comments = make([]CommentOut, 0, 0)
-					} else {
-						out.Comments = []CommentOut{}
-					}
-				} else {
-					out.Comments = (out.Comments)[:0]
-				}
-				for !in.IsDelim(']') {
-					var v1 CommentOut
-					(v1).UnmarshalEasyJSON(in)
-					out.Comments = append(out.Comments, v1)
-					in.WantComma()
-				}
-				in.Delim(']')
+				*out = CommentsOut{}
 			}
-		default:
-			in.SkipRecursive()
+		} else {
+			*out = (*out)[:0]
 		}
-		in.WantComma()
+		for !in.IsDelim(']') {
+			var v1 CommentOut
+			(v1).UnmarshalEasyJSON(in)
+			*out = append(*out, v1)
+			in.WantComma()
+		}
+		in.Delim(']')
 	}
-	in.Delim('}')
 	if isTopLevel {
 		in.Consumed()
 	}
 }
 func easyjsonE9abebc9EncodeQuickflowGatewayInternalDeliveryHttpForms(out *jwriter.Writer, in CommentsOut) {
-	out.RawByte('{')
-	first := true
-	_ = first
-	{
-		const prefix string = ",\"Comments\":"
-		out.RawString(prefix[1:])
-		if in.Comments == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
-			out.RawString("null")
-		} else {
-			out.RawByte('[')
-			for v2, v3 := range in.Comments {
-				if v2 > 0 {
-					out.RawByte(',')
-				}
-				(v3).MarshalEasyJSON(out)
+	if in == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
+		out.RawString("null")
+	} else {
+		out.RawByte('[')
+		for v2, v3 := range in {
+			if v2 > 0 {
+				out.RawByte(',')
 			}
-			out.RawByte(']')
+			(v3).MarshalEasyJSON(out)
 		}
+		out.RawByte(']')
 	}
-	out.RawByte('}')
 }
 
 // MarshalJSON supports json.Marshaler interface
