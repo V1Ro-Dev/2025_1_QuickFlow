@@ -61,7 +61,7 @@ const (
 	JOIN chat c ON cu.chat_id = c.id
 	JOIN message m ON c.id = m.chat_id
 	WHERE cu.user_id = $1
-    AND (cu.last_read IS NULL OR cu.last_read < c.updated_at)
+    AND (cu.last_read IS NULL OR cu.last_read::timestamptz(3) < c.updated_at::timestamptz(3))
 	AND (
 	    select m.sender_id
 	    from message m
@@ -219,7 +219,19 @@ func (c *ChatRepository) DeleteChat(ctx context.Context, chatId uuid.UUID) error
 }
 func (c *ChatRepository) IsParticipant(ctx context.Context, chatId, userId uuid.UUID) (bool, error) {
 	var exists bool
-	err := c.ConnPool.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM chat_user WHERE chat_id = $1 AND user_id = $2)", chatId, userId).Scan(&exists)
+	// check if chat exists
+	_, err := c.ConnPool.QueryContext(ctx, "select id from chat where id=$1", chatId)
+	if err != nil {
+		logger.Error(ctx, fmt.Sprintf("Unable to check if chat %v exists: %s", chatId, err.Error()))
+		return false, err
+	}
+
+	//if !rows.Next() {
+	//	logger.Info(ctx, fmt.Sprintf("Chat with id %s not found", chatId))
+	//	return false, messenger_errors.ErrNotFound
+	//}
+
+	err = c.ConnPool.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM chat_user WHERE chat_id = $1 AND user_id = $2)", chatId, userId).Scan(&exists)
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("Unable to check if user %v is participant in chat %v: %s", userId, chatId, err.Error()))
 		return false, err

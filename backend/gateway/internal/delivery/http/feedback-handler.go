@@ -2,11 +2,11 @@ package http
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/mailru/easyjson"
 	"github.com/microcosm-cc/bluemonday"
 
 	"quickflow/gateway/internal/delivery/http/forms"
@@ -49,7 +49,8 @@ func (f *FeedbackHandler) SaveFeedback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var form forms.FeedbackForm
-	if err := json.NewDecoder(r.Body).Decode(&form); err != nil {
+	err := easyjson.UnmarshalFromReader(r.Body, &form)
+	if err != nil {
 		logger.Error(ctx, "Failed to decode request body for feedback", err)
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Bad request body", http.StatusBadRequest))
 		return
@@ -115,90 +116,16 @@ func (f *FeedbackHandler) GetAllFeedbackType(w http.ResponseWriter, r *http.Requ
 	}
 
 	result := forms.FeedbackOutAverage{Feedbacks: feedbackOutput, Average: avg}
+	out := forms.PayloadWrapper[forms.FeedbackOutAverage]{Payload: result}
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(forms.PayloadWrapper[forms.FeedbackOutAverage]{Payload: result}); err != nil {
+	js, err := out.MarshalJSON()
+	if err != nil {
+		logger.Error(ctx, "Failed to marshal json payload", err)
+		http2.WriteJSONError(w, err)
+		return
+	}
+	if _, err = w.Write(js); err != nil {
 		logger.Error(ctx, "Failed to encode feedback output", err)
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode feedback output", http.StatusInternalServerError))
-	}
-}
-
-func (f *FeedbackHandler) GetNumMessagesSent(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	user, ok := ctx.Value("user").(models.User)
-	if !ok {
-		logger.Error(ctx, "Failed to get user from context while fetching messages count")
-		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
-		return
-	}
-
-	num, err := f.feedbackUseCase.GetNumMessagesSent(ctx, user.Id)
-	if err != nil {
-		appErr := errors2.FromGRPCError(err)
-		logger.Error(ctx, "Failed to fetch number of messages sent", err)
-		http2.WriteJSONError(w, appErr)
-		return
-	}
-
-	type out struct {
-		Count int64 `json:"count"`
-	}
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(forms.PayloadWrapper[out]{Payload: out{Count: num}}); err != nil {
-		logger.Error(ctx, "Failed to encode messages count", err)
-		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode messages count", http.StatusInternalServerError))
-	}
-}
-
-func (f *FeedbackHandler) GetNumPostsCreated(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	user, ok := ctx.Value("user").(models.User)
-	if !ok {
-		logger.Error(ctx, "Failed to get user from context while fetching posts count")
-		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
-		return
-	}
-
-	num, err := f.feedbackUseCase.GetNumPostsCreated(ctx, user.Id)
-	if err != nil {
-		appErr := errors2.FromGRPCError(err)
-		logger.Error(ctx, "Failed to fetch number of posts created", err)
-		http2.WriteJSONError(w, appErr)
-		return
-	}
-
-	type out struct {
-		Count int64 `json:"count"`
-	}
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(forms.PayloadWrapper[out]{Payload: out{Count: num}}); err != nil {
-		logger.Error(ctx, "Failed to encode posts count", err)
-		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode posts count", http.StatusInternalServerError))
-	}
-}
-
-func (f *FeedbackHandler) GetNumProfileChanges(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	user, ok := ctx.Value("user").(models.User)
-	if !ok {
-		logger.Error(ctx, "Failed to get user from context while fetching profile changes")
-		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
-		return
-	}
-
-	num, err := f.feedbackUseCase.GetNumProfileChanges(ctx, user.Id)
-	if err != nil {
-		appErr := errors2.FromGRPCError(err)
-		logger.Error(ctx, "Failed to fetch number of profile changes", err)
-		http2.WriteJSONError(w, appErr)
-		return
-	}
-
-	type out struct {
-		Count int64 `json:"count"`
-	}
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(forms.PayloadWrapper[out]{Payload: out{Count: num}}); err != nil {
-		logger.Error(ctx, "Failed to encode profile changes count", err)
-		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode profile changes count", http.StatusInternalServerError))
 	}
 }

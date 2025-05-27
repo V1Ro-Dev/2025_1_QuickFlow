@@ -10,6 +10,7 @@ import (
 	"quickflow/shared/models"
 )
 
+//easyjson:json
 type ProfileInfo struct {
 	Username      string     `json:"username,omitempty"`
 	Name          string     `json:"firstname"`
@@ -21,6 +22,7 @@ type ProfileInfo struct {
 	BackgroundUrl string     `json:"cover_url,omitempty"`
 }
 
+//easyjson:json
 type ProfileForm struct {
 	Id         string       `json:"id,omitempty"`
 	Avatar     *models.File `json:"-"`
@@ -89,6 +91,7 @@ func ModelToForm(profile models.Profile, username string, isOnline bool, relatio
 	return profileForm
 }
 
+//easyjson:json
 type ContactInfo struct {
 	City  string `json:"city,omitempty"`
 	Email string `json:"email,omitempty"`
@@ -119,11 +122,13 @@ func ContactInfoFormToModel(contactInfo *ContactInfo) *models.ContactInfo {
 	}
 }
 
+//easyjson:json
 type SchoolEducationForm struct {
 	SchoolCity string `json:"school_city,omitempty"`
 	SchoolName string `json:"school_name,omitempty"`
 }
 
+//easyjson:json
 type UniversityEducationForm struct {
 	UniversityCity    string `json:"univ_city,omitempty"`
 	UniversityName    string `json:"univ_name,omitempty"`
@@ -131,6 +136,7 @@ type UniversityEducationForm struct {
 	GraduationYear    int    `json:"grad_year,omitempty"`
 }
 
+//easyjson:json
 type Activity struct {
 	LastSeen string `json:"last_seen,omitempty"`
 	IsOnline bool   `json:"online,omitempty"`

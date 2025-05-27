@@ -3,11 +3,11 @@ package dto
 import (
 	"github.com/google/uuid"
 
-	shared_models "quickflow/shared/models"
+	sharedModels "quickflow/shared/models"
 	pb "quickflow/shared/proto/user_service"
 )
 
-func MapUserDTOToUser(userDTO *pb.User) (*shared_models.User, error) {
+func MapUserDTOToUser(userDTO *pb.User) (*sharedModels.User, error) {
 	if userDTO == nil {
 		return nil, nil
 	}
@@ -17,7 +17,7 @@ func MapUserDTOToUser(userDTO *pb.User) (*shared_models.User, error) {
 		return nil, err
 	}
 
-	return &shared_models.User{
+	return &sharedModels.User{
 		Id:       id,
 		Username: userDTO.Username,
 		Password: userDTO.Password,

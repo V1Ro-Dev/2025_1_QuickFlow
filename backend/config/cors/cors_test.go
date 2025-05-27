@@ -8,7 +8,6 @@ import (
 )
 
 func TestLoadCORSConfig_Success(t *testing.T) {
-	// Создаём временный конфигурационный файл для теста
 	cfg := &CORSConfig{
 		AllowedOrigins:     []string{"*"},
 		AllowedMethods:     []string{"GET", "POST"},

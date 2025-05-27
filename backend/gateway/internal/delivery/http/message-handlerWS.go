@@ -63,8 +63,8 @@ func NewMessageListenerWS(profileUseCase ProfileUseCase, webSocketManager IWebSo
 }
 
 // HandleMessages godoc
-// @Summary Handle incoming messages
-// @Description Handle incoming messages
+// @Summary SendMessage incoming messages
+// @Description SendMessage incoming messages
 // @Tags WebSocket
 // @Accept json
 // @Produce json

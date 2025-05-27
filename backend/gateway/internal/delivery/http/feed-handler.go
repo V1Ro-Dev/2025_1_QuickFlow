@@ -2,9 +2,10 @@ package http
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"time"
+
+	"github.com/mailru/easyjson"
 
 	"quickflow/shared/logger"
 
@@ -94,7 +95,7 @@ func (f *FeedHandler) GetFeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var postsOut []forms.PostOut
+	var postsOut forms.PostsOut
 	var authors, communities []uuid.UUID
 	for _, post := range posts {
 		var postOut forms.PostOut
@@ -178,8 +179,7 @@ func (f *FeedHandler) GetFeed(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(postsOut)
-	if err != nil {
+	if _, err = easyjson.MarshalToWriter(postsOut, w); err != nil {
 		logger.Error(ctx, "Failed to encode feed")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode feed", http.StatusInternalServerError))
 	}
@@ -229,7 +229,7 @@ func (f *FeedHandler) GetRecommendations(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	var postsOut []forms.PostOut
+	var postsOut forms.PostsOut
 	var authors, communities []uuid.UUID
 	for _, post := range posts {
 		var postOut forms.PostOut
@@ -317,10 +317,9 @@ func (f *FeedHandler) GetRecommendations(w http.ResponseWriter, r *http.Request)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(postsOut)
-	if err != nil {
-		logger.Error(ctx, "Failed to encode recommendations", err)
-		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode recommendations", http.StatusInternalServerError))
+	if _, err = easyjson.MarshalToWriter(postsOut, w); err != nil {
+		logger.Error(ctx, "Failed to encode feed")
+		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode feed", http.StatusInternalServerError))
 	}
 }
 
@@ -389,7 +388,7 @@ func (f *FeedHandler) FetchUserPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var postsOut []forms.PostOut
+	var postsOut forms.PostsOut
 	var commentOut forms.CommentOut
 	for _, post := range posts {
 		var postOut forms.PostOut
@@ -422,10 +421,9 @@ func (f *FeedHandler) FetchUserPosts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(postsOut)
-	if err != nil {
-		logger.Error(ctx, "Failed to encode user posts", err)
-		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode user posts", http.StatusInternalServerError))
+	if _, err = easyjson.MarshalToWriter(postsOut, w); err != nil {
+		logger.Error(ctx, "Failed to encode feed")
+		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode feed", http.StatusInternalServerError))
 	}
 }
 
@@ -482,7 +480,7 @@ func (f *FeedHandler) FetchCommunityPosts(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	var postsOut []forms.PostOut
+	var postsOut forms.PostsOut
 	var commentOut forms.CommentOut
 	for _, post := range posts {
 		var postOut forms.PostOut
@@ -514,9 +512,8 @@ func (f *FeedHandler) FetchCommunityPosts(w http.ResponseWriter, r *http.Request
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(postsOut)
-	if err != nil {
-		logger.Error(ctx, "Failed to encode community posts", err)
-		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode community posts", http.StatusInternalServerError))
+	if _, err = easyjson.MarshalToWriter(postsOut, w); err != nil {
+		logger.Error(ctx, "Failed to encode feed")
+		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode feed", http.StatusInternalServerError))
 	}
 }

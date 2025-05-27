@@ -12,11 +12,13 @@ import (
 	"quickflow/shared/models"
 )
 
+//easyjson:json
 type File struct {
 	Name string
 	Data []byte
 }
 
+//easyjson:json
 type PostForm struct {
 	Text        string    `json:"text,omitempty"`
 	Media       []string  `form:"media" json:"media,omitempty"`
@@ -96,6 +98,7 @@ func (p *PostForm) ToPostModel(userId uuid.UUID) (models.Post, error) {
 	return postModel, nil
 }
 
+//easyjson:json
 type FeedForm struct {
 	Posts int    `json:"posts_count"`
 	Ts    string `json:"ts"`
@@ -122,6 +125,7 @@ func (f *FeedForm) GetParams(values url.Values) error {
 	return nil
 }
 
+//easyjson:json
 type PublicUserInfoOut struct {
 	ID        string              `json:"id"`
 	Username  string              `json:"username"`
@@ -143,6 +147,7 @@ func PublicUserInfoToOut(info models.PublicUserInfo, relation models.UserRelatio
 	}
 }
 
+//easyjson:json
 type PostOut struct {
 	Id           string      `json:"id"`
 	Creator      interface{} `json:"author,omitempty"`
@@ -161,6 +166,9 @@ type PostOut struct {
 	IsLiked      bool        `json:"is_liked"`
 	LastComment  *CommentOut `json:"last_comment,omitempty"`
 }
+
+//easyjson:json
+type PostsOut []PostOut
 
 func (p *PostOut) FromPost(post models.Post) {
 	mediaURLs := make([]FileOut, 0)
@@ -199,6 +207,7 @@ func (p *PostOut) FromPost(post models.Post) {
 	p.IsLiked = post.IsLiked
 }
 
+//easyjson:json
 type UpdatePostForm struct {
 	Id    string   `json:"-"`
 	Text  string   `json:"text"`
