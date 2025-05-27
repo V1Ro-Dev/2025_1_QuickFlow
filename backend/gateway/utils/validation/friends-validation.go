@@ -1,15 +1,17 @@
 package validation
 
 const (
-	TypeOutComing = "outcoming"
-	TypeInComing  = "incoming"
-	TypeAll       = "all"
+	TypeOutComing   = "outcoming"
+	TypeInComing    = "incoming"
+	TypeAll         = "all"
+	TypeNewIncoming = "new_incoming"
 )
 
 var acceptedReqTypesSet = map[string]struct{}{
-	TypeOutComing: {},
-	TypeInComing:  {},
-	TypeAll:       {},
+	TypeOutComing:   {},
+	TypeInComing:    {},
+	TypeAll:         {},
+	TypeNewIncoming: {},
 }
 
 func ValidateFriendReqType(reqType string) bool {

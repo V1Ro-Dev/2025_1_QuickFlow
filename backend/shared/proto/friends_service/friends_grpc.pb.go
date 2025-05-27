@@ -20,12 +20,13 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	FriendsService_GetFriendsInfo_FullMethodName      = "/friends_service.FriendsService/GetFriendsInfo"
-	FriendsService_SendFriendRequest_FullMethodName   = "/friends_service.FriendsService/SendFriendRequest"
-	FriendsService_AcceptFriendRequest_FullMethodName = "/friends_service.FriendsService/AcceptFriendRequest"
-	FriendsService_Unfollow_FullMethodName            = "/friends_service.FriendsService/Unfollow"
-	FriendsService_DeleteFriend_FullMethodName        = "/friends_service.FriendsService/DeleteFriend"
-	FriendsService_GetUserRelation_FullMethodName     = "/friends_service.FriendsService/GetUserRelation"
+	FriendsService_GetFriendsInfo_FullMethodName        = "/friends_service.FriendsService/GetFriendsInfo"
+	FriendsService_SendFriendRequest_FullMethodName     = "/friends_service.FriendsService/SendFriendRequest"
+	FriendsService_AcceptFriendRequest_FullMethodName   = "/friends_service.FriendsService/AcceptFriendRequest"
+	FriendsService_Unfollow_FullMethodName              = "/friends_service.FriendsService/Unfollow"
+	FriendsService_DeleteFriend_FullMethodName          = "/friends_service.FriendsService/DeleteFriend"
+	FriendsService_GetUserRelation_FullMethodName       = "/friends_service.FriendsService/GetUserRelation"
+	FriendsService_MarkReadFriendRequest_FullMethodName = "/friends_service.FriendsService/MarkReadFriendRequest"
 )
 
 // FriendsServiceClient is the client API for FriendsService service.
@@ -38,6 +39,7 @@ type FriendsServiceClient interface {
 	Unfollow(ctx context.Context, in *FriendRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	DeleteFriend(ctx context.Context, in *FriendRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetUserRelation(ctx context.Context, in *FriendRequest, opts ...grpc.CallOption) (*RelationResponse, error)
+	MarkReadFriendRequest(ctx context.Context, in *FriendRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type friendsServiceClient struct {
@@ -108,6 +110,16 @@ func (c *friendsServiceClient) GetUserRelation(ctx context.Context, in *FriendRe
 	return out, nil
 }
 
+func (c *friendsServiceClient) MarkReadFriendRequest(ctx context.Context, in *FriendRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, FriendsService_MarkReadFriendRequest_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FriendsServiceServer is the server API for FriendsService service.
 // All implementations must embed UnimplementedFriendsServiceServer
 // for forward compatibility.
@@ -118,6 +130,7 @@ type FriendsServiceServer interface {
 	Unfollow(context.Context, *FriendRequest) (*emptypb.Empty, error)
 	DeleteFriend(context.Context, *FriendRequest) (*emptypb.Empty, error)
 	GetUserRelation(context.Context, *FriendRequest) (*RelationResponse, error)
+	MarkReadFriendRequest(context.Context, *FriendRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedFriendsServiceServer()
 }
 
@@ -145,6 +158,9 @@ func (UnimplementedFriendsServiceServer) DeleteFriend(context.Context, *FriendRe
 }
 func (UnimplementedFriendsServiceServer) GetUserRelation(context.Context, *FriendRequest) (*RelationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserRelation not implemented")
+}
+func (UnimplementedFriendsServiceServer) MarkReadFriendRequest(context.Context, *FriendRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MarkReadFriendRequest not implemented")
 }
 func (UnimplementedFriendsServiceServer) mustEmbedUnimplementedFriendsServiceServer() {}
 func (UnimplementedFriendsServiceServer) testEmbeddedByValue()                        {}
@@ -275,6 +291,24 @@ func _FriendsService_GetUserRelation_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FriendsService_MarkReadFriendRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FriendRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FriendsServiceServer).MarkReadFriendRequest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FriendsService_MarkReadFriendRequest_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FriendsServiceServer).MarkReadFriendRequest(ctx, req.(*FriendRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // FriendsService_ServiceDesc is the grpc.ServiceDesc for FriendsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -305,6 +339,10 @@ var FriendsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUserRelation",
 			Handler:    _FriendsService_GetUserRelation_Handler,
+		},
+		{
+			MethodName: "MarkReadFriendRequest",
+			Handler:    _FriendsService_MarkReadFriendRequest_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

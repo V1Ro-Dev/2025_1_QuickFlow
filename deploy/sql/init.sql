@@ -123,6 +123,7 @@ create table if not exists friendship(
                                          user1_id uuid references "user"(id) on delete cascade,
                                          user2_id uuid references "user"(id) on delete cascade,
                                          status text not null default 'following',
+                                         is_read boolean default false,
                                          unique (user1_id, user2_id),
                                          check (user1_id < user2_id)
 );

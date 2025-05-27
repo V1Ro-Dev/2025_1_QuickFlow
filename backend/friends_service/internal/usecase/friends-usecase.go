@@ -19,6 +19,7 @@ type FriendsRepository interface {
 	Unfollow(ctx context.Context, userID string, friendID string) error
 	IsExistsFriendRequest(ctx context.Context, senderID string, receiverID string) (bool, error)
 	GetUserRelation(ctx context.Context, user1 uuid.UUID, user2 uuid.UUID) (models.UserRelation, error)
+	MarkRead(ctx context.Context, user1 string, user2 string) error
 }
 
 type FriendsService struct {
@@ -44,7 +45,7 @@ func (f *FriendsService) GetFriendsInfo(ctx context.Context, userID string, limi
 		logger.Error(ctx, fmt.Sprintf("Unable to parse offset. Given value %s: %s", offset, err.Error()))
 		return nil, 0, err
 	}
-	
+
 	friendsIds, friendsCount, err := f.friendsRepo.GetFriendsPublicInfo(ctx, userID, amount, startPos, reqType)
 	if err != nil {
 		return []models.FriendInfo{}, 0, err
@@ -105,6 +106,14 @@ func (f *FriendsService) GetUserRelation(ctx context.Context, user1 uuid.UUID, u
 
 func (f *FriendsService) Unfollow(ctx context.Context, userID string, friendID string) error {
 	if err := f.friendsRepo.Unfollow(ctx, userID, friendID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (f *FriendsService) MarkRead(ctx context.Context, userID string, friendID string) error {
+	if err := f.friendsRepo.MarkRead(ctx, userID, friendID); err != nil {
 		return err
 	}
 

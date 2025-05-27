@@ -23,7 +23,7 @@ const (
 					else user1_id
 				end as related_id
 			from friendship
-			where((user1_id = $1 AND status = $2) OR (user2_id = $1 AND status = $3))
+			where ((user1_id = $1 AND status = $2) OR (user2_id = $1 AND status = $3)) and (is_read = $6 or is_read = $7)
 		)
 		select 
 			u.id, 
@@ -79,7 +79,13 @@ const (
 			end
 		)
 		from friendship
-		where ((user1_id = $1 and status = $2) or (user2_id = $1 and status = $3));
+		where ((user1_id = $1 and status = $2) or (user2_id = $1 and status = $3)) and is_read in ($4, $5);
+	`
+
+	MarkRead = `
+		update friendship
+		set is_read = $1
+		where ((user1_id = $2 and user2_id = $3) or (user1_id = $3 and user2_id = $2)) and status in ($4, $5)
 	`
 )
 
@@ -100,6 +106,7 @@ func (p *PostgresFriendsRepository) Close() {
 // GetFriendsPublicInfo Отдает структуру с информацией по друзьям + количество друзей + ошибку
 func (p *PostgresFriendsRepository) GetFriendsPublicInfo(ctx context.Context, userID string, limit int, offset int, reqType string) ([]models.FriendInfo, int, error) {
 	var rel1, rel2 models.UserRelation
+	var isRead = true
 	switch reqType {
 
 	case "all":
@@ -113,11 +120,16 @@ func (p *PostgresFriendsRepository) GetFriendsPublicInfo(ctx context.Context, us
 	case "incoming":
 		rel1 = models.RelationFollowedBy
 		rel2 = models.RelationFollowing
+
+	case "new_incoming":
+		rel1 = models.RelationFollowedBy
+		rel2 = models.RelationFollowing
+		isRead = false
 	}
 
 	logger.Info(ctx, fmt.Sprintf("Trying to get friends info for user %s", userID))
 
-	rows, err := p.connPool.QueryContext(ctx, GetFriendsInfoQuery, userID, rel1, rel2, limit, offset)
+	rows, err := p.connPool.QueryContext(ctx, GetFriendsInfoQuery, userID, rel1, rel2, limit, offset, isRead, false)
 	friendsInfo := make([]models.FriendInfo, 0)
 
 	if err != nil {
@@ -152,7 +164,7 @@ func (p *PostgresFriendsRepository) GetFriendsPublicInfo(ctx context.Context, us
 	logger.Info(ctx, fmt.Sprintf("Trying to get total amount of %s friends for user: %s", reqType, userID))
 
 	var friendsCount int
-	err = p.connPool.QueryRowContext(ctx, GetFriendsCountQuery, userID, rel1, rel2).Scan(&friendsCount)
+	err = p.connPool.QueryRowContext(ctx, GetFriendsCountQuery, userID, rel1, rel2, isRead, false).Scan(&friendsCount)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			logger.Info(ctx, fmt.Sprintf("user: %s has no %s friends", reqType, userID))
@@ -298,4 +310,20 @@ func (p *PostgresFriendsRepository) GetUserRelation(ctx context.Context, user1 u
 		}
 	}
 	return status, nil
+}
+
+func (p *PostgresFriendsRepository) MarkRead(ctx context.Context, userID string, friendID string) error {
+	logger.Info(ctx, fmt.Sprintf("Trying to mark read friend: %s for user: %s ", friendID, userID))
+
+	commandTag, err := p.connPool.ExecContext(ctx, MarkRead, true, userID, friendID, models.RelationFollowing, models.RelationFollowedBy)
+	if err != nil {
+		return err
+	}
+
+	if rows, err := commandTag.RowsAffected(); rows == 0 || err != nil {
+		logger.Error(ctx, fmt.Sprintf("friend request from potential friend: %s has alreadby been read or incorrect ID's were given", friendID))
+		return errors.New("failed to mark read friend request")
+	}
+
+	return nil
 }

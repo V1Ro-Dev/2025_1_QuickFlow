@@ -47,6 +47,7 @@ service FriendsService {
   rpc Unfollow(FriendRequest) returns (google.protobuf.Empty);
   rpc DeleteFriend(FriendRequest) returns (google.protobuf.Empty);
   rpc GetUserRelation(FriendRequest) returns (RelationResponse);
+  rpc MarkReadFriendRequest(FriendRequest) returns (google.protobuf.Empty);
 }
 
 

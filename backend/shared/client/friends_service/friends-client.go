@@ -91,3 +91,13 @@ func (f *FriendsClient) DeleteFriend(ctx context.Context, user string, friend st
 
 	return nil
 }
+
+func (f *FriendsClient) MarkRead(ctx context.Context, userID string, friendID string) error {
+	logger.Info(ctx, fmt.Sprintf("Marking read friend request from %v", friendID))
+	if _, err := f.client.MarkReadFriendRequest(ctx, &pb.FriendRequest{UserId: userID, ReceiverId: friendID}); err != nil {
+		logger.Error(ctx, fmt.Sprintf("Failed to mark read: %v", err))
+		return err
+	}
+
+	return nil
+}
