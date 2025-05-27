@@ -115,9 +115,7 @@ type CommentOut struct {
 }
 
 //easyjson:json
-type CommentsOut struct {
-	Comments []CommentOut
-}
+type CommentsOut []CommentOut
 
 func (c *CommentOut) FromComment(comment models.Comment, userInfo models.PublicUserInfo) {
 	var files, media, audio, stickers []FileOut

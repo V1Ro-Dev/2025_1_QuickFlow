@@ -35,9 +35,7 @@ type ChatOut struct {
 }
 
 //easyjson:json
-type ChatsOut struct {
-	Chats []ChatOut
-}
+type ChatsOut []ChatOut
 
 //easyjson:json
 type GetNumUnreadChatsForm struct {

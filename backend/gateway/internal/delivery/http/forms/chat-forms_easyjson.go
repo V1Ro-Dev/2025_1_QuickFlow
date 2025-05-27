@@ -165,76 +165,44 @@ func (v *GetNumUnreadChatsForm) UnmarshalEasyJSON(l *jlexer.Lexer) {
 func easyjson44a4302cDecodeQuickflowGatewayInternalDeliveryHttpForms2(in *jlexer.Lexer, out *ChatsOut) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
-		if isTopLevel {
-			in.Consumed()
-		}
 		in.Skip()
-		return
-	}
-	in.Delim('{')
-	for !in.IsDelim('}') {
-		key := in.UnsafeFieldName(false)
-		in.WantColon()
-		if in.IsNull() {
-			in.Skip()
-			in.WantComma()
-			continue
-		}
-		switch key {
-		case "Chats":
-			if in.IsNull() {
-				in.Skip()
-				out.Chats = nil
+		*out = nil
+	} else {
+		in.Delim('[')
+		if *out == nil {
+			if !in.IsDelim(']') {
+				*out = make(ChatsOut, 0, 0)
 			} else {
-				in.Delim('[')
-				if out.Chats == nil {
-					if !in.IsDelim(']') {
-						out.Chats = make([]ChatOut, 0, 0)
-					} else {
-						out.Chats = []ChatOut{}
-					}
-				} else {
-					out.Chats = (out.Chats)[:0]
-				}
-				for !in.IsDelim(']') {
-					var v1 ChatOut
-					(v1).UnmarshalEasyJSON(in)
-					out.Chats = append(out.Chats, v1)
-					in.WantComma()
-				}
-				in.Delim(']')
+				*out = ChatsOut{}
 			}
-		default:
-			in.SkipRecursive()
+		} else {
+			*out = (*out)[:0]
 		}
-		in.WantComma()
+		for !in.IsDelim(']') {
+			var v1 ChatOut
+			(v1).UnmarshalEasyJSON(in)
+			*out = append(*out, v1)
+			in.WantComma()
+		}
+		in.Delim(']')
 	}
-	in.Delim('}')
 	if isTopLevel {
 		in.Consumed()
 	}
 }
 func easyjson44a4302cEncodeQuickflowGatewayInternalDeliveryHttpForms2(out *jwriter.Writer, in ChatsOut) {
-	out.RawByte('{')
-	first := true
-	_ = first
-	{
-		const prefix string = ",\"Chats\":"
-		out.RawString(prefix[1:])
-		if in.Chats == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
-			out.RawString("null")
-		} else {
-			out.RawByte('[')
-			for v2, v3 := range in.Chats {
-				if v2 > 0 {
-					out.RawByte(',')
-				}
-				(v3).MarshalEasyJSON(out)
+	if in == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
+		out.RawString("null")
+	} else {
+		out.RawByte('[')
+		for v2, v3 := range in {
+			if v2 > 0 {
+				out.RawByte(',')
 			}
-			out.RawByte(']')
+			(v3).MarshalEasyJSON(out)
 		}
+		out.RawByte(']')
 	}
-	out.RawByte('}')
 }
 
 // MarshalJSON supports json.Marshaler interface
@@ -245,8 +213,16 @@ func (v ChatsOut) MarshalJSON() ([]byte, error) {
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
-func (v ChatsOut) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson44a4302cEncodeQuickflowGatewayInternalDeliveryHttpForms2(w, v)
+func (chats ChatsOut) MarshalEasyJSON(w *jwriter.Writer) {
+	// Начинаем сериализацию среза
+	w.RawByte('[') // Начало массива JSON
+	for i, chat := range chats {
+		if i > 0 {
+			w.RawByte(',')
+		}
+		chat.MarshalEasyJSON(w) // Сериализация каждого элемента
+	}
+	w.RawByte(']') // Конец массива JSON
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface

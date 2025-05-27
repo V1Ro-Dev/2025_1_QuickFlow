@@ -123,7 +123,7 @@ func (f *FeedHandler) GetFeed(w http.ResponseWriter, r *http.Request) {
 			postOut.LastComment = &commentOut
 		}
 
-		postsOut.Posts = append(postsOut.Posts, postOut)
+		postsOut = append(postsOut, postOut)
 		if post.CreatorType == models.PostUser {
 			authors = append(authors, post.CreatorId)
 		} else {
@@ -161,8 +161,8 @@ func (f *FeedHandler) GetFeed(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var numUser, numComm int
-	for i := range postsOut.Posts {
-		if postsOut.Posts[i].CreatorType == "user" {
+	for i := range postsOut {
+		if postsOut[i].CreatorType == "user" {
 			rel, err := f.friendUseCase.GetUserRelation(ctx, user.Id, authors[i-numComm])
 			if err != nil {
 				logger.Error(ctx, "Failed to get user relation")
@@ -170,10 +170,10 @@ func (f *FeedHandler) GetFeed(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			info := forms.PublicUserInfoToOut(infosMap[authors[i-numComm]], rel)
-			postsOut.Posts[i].Creator = &info
+			postsOut[i].Creator = &info
 			numUser++
 		} else {
-			postsOut.Posts[i].Creator = forms.ToCommunityForm(*infosCommunityMap[communities[i-numUser]], infosMap[infosCommunityMap[communities[i-numUser]].OwnerID])
+			postsOut[i].Creator = forms.ToCommunityForm(*infosCommunityMap[communities[i-numUser]], infosMap[infosCommunityMap[communities[i-numUser]].OwnerID])
 			numComm++
 		}
 	}
@@ -257,7 +257,7 @@ func (f *FeedHandler) GetRecommendations(w http.ResponseWriter, r *http.Request)
 			postOut.LastComment = &commentOut
 		}
 
-		postsOut.Posts = append(postsOut.Posts, postOut)
+		postsOut = append(postsOut, postOut)
 		if post.CreatorType == models.PostUser {
 			authors = append(authors, post.CreatorId)
 		} else {
@@ -298,8 +298,8 @@ func (f *FeedHandler) GetRecommendations(w http.ResponseWriter, r *http.Request)
 	}
 
 	var numUser, numComm int
-	for i := range postsOut.Posts {
-		if postsOut.Posts[i].CreatorType == "user" {
+	for i := range postsOut {
+		if postsOut[i].CreatorType == "user" {
 			rel, err := f.friendUseCase.GetUserRelation(ctx, user.Id, authors[i-numComm])
 			if err != nil {
 				err := errors2.FromGRPCError(err)
@@ -308,10 +308,10 @@ func (f *FeedHandler) GetRecommendations(w http.ResponseWriter, r *http.Request)
 				return
 			}
 			info := forms.PublicUserInfoToOut(infosMap[authors[i-numComm]], rel)
-			postsOut.Posts[i].Creator = &info
+			postsOut[i].Creator = &info
 			numUser++
 		} else {
-			postsOut.Posts[i].Creator = forms.ToCommunityForm(*infosCommunityMap[communities[i-numUser]], infosMap[infosCommunityMap[communities[i-numUser]].OwnerID])
+			postsOut[i].Creator = forms.ToCommunityForm(*infosCommunityMap[communities[i-numUser]], infosMap[infosCommunityMap[communities[i-numUser]].OwnerID])
 			numComm++
 		}
 	}
@@ -417,7 +417,7 @@ func (f *FeedHandler) FetchUserPosts(w http.ResponseWriter, r *http.Request) {
 
 		info := forms.PublicUserInfoToOut(publicUserInfo, models.RelationSelf)
 		postOut.Creator = &info
-		postsOut.Posts = append(postsOut.Posts, postOut)
+		postsOut = append(postsOut, postOut)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -508,7 +508,7 @@ func (f *FeedHandler) FetchCommunityPosts(w http.ResponseWriter, r *http.Request
 		}
 
 		postOut.Creator = forms.ToCommunityForm(*community, ownerInfo)
-		postsOut.Posts = append(postsOut.Posts, postOut)
+		postsOut = append(postsOut, postOut)
 	}
 
 	w.Header().Set("Content-Type", "application/json")

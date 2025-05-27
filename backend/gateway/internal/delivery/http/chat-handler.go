@@ -2,7 +2,6 @@ package http
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -156,12 +155,11 @@ func (c *ChatHandler) GetUserChats(w http.ResponseWriter, r *http.Request) {
 			Activity: forms.Activity{IsOnline: isOnline, LastSeen: lastSeen.Format(time2.TimeStampLayout)},
 		})
 		chatOut.NumUnreadMessages = numUnreadMessages
-		chatsOut.Chats = append(chatsOut.Chats, chatOut)
+		chatsOut = append(chatsOut, chatOut)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	_, err = easyjson.MarshalToWriter(chatsOut, w)
-	err = json.NewEncoder(w).Encode(chatsOut)
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("Failed to encode chats: %s", err.Error()))
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode chats", http.StatusInternalServerError))
