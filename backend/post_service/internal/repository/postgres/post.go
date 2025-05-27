@@ -188,7 +188,10 @@ func (p *PostgresPostRepository) GetPost(ctx context.Context, postId uuid.UUID) 
 
 		postPostgres.Files = append(postPostgres.Files, postgresFile)
 	}
-	pics.Close()
+	err = pics.Close()
+	if err != nil {
+		return models.Post{}, err
+	}
 
 	return postPostgres.ToPost(), nil
 }
@@ -203,7 +206,12 @@ func (p *PostgresPostRepository) GetUserPosts(ctx context.Context, id uuid.UUID,
 			id, numPosts, timestamp, err.Error()))
 		return nil, fmt.Errorf("unable to get posts from database: %w", err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err = rows.Close()
+		if err != nil {
+			return
+		}
+	}(rows)
 
 	var result []models.Post
 	for rows.Next() {
@@ -233,7 +241,10 @@ func (p *PostgresPostRepository) GetUserPosts(ctx context.Context, id uuid.UUID,
 
 			postPostgres.Files = append(postPostgres.Files, postgresFile)
 		}
-		pics.Close()
+		err = pics.Close()
+		if err != nil {
+			return nil, err
+		}
 
 		// check if requester liked the post
 		liked, err := p.CheckIfPostLiked(ctx, postPostgres.Id.Bytes, requesterId)
@@ -258,7 +269,12 @@ func (p *PostgresPostRepository) GetRecommendationsForUId(ctx context.Context, u
 			uid, numPosts, timestamp, err.Error()))
 		return nil, fmt.Errorf("unable to get posts from database: %w", err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err = rows.Close()
+		if err != nil {
+			return
+		}
+	}(rows)
 
 	var result []models.Post
 	for rows.Next() {
@@ -288,7 +304,10 @@ func (p *PostgresPostRepository) GetRecommendationsForUId(ctx context.Context, u
 
 			postPostgres.Files = append(postPostgres.Files, postgresFile)
 		}
-		pics.Close()
+		err = pics.Close()
+		if err != nil {
+			return nil, err
+		}
 
 		// check if requester liked the post
 		liked, err := p.CheckIfPostLiked(ctx, postPostgres.Id.Bytes, uid)
@@ -314,7 +333,12 @@ func (p *PostgresPostRepository) GetPostsForUId(ctx context.Context, uid uuid.UU
 			uid, numPosts, timestamp, err.Error()))
 		return nil, fmt.Errorf("unable to get posts from database: %w", err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			return
+		}
+	}(rows)
 
 	var result []models.Post
 	for rows.Next() {
@@ -344,7 +368,10 @@ func (p *PostgresPostRepository) GetPostsForUId(ctx context.Context, uid uuid.UU
 
 			postPostgres.Files = append(postPostgres.Files, postgresFile)
 		}
-		pics.Close()
+		err = pics.Close()
+		if err != nil {
+			return nil, err
+		}
 
 		// check if requester liked the post
 		liked, err := p.CheckIfPostLiked(ctx, postPostgres.Id.Bytes, uid)
@@ -390,7 +417,12 @@ func (p *PostgresPostRepository) GetPostFiles(ctx context.Context, postId uuid.U
 		logger.Error(ctx, fmt.Sprintf("Unable to get post pictures %v from database: %s", postId, err.Error()))
 		return nil, fmt.Errorf("unable to get post pictures from database: %w", err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err = rows.Close()
+		if err != nil {
+			return
+		}
+	}(rows)
 
 	var result []string
 	for rows.Next() {

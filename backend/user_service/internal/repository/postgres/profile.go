@@ -174,9 +174,15 @@ func (p *PostgresProfileRepository) UpdateProfileTextInfo(ctx context.Context, n
 	}
 	defer func() {
 		if err != nil {
-			tx.Rollback()
+			err = tx.Rollback()
+			if err != nil {
+				return
+			}
 		} else {
-			tx.Commit()
+			err = tx.Commit()
+			if err != nil {
+				return
+			}
 		}
 	}()
 
@@ -287,7 +293,12 @@ func (p *PostgresProfileRepository) GetPublicUsersInfo(ctx context.Context, user
 	} else if err != nil {
 		return nil, fmt.Errorf("unable to get public user info: %w", err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err = rows.Close()
+		if err != nil {
+			return
+		}
+	}(rows)
 
 	var publicInfos []models.PublicUserInfo
 	for rows.Next() {

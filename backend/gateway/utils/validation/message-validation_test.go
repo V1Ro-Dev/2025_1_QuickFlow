@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 
-	"quickflow/internal/models"
+	"quickflow/shared/models"
 )
 
 func TestValidateMessage(t *testing.T) {
@@ -48,10 +48,10 @@ func TestValidateMessage(t *testing.T) {
 		{
 			name: "too many attachments",
 			input: models.Message{
-				Text:           "Valid message",
-				AttachmentURLs: make([]string, 11),
-				ChatID:         validUUID,
-				SenderID:       validUUID,
+				Text:        "Valid message",
+				Attachments: []*models.File{},
+				ChatID:      validUUID,
+				SenderID:    validUUID,
 			},
 			expected: errors.New("too many attachments"),
 		},

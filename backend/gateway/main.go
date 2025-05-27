@@ -9,11 +9,11 @@ import (
 
 	"quickflow/config"
 	"quickflow/config/cors"
-	minio_config "quickflow/config/minio"
-	postgres_config "quickflow/config/postgres"
-	redis_config "quickflow/config/redis"
+	minioConfig "quickflow/config/minio"
+	postgresConfig "quickflow/config/postgres"
+	redisConfig "quickflow/config/redis"
 	"quickflow/config/server"
-	validation_config "quickflow/config/validation"
+	validationCfg "quickflow/config/validation"
 	"quickflow/gateway/internal"
 )
 
@@ -45,18 +45,18 @@ func initCfg() (*config.Config, error) {
 		return nil, fmt.Errorf("failed to load project CORS configuration: %v", err)
 	}
 
-	minioCfg, err := minio_config.ParseMinio(resolveConfigPath(*minioConfigPath))
+	minioCfg, err := minioConfig.ParseMinio(resolveConfigPath(*minioConfigPath))
 	if err != nil {
 		return nil, fmt.Errorf("failed to load project minio configuration: %v", err)
 	}
 
-	validationCfg, err := validation_config.NewValidationConfig(resolveConfigPath(*validationConfig))
+	validationConf, err := validationCfg.NewValidationConfig(resolveConfigPath(*validationConfig))
 	if err != nil {
 		return nil, fmt.Errorf("failed to load project validation configuration: %v", err)
 	}
 
-	postgresCfg := postgres_config.NewPostgresConfig()
-	redisCfg := redis_config.NewRedisConfig()
+	postgresCfg := postgresConfig.NewPostgresConfig()
+	redisCfg := redisConfig.NewRedisConfig()
 
 	return &config.Config{
 		PostgresConfig:   postgresCfg,
@@ -64,7 +64,7 @@ func initCfg() (*config.Config, error) {
 		CORSConfig:       corsCfg,
 		MinioConfig:      minioCfg,
 		RedisConfig:      redisCfg,
-		ValidationConfig: validationCfg,
+		ValidationConfig: validationConf,
 	}, nil
 }
 

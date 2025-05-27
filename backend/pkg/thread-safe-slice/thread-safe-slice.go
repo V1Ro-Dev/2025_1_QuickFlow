@@ -80,8 +80,6 @@ func (s *ThreadSafeSlice[T]) GetSliceCopy() []T {
 	defer s.mu.RUnlock()
 
 	copySlice := make([]T, len(s.items))
-	for i, v := range s.items {
-		copySlice[i] = v
-	}
+	copy(copySlice, s.items)
 	return copySlice
 }

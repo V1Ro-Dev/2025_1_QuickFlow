@@ -141,7 +141,7 @@ func (p *ProfileService) UpdateProfile(ctx context.Context, newProfile shared_mo
 				return nil, err
 			}
 		}
-		if newProfile.Background != nil && len(newProfile.BasicInfo.BackgroundUrl) > 0 && newProfile.BasicInfo.BackgroundUrl != newProfile.BasicInfo.BackgroundUrl {
+		if newProfile.Background != nil && len(newProfile.BasicInfo.BackgroundUrl) > 0 {
 			err = p.fileRepo.DeleteFile(ctx, path.Base(oldProfile.BasicInfo.BackgroundUrl))
 			if err != nil {
 				return nil, err

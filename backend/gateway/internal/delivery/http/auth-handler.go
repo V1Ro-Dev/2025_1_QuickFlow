@@ -134,7 +134,7 @@ func (a *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger.Info(ctx, fmt.Sprintf("Successfully created new user"))
+	logger.Info(ctx, "Successfully created new user")
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session",

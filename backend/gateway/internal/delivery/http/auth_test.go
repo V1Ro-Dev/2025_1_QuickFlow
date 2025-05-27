@@ -14,8 +14,8 @@ import (
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/stretchr/testify/assert"
 
-	"quickflow/gateway/internal/delivery/forms"
 	http2 "quickflow/gateway/internal/delivery/http"
+	"quickflow/gateway/internal/delivery/http/forms"
 	"quickflow/gateway/internal/delivery/http/mocks"
 	"quickflow/shared/models"
 )

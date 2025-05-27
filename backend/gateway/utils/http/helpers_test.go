@@ -3,6 +3,7 @@ package http_test
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -10,7 +11,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	customErr "quickflow/utils/http"
+	customErr "quickflow/gateway/utils/http"
 )
 
 func TestWriteJSONError_Table(t *testing.T) {
@@ -27,7 +28,7 @@ func TestWriteJSONError_Table(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rec := httptest.NewRecorder()
-			customErr.WriteJSONError(rec, tt.msg, tt.statusCode)
+			customErr.WriteJSONError(rec, errors.New(tt.msg))
 
 			res := rec.Result()
 			defer res.Body.Close()

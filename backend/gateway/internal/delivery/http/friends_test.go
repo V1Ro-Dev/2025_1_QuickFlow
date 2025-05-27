@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"quickflow/shared/logger"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -35,7 +36,7 @@ func TestFriendsHandler_GetFriends(t *testing.T) {
 		mockWS.EXPECT().IsConnected(gomock.Any()).Return(nil, false).AnyTimes()
 
 		req := httptest.NewRequest(http.MethodGet, "/api/friends", nil)
-		ctx := context.WithValue(req.Context(), "user", models.User{Id: userID, Username: "testuser"})
+		ctx := context.WithValue(req.Context(), logger.Username, models.User{Id: userID, Username: "testuser"})
 		req = req.WithContext(ctx)
 		rr := httptest.NewRecorder()
 
@@ -52,7 +53,7 @@ func TestFriendsHandler_GetFriends(t *testing.T) {
 		mockWS.EXPECT().IsConnected(gomock.Any()).Return(nil, false).AnyTimes()
 
 		req := httptest.NewRequest(http.MethodGet, "/api/friends?user_id="+targetUserID.String(), nil)
-		ctx := context.WithValue(req.Context(), "user", models.User{Id: userID, Username: "testuser"})
+		ctx := context.WithValue(req.Context(), logger.Username, models.User{Id: userID, Username: "testuser"})
 		req = req.WithContext(ctx)
 		rr := httptest.NewRecorder()
 
@@ -67,7 +68,7 @@ func TestFriendsHandler_GetFriends(t *testing.T) {
 			Return(nil, 0, errors.New("some error"))
 
 		req := httptest.NewRequest(http.MethodGet, "/api/friends", nil)
-		ctx := context.WithValue(req.Context(), "user", models.User{Id: userID, Username: "testuser"})
+		ctx := context.WithValue(req.Context(), logger.Username, models.User{Id: userID, Username: "testuser"})
 		req = req.WithContext(ctx)
 		rr := httptest.NewRecorder()
 
@@ -151,7 +152,7 @@ func TestFriendsHandler_SendFriendRequest(t *testing.T) {
 
 			req := httptest.NewRequest(http.MethodPost, "/api/friends", bytes.NewBufferString(tc.inputBody))
 			if tc.ctxUser != nil {
-				ctx := context.WithValue(req.Context(), "user", *tc.ctxUser)
+				ctx := context.WithValue(req.Context(), logger.Username, *tc.ctxUser)
 				req = req.WithContext(ctx)
 			}
 
@@ -219,7 +220,7 @@ func TestFriendsHandler_AcceptFriendRequest(t *testing.T) {
 
 			req := httptest.NewRequest(http.MethodPost, "/api/friends/accept", bytes.NewBufferString(tc.inputBody))
 			if tc.ctxUser != nil {
-				ctx := context.WithValue(req.Context(), "user", *tc.ctxUser)
+				ctx := context.WithValue(req.Context(), logger.Username, *tc.ctxUser)
 				req = req.WithContext(ctx)
 			}
 
@@ -287,7 +288,7 @@ func TestFriendsHandler_DeleteFriend(t *testing.T) {
 
 			req := httptest.NewRequest(http.MethodDelete, "/api/friends", bytes.NewBufferString(tc.inputBody))
 			if tc.ctxUser != nil {
-				ctx := context.WithValue(req.Context(), "user", *tc.ctxUser)
+				ctx := context.WithValue(req.Context(), logger.Username, *tc.ctxUser)
 				req = req.WithContext(ctx)
 			}
 
@@ -355,7 +356,7 @@ func TestFriendsHandler_Unfollow(t *testing.T) {
 
 			req := httptest.NewRequest(http.MethodPost, "/api/friends/unfollow", bytes.NewBufferString(tc.inputBody))
 			if tc.ctxUser != nil {
-				ctx := context.WithValue(req.Context(), "user", *tc.ctxUser)
+				ctx := context.WithValue(req.Context(), logger.Username, *tc.ctxUser)
 				req = req.WithContext(ctx)
 			}
 

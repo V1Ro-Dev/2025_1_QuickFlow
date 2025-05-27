@@ -148,7 +148,7 @@ func (p *ProfileHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 // @Router /api/profile [post]
 func (p *ProfileHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	user, ok := ctx.Value("user").(models.User)
+	user, ok := ctx.Value(logger.Username).(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while updating profile")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -164,7 +164,7 @@ func (p *ProfileHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger.Info(ctx, fmt.Sprintf("Loading pictures"))
+	logger.Info(ctx, "Loading pictures")
 	// retrieving files if passed
 	profileForm.Avatar, err = http2.GetFile(r, "avatar")
 	if err != nil {
@@ -256,9 +256,9 @@ func (p *ProfileHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 func (p *ProfileHandler) GetMyProfile(w http.ResponseWriter, r *http.Request) {
 	// user whose profile is requested
 	ctx := r.Context()
-	user, ok := ctx.Value("user").(models.User)
+	user, ok := ctx.Value(logger.Username).(models.User)
 	if !ok {
-		logger.Error(ctx, fmt.Sprintf("User not found in context"))
+		logger.Error(ctx, "User not found in context")
 		http.NotFound(w, r)
 		return
 	}
@@ -288,7 +288,7 @@ func (p *ProfileHandler) GetMyProfile(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// lookup user by session
-		user, err := p.authUseCase.LookupUserSession(r.Context(), models.Session{SessionId: sessionUuid})
+		user, err = p.authUseCase.LookupUserSession(r.Context(), models.Session{SessionId: sessionUuid})
 		if err != nil {
 			err := errors2.FromGRPCError(err)
 			logger.Error(ctx, fmt.Sprintf("Failed to lookup user by session: %s", err.Error()))

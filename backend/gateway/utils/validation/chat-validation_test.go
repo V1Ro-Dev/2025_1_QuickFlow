@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"quickflow/internal/models"
+	"quickflow/shared/models"
 
 	"github.com/stretchr/testify/require"
 )

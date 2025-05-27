@@ -52,7 +52,7 @@ func NewFriendsHandler(friendsUseCase FriendsUseCase, connService IWebSocketConn
 func (f *FriendHandler) GetFriends(w http.ResponseWriter, r *http.Request) {
 	ctx := http2.SetRequestId(r.Context())
 
-	user, ok := ctx.Value("user").(models.User)
+	user, ok := ctx.Value(logger.Username).(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while fetching friends")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -131,7 +131,7 @@ func (f *FriendHandler) GetFriends(w http.ResponseWriter, r *http.Request) {
 func (f *FriendHandler) SendFriendRequest(w http.ResponseWriter, r *http.Request) {
 	ctx := http2.SetRequestId(r.Context())
 
-	user, ok := ctx.Value("user").(models.User)
+	user, ok := ctx.Value(logger.Username).(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while sending friend request")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -163,7 +163,7 @@ func (f *FriendHandler) SendFriendRequest(w http.ResponseWriter, r *http.Request
 func (f *FriendHandler) AcceptFriendRequest(w http.ResponseWriter, r *http.Request) {
 	ctx := http2.SetRequestId(r.Context())
 
-	user, ok := ctx.Value("user").(models.User)
+	user, ok := ctx.Value(logger.Username).(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while accepting friend request")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -195,7 +195,7 @@ func (f *FriendHandler) AcceptFriendRequest(w http.ResponseWriter, r *http.Reque
 func (f *FriendHandler) DeleteFriend(w http.ResponseWriter, r *http.Request) {
 	ctx := http2.SetRequestId(r.Context())
 
-	user, ok := ctx.Value("user").(models.User)
+	user, ok := ctx.Value(logger.Username).(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while deleting friend")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -227,7 +227,7 @@ func (f *FriendHandler) DeleteFriend(w http.ResponseWriter, r *http.Request) {
 func (f *FriendHandler) Unfollow(w http.ResponseWriter, r *http.Request) {
 	ctx := http2.SetRequestId(r.Context())
 
-	user, ok := ctx.Value("user").(models.User)
+	user, ok := ctx.Value(logger.Username).(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while unfollowing user")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -259,7 +259,7 @@ func (f *FriendHandler) Unfollow(w http.ResponseWriter, r *http.Request) {
 func (f *FriendHandler) MarkRead(w http.ResponseWriter, r *http.Request) {
 	ctx := http2.SetRequestId(r.Context())
 
-	user, ok := ctx.Value("user").(models.User)
+	user, ok := ctx.Value(logger.Username).(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while unfollowing user")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))

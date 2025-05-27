@@ -35,7 +35,7 @@ func NewFileHandler(fileService FileService, policy *bluemonday.Policy) *FileHan
 func (p *FileHandler) AddFiles(w http.ResponseWriter, r *http.Request) {
 	// extracting user from context
 	ctx := r.Context()
-	user, ok := ctx.Value("user").(models.User)
+	user, ok := ctx.Value(logger.Username).(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while adding files")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))

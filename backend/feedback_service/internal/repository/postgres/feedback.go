@@ -36,12 +36,6 @@ const (
 		where type = $1;
 `
 
-	getAverateRatingQuery = `
-	select type, avg(rating)
-	from feedback
-	group by type
-	`
-
 	getNumMessagesSent = `
 	select count
 	from count_messages

@@ -50,7 +50,7 @@ func NewMessageHandler(messageUseCase MessageService, authUseCase AuthUseCase, p
 // GetMessagesForChat godoc
 func (m *MessageHandler) GetMessagesForChat(w http.ResponseWriter, r *http.Request) {
 	ctx := http2.SetRequestId(r.Context())
-	user, ok := ctx.Value("user").(models.User)
+	user, ok := ctx.Value(logger.Username).(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while fetching messages")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))

@@ -42,6 +42,10 @@ func main() {
 		grpc.WithUnaryInterceptor(interceptors.RequestIDClientInterceptor()),
 		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(addr.MaxMessageSize)),
 	)
+	if err != nil {
+		log.Fatalf("failed to connect to file service: %v", err)
+	}
+	defer grpcConnFileService.Close()
 
 	grpcConnUserService, err := grpc.NewClient(
 		getEnv.GetServiceAddr(addr.DefaultUserServiceAddrEnv, addr.DefaultUserServicePort),
@@ -49,10 +53,10 @@ func main() {
 		grpc.WithUnaryInterceptor(interceptors.RequestIDClientInterceptor()),
 		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(addr.MaxMessageSize)),
 	)
-
 	if err != nil {
-		log.Fatalf("failed to connect to file service: %v", err)
+		log.Fatalf("failed to connect to user service: %v", err)
 	}
+
 	defer grpcConnFileService.Close()
 
 	db, err := sql.Open("pgx", postgresConfig.NewPostgresConfig().GetURL())

@@ -67,7 +67,7 @@ func NewFeedHandler(authUseCase AuthUseCase, postUseCase PostService,
 // @Router /api/feed [get]
 func (f *FeedHandler) GetFeed(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	user, ok := ctx.Value("user").(models.User)
+	user, ok := ctx.Value(logger.Username).(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while fetching feed")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -199,7 +199,7 @@ func (f *FeedHandler) GetFeed(w http.ResponseWriter, r *http.Request) {
 // @Security Session
 func (f *FeedHandler) GetRecommendations(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	user, ok := ctx.Value("user").(models.User)
+	user, ok := ctx.Value(logger.Username).(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while getting recommendations")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -337,7 +337,7 @@ func (f *FeedHandler) GetRecommendations(w http.ResponseWriter, r *http.Request)
 // @Security Session
 func (f *FeedHandler) FetchUserPosts(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	requester, ok := ctx.Value("user").(models.User)
+	user, ok := ctx.Value(logger.Username).(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while fetching user posts")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -372,7 +372,7 @@ func (f *FeedHandler) FetchUserPosts(w http.ResponseWriter, r *http.Request) {
 		ts = time.Now()
 	}
 
-	posts, err := f.postService.FetchCreatorPosts(ctx, user.Id, requester.Id, feedForm.Posts, ts)
+	posts, err := f.postService.FetchCreatorPosts(ctx, user.Id, user.Id, feedForm.Posts, ts)
 	appErr := errors2.FromGRPCError(err)
 	if appErr != nil && appErr.HTTPStatus != http.StatusNotFound {
 		logger.Error(ctx, "Failed to fetch user posts", err)
@@ -429,7 +429,7 @@ func (f *FeedHandler) FetchUserPosts(w http.ResponseWriter, r *http.Request) {
 
 func (f *FeedHandler) FetchCommunityPosts(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	requester, ok := ctx.Value("user").(models.User)
+	user, ok := ctx.Value(logger.Username).(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while fetching community posts")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -464,7 +464,7 @@ func (f *FeedHandler) FetchCommunityPosts(w http.ResponseWriter, r *http.Request
 		ts = time.Now()
 	}
 
-	posts, err := f.postService.FetchCreatorPosts(ctx, community.ID, requester.Id, feedForm.Posts, ts)
+	posts, err := f.postService.FetchCreatorPosts(ctx, community.ID, user.Id, feedForm.Posts, ts)
 	appErr := errors2.FromGRPCError(err)
 	if appErr != nil && appErr.HTTPStatus != http.StatusNotFound {
 		logger.Error(ctx, "Failed to fetch community posts", err)
@@ -488,7 +488,7 @@ func (f *FeedHandler) FetchCommunityPosts(w http.ResponseWriter, r *http.Request
 
 		// getLastComment
 		lastComment, err := f.commentUseCase.GetLastPostComment(ctx, post.Id)
-		appErr := errors2.FromGRPCError(err)
+		appErr = errors2.FromGRPCError(err)
 		if appErr != nil && appErr.HTTPStatus != http.StatusNotFound {
 			logger.Error(ctx, "Failed to get last comment")
 			http2.WriteJSONError(w, appErr)
