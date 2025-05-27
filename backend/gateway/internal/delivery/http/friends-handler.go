@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/mailru/easyjson"
 
 	"quickflow/gateway/internal/delivery/http/forms"
 	"quickflow/gateway/internal/errors"
@@ -139,7 +140,7 @@ func (f *FriendHandler) SendFriendRequest(w http.ResponseWriter, r *http.Request
 	logger.Info(ctx, "Trying to parse request body")
 
 	var req forms.FriendRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
+	err := easyjson.UnmarshalFromReader(r.Body, &req)
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("Unable to decode request body: %s", err))
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Unable to decode request body", http.StatusBadRequest))
@@ -171,7 +172,7 @@ func (f *FriendHandler) AcceptFriendRequest(w http.ResponseWriter, r *http.Reque
 	logger.Info(ctx, "Trying to parse request body")
 
 	var req forms.FriendRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
+	err := easyjson.UnmarshalFromReader(r.Body, &req)
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("Unable to decode request body: %s", err))
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Unable to decode request body", http.StatusBadRequest))
@@ -203,7 +204,7 @@ func (f *FriendHandler) DeleteFriend(w http.ResponseWriter, r *http.Request) {
 	logger.Info(ctx, "Trying to parse request body")
 
 	var req forms.FriendRequestDel
-	err := json.NewDecoder(r.Body).Decode(&req)
+	err := easyjson.UnmarshalFromReader(r.Body, &req)
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("Unable to decode request body: %s", err))
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Unable to decode request body", http.StatusBadRequest))
@@ -235,7 +236,7 @@ func (f *FriendHandler) Unfollow(w http.ResponseWriter, r *http.Request) {
 	logger.Info(ctx, "Trying to parse request body")
 
 	var req forms.FriendRequestDel
-	err := json.NewDecoder(r.Body).Decode(&req)
+	err := easyjson.UnmarshalFromReader(r.Body, &req)
 	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("Unable to decode request body: %s", err))
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Unable to decode request body", http.StatusBadRequest))

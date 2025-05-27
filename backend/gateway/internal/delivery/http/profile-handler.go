@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/mailru/easyjson"
 	"github.com/microcosm-cc/bluemonday"
 
 	"quickflow/gateway/internal/delivery/http/forms"
@@ -119,9 +120,10 @@ func (p *ProfileHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	out := forms.ModelToForm(profileInfo, userRequested, isOnline, relation, chatId)
+
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(forms.ModelToForm(profileInfo, userRequested, isOnline, relation, chatId))
-	if err != nil {
+	if _, err := easyjson.MarshalToWriter(out, w); err != nil {
 		logger.Error(ctx, fmt.Sprintf("Failed to encode profile: %s", err.Error()))
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode profile", http.StatusInternalServerError))
 		return
@@ -316,9 +318,10 @@ func (p *ProfileHandler) GetMyProfile(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	out := forms.ModelToForm(profileInfo, user.Username, isOnline, relation, chatId)
+
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(forms.ModelToForm(profileInfo, user.Username, isOnline, relation, chatId))
-	if err != nil {
+	if _, err := easyjson.MarshalToWriter(out, w); err != nil {
 		logger.Error(ctx, fmt.Sprintf("Failed to encode profile: %s", err.Error()))
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode profile", http.StatusInternalServerError))
 		return

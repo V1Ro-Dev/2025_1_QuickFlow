@@ -2,13 +2,13 @@ package http
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/mailru/easyjson"
 	"github.com/microcosm-cc/bluemonday"
 
 	"quickflow/gateway/internal/delivery/http/forms"
@@ -61,7 +61,7 @@ func (s *StickerHandler) AddStickerPack(w http.ResponseWriter, r *http.Request) 
 	}
 
 	var form forms.StickerPackForm
-	if err := json.NewDecoder(r.Body).Decode(&form); err != nil {
+	if err := easyjson.UnmarshalFromReader(r.Body, &form); err != nil {
 		logger.Error(ctx, fmt.Sprintf("Failed to parse request body: %v", err))
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Invalid request body", http.StatusBadRequest))
 		return
@@ -79,10 +79,17 @@ func (s *StickerHandler) AddStickerPack(w http.ResponseWriter, r *http.Request) 
 	response := forms.ToStickerPackOut(createdStickerPack)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	err = json.NewEncoder(w).Encode(forms.PayloadWrapper[forms.StickerPackOut]{Payload: response})
+
+	out := forms.PayloadWrapper[forms.StickerPackOut]{Payload: response}
+	js, err := out.MarshalJSON()
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to encode StickerPack response: %v", err))
-		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode StickerPack response", http.StatusInternalServerError))
+		logger.Error(ctx, "Failed to marshal json payload", err)
+		http2.WriteJSONError(w, err)
+		return
+	}
+	if _, err = w.Write(js); err != nil {
+		logger.Error(ctx, "Failed to encode feedback output", err)
+		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode feedback output", http.StatusInternalServerError))
 	}
 }
 
@@ -119,10 +126,16 @@ func (s *StickerHandler) GetStickerPack(w http.ResponseWriter, r *http.Request) 
 	// Mapping model to DTO
 	response := forms.ToStickerPackOut(stickerPack)
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(forms.PayloadWrapper[forms.StickerPackOut]{Payload: response})
+	out := forms.PayloadWrapper[forms.StickerPackOut]{Payload: response}
+	js, err := out.MarshalJSON()
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to encode StickerPack response: %v", err))
-		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode StickerPack response", http.StatusInternalServerError))
+		logger.Error(ctx, "Failed to marshal json payload", err)
+		http2.WriteJSONError(w, err)
+		return
+	}
+	if _, err = w.Write(js); err != nil {
+		logger.Error(ctx, "Failed to encode feedback output", err)
+		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode feedback output", http.StatusInternalServerError))
 	}
 }
 
@@ -159,10 +172,16 @@ func (s *StickerHandler) GetStickerPackByName(w http.ResponseWriter, r *http.Req
 	// Mapping model to DTO
 	response := forms.ToStickerPackOut(stickerPack)
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(forms.PayloadWrapper[forms.StickerPackOut]{Payload: response})
+	out := forms.PayloadWrapper[forms.StickerPackOut]{Payload: response}
+	js, err := out.MarshalJSON()
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to encode StickerPack response: %v", err))
-		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode StickerPack response", http.StatusInternalServerError))
+		logger.Error(ctx, "Failed to marshal json payload", err)
+		http2.WriteJSONError(w, err)
+		return
+	}
+	if _, err = w.Write(js); err != nil {
+		logger.Error(ctx, "Failed to encode feedback output", err)
+		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode feedback output", http.StatusInternalServerError))
 	}
 }
 
@@ -219,10 +238,16 @@ func (s *StickerHandler) GetStickerPacks(w http.ResponseWriter, r *http.Request)
 	stickerPacksOut := forms.ToStickerPacksOut(stickerPacks)
 
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(forms.PayloadWrapper[[]forms.StickerPackOut]{Payload: stickerPacksOut})
+	out := forms.PayloadWrapper[[]forms.StickerPackOut]{Payload: stickerPacksOut}
+	js, err := out.MarshalJSON()
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to encode StickerPacks response: %v", err))
-		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode StickerPacks response", http.StatusInternalServerError))
+		logger.Error(ctx, "Failed to marshal json payload", err)
+		http2.WriteJSONError(w, err)
+		return
+	}
+	if _, err = w.Write(js); err != nil {
+		logger.Error(ctx, "Failed to encode feedback output", err)
+		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode feedback output", http.StatusInternalServerError))
 	}
 }
 

@@ -9,6 +9,7 @@ import (
 	"quickflow/shared/models"
 )
 
+//easyjson:json
 type StickerPackForm struct {
 	Name     string   `json:"name"`
 	Stickers []string `json:"stickers"`
@@ -33,6 +34,7 @@ func (s *StickerPackForm) ToStickerPackModel(creatorId uuid.UUID) *models.Sticke
 	}
 }
 
+//easyjson:json
 type StickerPackOut struct {
 	Id        uuid.UUID `json:"id"`
 	Name      string    `json:"name"`

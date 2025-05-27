@@ -1,4 +1,4 @@
-package forms_test
+package forms
 
 import (
 	"errors"

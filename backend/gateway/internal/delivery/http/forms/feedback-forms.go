@@ -23,12 +23,14 @@ const (
 	FeedbackMessenger      = "messenger"
 )
 
+//easyjson:json
 type FeedbackForm struct {
 	Type   string `json:"type"`
 	Text   string `json:"text"`
 	Rating int    `json:"rating"`
 }
 
+//easyjson:json
 type FeedbackFormOut struct {
 	Type      string `json:"type"`
 	Text      string `json:"text"`
@@ -38,6 +40,7 @@ type FeedbackFormOut struct {
 	Lastname  string `json:"lastname"`
 }
 
+//easyjson:json
 type FeedbackOutAverage struct {
 	Average   float64           `json:"average"`
 	Feedbacks []FeedbackFormOut `json:"feedbacks"`
@@ -88,6 +91,7 @@ func FromFeedBack(feedback models.Feedback, info models.PublicUserInfo) Feedback
 	}
 }
 
+//easyjson:json
 type GetFeedbackForm struct {
 	Ts    time.Time           `json:"ts"`
 	Count int                 `json:"count"`

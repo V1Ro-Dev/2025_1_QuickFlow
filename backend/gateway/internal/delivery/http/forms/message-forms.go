@@ -12,6 +12,7 @@ import (
 	"quickflow/shared/models"
 )
 
+//easyjson:json
 type GetMessagesForm struct {
 	MessagesCount int       `json:"messages_count"`
 	Ts            time.Time `json:"ts,omitempty"`
@@ -54,6 +55,7 @@ func ToFileOut(file models.File) FileOut {
 	}
 }
 
+//easyjson:json
 type MessageOut struct {
 	ID          uuid.UUID `json:"id,omitempty"`
 	Text        string    `json:"text"`
@@ -110,11 +112,13 @@ func ToMessagesOut(messages []*models.Message, usersInfo map[uuid.UUID]models.Pu
 	return messagesOut
 }
 
+//easyjson:json
 type MessagesOut struct {
 	Messages   []MessageOut `json:"messages"`
 	LastReadTs string       `json:"last_read_ts,omitempty"`
 }
 
+//easyjson:json
 type MessageForm struct {
 	Text       string    `form:"text" json:"text,omitempty"`
 	ChatId     uuid.UUID `form:"chat_id" json:"chat_id,omitempty"`
