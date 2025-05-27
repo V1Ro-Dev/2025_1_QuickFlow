@@ -52,7 +52,7 @@ func (p *FileHandler) AddFiles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Handle video files
+	// SendMessage video files
 	media, err := http2.GetFiles(r, "media")
 	if errors.Is(err, http2.TooManyFilesErr) {
 		logger.Error(ctx, fmt.Sprintf("Too many media files requested: %s", err.Error()))
@@ -65,7 +65,7 @@ func (p *FileHandler) AddFiles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Handle audio files
+	// SendMessage audio files
 	audios, err := http2.GetFiles(r, "audio")
 	if errors.Is(err, http2.TooManyFilesErr) {
 		logger.Error(ctx, fmt.Sprintf("Too many audio files requested: %s", err.Error()))
@@ -89,7 +89,7 @@ func (p *FileHandler) AddFiles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Handle other files
+	// SendMessage other files
 	otherFiles, err := http2.GetFiles(r, "files")
 	if errors.Is(err, http2.TooManyFilesErr) {
 		logger.Error(ctx, fmt.Sprintf("Too many files requested: %s", err.Error()))
