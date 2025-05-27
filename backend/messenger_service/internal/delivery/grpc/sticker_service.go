@@ -35,6 +35,7 @@ func (s *StickerServiceServer) AddStickerPack(ctx context.Context, req *pb.AddSt
 	stickerPack, err := dto.MapProtoToStickerPack(req.StickerPack)
 	if err != nil {
 		logger.Error(ctx, "Failed to map Proto to StickerPack: ", err)
+		return nil, fmt.Errorf("failed to map Proto to StickerPack: %v", err)
 	}
 
 	createdStickerPack, err := s.stickerUseCase.AddStickerPack(ctx, stickerPack)
@@ -121,6 +122,11 @@ func (s *StickerServiceServer) DeleteStickerPack(ctx context.Context, req *pb.De
 
 func (s *StickerServiceServer) GetStickerPackByName(ctx context.Context, req *pb.GetStickerPackByNameRequest) (*pb.GetStickerPackByNameResponse, error) {
 	logger.Info(ctx, "Received GetStickerPackByName request")
+
+	if len(req.Name) == 0 {
+		logger.Error(ctx, "Name is required")
+		return nil, fmt.Errorf("name is required")
+	}
 
 	stickerPack, err := s.stickerUseCase.GetStickerPackByName(ctx, req.Name)
 	if err != nil {

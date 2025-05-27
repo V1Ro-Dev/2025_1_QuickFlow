@@ -38,19 +38,19 @@ func (s *UserServiceServer) SignUp(ctx context.Context, req *pb.SignUpRequest) (
 	logger.Info(ctx, "SignUp called")
 	user, err := dto.MapUserDTOToUser(req.User)
 	if err != nil {
-		logger.Error(ctx, "invalid user data:", err)
+		logger.Error(ctx, "invalid user data : %v", err)
 		return nil, fmt.Errorf("invalid user data: %w", err)
 	}
 
 	profile, err := dto.MapProfileDTOToProfile(req.Profile)
 	if err != nil {
-		logger.Error(ctx, "invalid profile data:", err)
+		logger.Error(ctx, "invalid profile data : %v", err)
 		return nil, fmt.Errorf("invalid profile data: %w", err)
 	}
 
 	_, session, err := s.authUseCase.CreateUser(ctx, *user, *profile)
 	if err != nil {
-		logger.Error(ctx, "failed to create user:", err)
+		logger.Error(ctx, "failed to create user : %v", err)
 		return nil, err
 	}
 
@@ -63,7 +63,7 @@ func (s *UserServiceServer) SignIn(ctx context.Context, req *pb.SignInRequest) (
 
 	session, err := s.authUseCase.AuthUser(ctx, *loginData)
 	if err != nil {
-		logger.Error(ctx, "failed to authenticate user:", err)
+		logger.Error(ctx, "failed to authenticate user : %v", err)
 		return nil, err
 	}
 
@@ -74,50 +74,50 @@ func (s *UserServiceServer) SignOut(ctx context.Context, req *pb.SignOutRequest)
 	logger.Info(ctx, "SignOut called")
 	err := s.authUseCase.DeleteUserSession(ctx, req.SessionId)
 	if err != nil {
-		logger.Error(ctx, "failed to sign out:", err)
+		logger.Error(ctx, "failed to sign out : %v", err)
 		return &pb.SignOutResponse{Success: false}, err
 	}
 	return &pb.SignOutResponse{Success: true}, nil
 }
 
 func (s *UserServiceServer) GetUserByUsername(ctx context.Context, req *pb.GetUserByUsernameRequest) (*pb.GetUserByUsernameResponse, error) {
-	logger.Info(ctx, "GetUserByUsername called:", req.Username)
+	logger.Info(ctx, "GetUserByUsername called: %s", req.Username)
 	user, err := s.authUseCase.GetUserByUsername(ctx, req.Username)
 	if err != nil {
-		logger.Error(ctx, "failed to get user by username:", err)
+		logger.Error(ctx, "failed to get user by username : %v", err)
 		return nil, err
 	}
 	return &pb.GetUserByUsernameResponse{User: dto.MapUserToUserDTO(&user)}, nil
 }
 
 func (s *UserServiceServer) GetUserById(ctx context.Context, req *pb.GetUserByIdRequest) (*pb.GetUserByIdResponse, error) {
-	logger.Info(ctx, "GetUserById called:", req.Id)
+	logger.Info(ctx, "GetUserById called: %v", req.Id)
 	userId, err := uuid.Parse(req.Id)
 	if err != nil {
-		logger.Error(ctx, "invalid user id:", err)
+		logger.Error(ctx, "invalid user id : %v", err)
 		return nil, status.Error(codes.InvalidArgument, "invalid user id")
 	}
 
 	user, err := s.authUseCase.GetUserById(ctx, userId)
 	if err != nil {
-		logger.Error(ctx, "failed to get user by id:", err)
+		logger.Error(ctx, "failed to get user by id : %v", err)
 		return nil, err
 	}
 	return &pb.GetUserByIdResponse{User: dto.MapUserToUserDTO(&user)}, nil
 }
 
 func (s *UserServiceServer) LookupUserSession(ctx context.Context, req *pb.LookupUserSessionRequest) (*pb.LookupUserSessionResponse, error) {
-	logger.Info(ctx, "LookupUserSession called:", req.SessionId)
+	logger.Info(ctx, "LookupUserSession called: %v", req.SessionId)
 	sessionId, err := uuid.Parse(req.SessionId)
 	if err != nil {
-		logger.Error(ctx, "invalid session id:", err)
+		logger.Error(ctx, "invalid session id : %v", err)
 		return nil, status.Error(codes.InvalidArgument, "invalid session id")
 	}
 
 	session := shared_models.Session{SessionId: sessionId}
 	user, err := s.authUseCase.LookupUserSession(ctx, session)
 	if err != nil {
-		logger.Error(ctx, "failed to lookup user session:", err)
+		logger.Error(ctx, "failed to lookup user session : %v", err)
 		return nil, err
 	}
 
@@ -128,10 +128,10 @@ func (s *UserServiceServer) LookupUserSession(ctx context.Context, req *pb.Looku
 }
 
 func (s *UserServiceServer) SearchSimilarUser(ctx context.Context, req *pb.SearchSimilarUserRequest) (*pb.SearchSimilarUserResponse, error) {
-	logger.Info(ctx, "SearchSimilarUser called:", req.ToSearch)
+	logger.Info(ctx, "SearchSimilarUser called: %v", req.ToSearch)
 	users, err := s.authUseCase.SearchSimilarUser(ctx, req.ToSearch, uint(req.NumUsers))
 	if err != nil {
-		logger.Error(ctx, "failed to search similar user:", err)
+		logger.Error(ctx, "failed to search similar user : %v", err)
 		return nil, err
 	}
 

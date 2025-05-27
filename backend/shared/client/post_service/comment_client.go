@@ -35,7 +35,7 @@ func (c *CommentClient) FetchCommentsForPost(ctx context.Context, postId uuid.UU
 
 	resp, err := c.client.FetchCommentsForPost(ctx, req)
 	if err != nil {
-		logger.Error(ctx, "Failed to fetch comments for post:", err)
+		logger.Error(ctx, "Failed to fetch comments for post:: %v", err)
 		return nil, fmt.Errorf("failed to fetch comments for post: %w", err)
 	}
 
@@ -43,7 +43,7 @@ func (c *CommentClient) FetchCommentsForPost(ctx context.Context, postId uuid.UU
 	for _, protoComment := range resp.Comments {
 		comment, err := ProtoCommentToModel(protoComment)
 		if err != nil {
-			logger.Error(ctx, "Failed to convert proto comment to model:", err)
+			logger.Error(ctx, "Failed to convert proto comment to model:: %v", err)
 			continue
 		}
 		comments = append(comments, *comment)
@@ -62,8 +62,8 @@ func (c *CommentClient) AddComment(ctx context.Context, comment models.Comment) 
 
 	resp, err := c.client.AddComment(ctx, req)
 	if err != nil {
-		logger.Error(ctx, "Failed to add comment:", err)
-		return nil, fmt.Errorf("failed to add comment: %w", err)
+		logger.Error(ctx, "Failed to add comment:: %v", err)
+		return nil, fmt.Errorf("failed to add comment: %w: ", err)
 	}
 
 	return ProtoCommentToModel(resp.Comment)
@@ -78,8 +78,8 @@ func (c *CommentClient) DeleteComment(ctx context.Context, userId uuid.UUID, com
 
 	_, err := c.client.DeleteComment(ctx, req)
 	if err != nil {
-		logger.Error(ctx, "Failed to delete comment:", err)
-		return fmt.Errorf("failed to delete comment: %w", err)
+		logger.Error(ctx, "Failed to delete comment:: %v", err)
+		return fmt.Errorf("failed to delete comment: %w: ", err)
 	}
 
 	return nil
@@ -96,8 +96,8 @@ func (c *CommentClient) UpdateComment(ctx context.Context, commentUpdate models.
 
 	resp, err := c.client.UpdateComment(ctx, req)
 	if err != nil {
-		logger.Error(ctx, "Failed to update comment:", err)
-		return nil, fmt.Errorf("failed to update comment: %w", err)
+		logger.Error(ctx, "Failed to update comment:: %v", err)
+		return nil, fmt.Errorf("failed to update comment: %w: ", err)
 	}
 
 	return ProtoCommentToModel(resp.Comment)
@@ -112,8 +112,8 @@ func (c *CommentClient) LikeComment(ctx context.Context, commentId uuid.UUID, us
 
 	_, err := c.client.LikeComment(ctx, req)
 	if err != nil {
-		logger.Error(ctx, "Failed to like comment:", err)
-		return fmt.Errorf("failed to like comment: %w", err)
+		logger.Error(ctx, "Failed to like comment:: %v", err)
+		return fmt.Errorf("failed to like comment: %w: ", err)
 	}
 
 	return nil
@@ -128,8 +128,8 @@ func (c *CommentClient) UnlikeComment(ctx context.Context, commentId uuid.UUID, 
 
 	_, err := c.client.UnlikeComment(ctx, req)
 	if err != nil {
-		logger.Error(ctx, "Failed to unlike comment:", err)
-		return fmt.Errorf("failed to unlike comment: %w", err)
+		logger.Error(ctx, "Failed to unlike comment:: %v", err)
+		return fmt.Errorf("failed to unlike comment: %w: ", err)
 	}
 
 	return nil
@@ -144,8 +144,8 @@ func (c *CommentClient) GetComment(ctx context.Context, commentId uuid.UUID, use
 
 	resp, err := c.client.GetComment(ctx, req)
 	if err != nil {
-		logger.Error(ctx, "Failed to get comment:", err)
-		return nil, fmt.Errorf("failed to get comment: %w", err)
+		logger.Error(ctx, "Failed to get comment:: %v", err)
+		return nil, fmt.Errorf("failed to get comment: %w: ", err)
 	}
 
 	return ProtoCommentToModel(resp.Comment)
@@ -158,7 +158,7 @@ func (c *CommentClient) GetLastPostComment(ctx context.Context, postId uuid.UUID
 
 	resp, err := c.client.GetLastPostComment(ctx, req)
 	if err != nil {
-		logger.Error(ctx, "Failed to get last post comment:", err)
+		logger.Error(ctx, "Failed to get last post comment: %v", err)
 		return nil, err
 	}
 

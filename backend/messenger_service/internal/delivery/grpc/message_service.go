@@ -158,6 +158,11 @@ func (m *MessageServiceServer) GetLastReadTs(ctx context.Context, req *pb.GetLas
 		return nil, err
 	}
 
+	if lastReadTs == nil {
+		logger.Error(ctx, "No last read timestamp found")
+		return nil, status.Error(codes.NotFound, "user not found in context")
+	}
+
 	return &pb.GetLastReadTsResponse{
 		LastReadTs: timestamppb.New(*lastReadTs),
 	}, nil

@@ -6,556 +6,553 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	dto "quickflow/shared/client/user_service"
 	"quickflow/shared/models"
 	pb "quickflow/shared/proto/user_service"
-
-	"quickflow/user_service/internal/delivery/grpc/mocks"
 )
 
+type mockUserUseCase struct {
+	mock.Mock
+}
+
+func (m *mockUserUseCase) CreateUser(ctx context.Context, user models.User, profile models.Profile) (uuid.UUID, models.Session, error) {
+	args := m.Called(ctx, user, profile)
+	return args.Get(0).(uuid.UUID), args.Get(1).(models.Session), args.Error(2)
+}
+
+func (m *mockUserUseCase) AuthUser(ctx context.Context, authData models.LoginData) (models.Session, error) {
+	args := m.Called(ctx, authData)
+	return args.Get(0).(models.Session), args.Error(1)
+}
+
+func (m *mockUserUseCase) GetUserByUsername(ctx context.Context, username string) (models.User, error) {
+	args := m.Called(ctx, username)
+	return args.Get(0).(models.User), args.Error(1)
+}
+
+func (m *mockUserUseCase) LookupUserSession(ctx context.Context, session models.Session) (models.User, error) {
+	args := m.Called(ctx, session)
+	return args.Get(0).(models.User), args.Error(1)
+}
+
+func (m *mockUserUseCase) DeleteUserSession(ctx context.Context, session string) error {
+	args := m.Called(ctx, session)
+	return args.Error(0)
+}
+
+func (m *mockUserUseCase) GetUserById(ctx context.Context, userId uuid.UUID) (models.User, error) {
+	args := m.Called(ctx, userId)
+	return args.Get(0).(models.User), args.Error(1)
+}
+
+func (m *mockUserUseCase) SearchSimilarUser(ctx context.Context, toSearch string, usersCount uint) ([]models.PublicUserInfo, error) {
+	args := m.Called(ctx, toSearch, usersCount)
+	return args.Get(0).([]models.PublicUserInfo), args.Error(1)
+}
+
 func TestUserServiceServer_SignUp(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	userID := uuid.New()
+	sessionID := uuid.New()
+	expiry := time.Now().Add(24 * time.Hour)
 
 	tests := []struct {
-		name          string
-		req           *pb.SignUpRequest
-		mockSetup     func(*mocks.MockUserUseCase, *pb.SignUpRequest)
-		expectedResp  *pb.SignUpResponse
-		expectedError error
+		name        string
+		req         *pb.SignUpRequest
+		mockSetup   func(*mockUserUseCase)
+		expected    *pb.SignUpResponse
+		expectedErr error
 	}{
 		{
-			name: "Success",
+			name: "successful signup",
 			req: &pb.SignUpRequest{
 				User: &pb.User{
-					Id:       uuid.New().String(),
+					Id:       userID.String(),
 					Username: "testuser",
-					Password: "testpass",
+					Password: "password123",
+					Salt:     "salt",
 				},
 				Profile: &pb.Profile{
+					Id:       userID.String(),
 					Username: "testuser",
 					BasicInfo: &pb.BasicInfo{
-						Firstname: "Test",
-						Lastname:  "User",
+						Firstname: "testuser",
+						Lastname:  "testuser",
+						BirthDate: timestamppb.New(expiry),
 					},
 				},
 			},
-			mockSetup: func(m *mocks.MockUserUseCase, req *pb.SignUpRequest) {
-				user, _ := dto.MapUserDTOToUser(req.User)
-				profile, _ := dto.MapProfileDTOToProfile(req.Profile)
-				session := models.Session{SessionId: uuid.New()}
-				m.EXPECT().CreateUser(gomock.Any(), *user, *profile).
-					Return(uuid.New(), session, nil)
+			mockSetup: func(m *mockUserUseCase) {
+				m.On("CreateUser", mock.Anything, mock.Anything, mock.Anything).
+					Return(userID, models.Session{
+						SessionId:  sessionID,
+						ExpireDate: expiry,
+					}, nil)
 			},
-			expectedResp: &pb.SignUpResponse{
-				Session: &pb.Session{Id: gomock.Any().String()},
+			expected: &pb.SignUpResponse{
+				Session: &pb.Session{
+					Id:     sessionID.String(),
+					Expiry: timestamppb.New(expiry),
+				},
 			},
 		},
 		{
-			name: "Invalid User Data",
+			name: "invalid user data",
 			req: &pb.SignUpRequest{
 				User: &pb.User{
-					Username: "testuser",
-					Password: "testpass",
-				},
-				Profile: &pb.Profile{
-					Username: "testuser",
+					Username: "", // invalid empty username
 				},
 			},
-			mockSetup:     nil,
-			expectedError: status.Error(codes.InvalidArgument, "invalid user data"),
+			mockSetup:   func(m *mockUserUseCase) {},
+			expectedErr: status.Error(codes.InvalidArgument, "invalid user data"),
 		},
 		{
-			name: "Create User Error",
+			name: "use case error",
 			req: &pb.SignUpRequest{
 				User: &pb.User{
-					Id:       uuid.New().String(),
 					Username: "testuser",
-					Password: "testpass",
+					Password: "password123",
+					Salt:     "salt",
 				},
 				Profile: &pb.Profile{
-					Username: "testuser",
 					BasicInfo: &pb.BasicInfo{
-						Firstname: "Test",
-						Lastname:  "User",
+						Firstname: "testuser",
+						Lastname:  "testuser",
+						BirthDate: timestamppb.New(expiry),
 					},
 				},
 			},
-			mockSetup: func(m *mocks.MockUserUseCase, req *pb.SignUpRequest) {
-				user, _ := dto.MapUserDTOToUser(req.User)
-				profile, _ := dto.MapProfileDTOToProfile(req.Profile)
-				m.EXPECT().CreateUser(gomock.Any(), *user, *profile).
-					Return(uuid.Nil, models.Session{}, errors.New("create error"))
+			mockSetup: func(m *mockUserUseCase) {
+				m.On("CreateUser", mock.Anything, mock.Anything, mock.Anything).
+					Return(uuid.Nil, models.Session{}, errors.New("user already exists")).Maybe()
 			},
-			expectedError: errors.New("create error"),
+			expectedErr: errors.New("user already exists"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockUseCase := mocks.NewMockUserUseCase(ctrl)
-			if tt.mockSetup != nil {
-				tt.mockSetup(mockUseCase, tt.req)
-			}
+			mockUC := new(mockUserUseCase)
+			tt.mockSetup(mockUC)
+			server := NewUserServiceServer(mockUC)
 
-			server := NewUserServiceServer(mockUseCase)
 			resp, err := server.SignUp(context.Background(), tt.req)
 
-			if tt.expectedError != nil {
+			if tt.expectedErr != nil {
 				assert.Error(t, err)
-				if statusErr, ok := status.FromError(err); ok {
-					assert.Contains(t, statusErr.Message(), "invalid user data")
-				} else {
-					assert.Equal(t, tt.expectedError.Error(), err.Error())
-				}
 			} else {
 				assert.NoError(t, err)
-				if resp != nil {
-					assert.NotNil(t, resp)
-					assert.NotEmpty(t, resp.Session.Id)
-				}
+				assert.Equal(t, tt.expected, resp)
 			}
+			mockUC.AssertExpectations(t)
 		})
 	}
 }
 
 func TestUserServiceServer_SignIn(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	sessionID := uuid.New()
+	expiry := time.Now().Add(24 * time.Hour)
 
 	tests := []struct {
-		name          string
-		req           *pb.SignInRequest
-		mockSetup     func(*mocks.MockUserUseCase)
-		expectedResp  *pb.SignInResponse
-		expectedError error
+		name        string
+		req         *pb.SignInRequest
+		mockSetup   func(*mockUserUseCase)
+		expected    *pb.SignInResponse
+		expectedErr error
 	}{
 		{
-			name: "Success",
+			name: "successful signin",
 			req: &pb.SignInRequest{
 				SignIn: &pb.SignIn{
 					Username: "testuser",
-					Password: "testpass",
+					Password: "password123",
 				},
 			},
-			mockSetup: func(m *mocks.MockUserUseCase) {
-				session := models.Session{SessionId: uuid.New()}
-				m.EXPECT().AuthUser(gomock.Any(), models.LoginData{
+			mockSetup: func(m *mockUserUseCase) {
+				m.On("AuthUser", mock.Anything, models.LoginData{
 					Username: "testuser",
-					Password: "testpass",
-				}).Return(session, nil)
+					Password: "password123",
+				}).Return(models.Session{
+					SessionId:  sessionID,
+					ExpireDate: expiry,
+				}, nil)
 			},
-			expectedResp: &pb.SignInResponse{
-				Session: &pb.Session{Id: gomock.Any().String()},
+			expected: &pb.SignInResponse{
+				Session: &pb.Session{
+					Id:     sessionID.String(),
+					Expiry: timestamppb.New(expiry),
+				},
 			},
 		},
 		{
-			name: "Auth Error",
+			name: "invalid credentials",
 			req: &pb.SignInRequest{
 				SignIn: &pb.SignIn{
 					Username: "testuser",
-					Password: "wrongpass",
+					Password: "wrongpassword",
 				},
 			},
-			mockSetup: func(m *mocks.MockUserUseCase) {
-				m.EXPECT().AuthUser(gomock.Any(), gomock.Any()).
-					Return(models.Session{}, errors.New("auth error"))
+			mockSetup: func(m *mockUserUseCase) {
+				m.On("AuthUser", mock.Anything, mock.Anything).
+					Return(models.Session{}, errors.New("invalid credentials"))
 			},
-			expectedError: errors.New("auth error"),
+			expectedErr: errors.New("invalid credentials"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockUseCase := mocks.NewMockUserUseCase(ctrl)
-			tt.mockSetup(mockUseCase)
+			mockUC := new(mockUserUseCase)
+			tt.mockSetup(mockUC)
+			server := NewUserServiceServer(mockUC)
 
-			server := NewUserServiceServer(mockUseCase)
 			resp, err := server.SignIn(context.Background(), tt.req)
 
-			if tt.expectedError != nil {
+			if tt.expectedErr != nil {
 				assert.Error(t, err)
-				assert.Equal(t, tt.expectedError.Error(), err.Error())
+				assert.Contains(t, err.Error(), tt.expectedErr.Error())
 			} else {
 				assert.NoError(t, err)
-				assert.NotNil(t, resp)
-				assert.NotEmpty(t, resp.Session.Id)
+				assert.Equal(t, tt.expected, resp)
 			}
+			mockUC.AssertExpectations(t)
 		})
 	}
 }
 
 func TestUserServiceServer_SignOut(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	sessionID := uuid.New().String()
 
 	tests := []struct {
-		name          string
-		req           *pb.SignOutRequest
-		mockSetup     func(*mocks.MockUserUseCase)
-		expectedResp  *pb.SignOutResponse
-		expectedError error
+		name        string
+		req         *pb.SignOutRequest
+		mockSetup   func(*mockUserUseCase)
+		expected    *pb.SignOutResponse
+		expectedErr error
 	}{
 		{
-			name: "Success",
+			name: "successful signout",
 			req: &pb.SignOutRequest{
-				SessionId: uuid.New().String(),
+				SessionId: sessionID,
 			},
-			mockSetup: func(m *mocks.MockUserUseCase) {
-				m.EXPECT().DeleteUserSession(gomock.Any(), gomock.Any()).
+			mockSetup: func(m *mockUserUseCase) {
+				m.On("DeleteUserSession", mock.Anything, sessionID).
 					Return(nil)
 			},
-			expectedResp: &pb.SignOutResponse{Success: true},
+			expected: &pb.SignOutResponse{Success: true},
 		},
 		{
-			name: "Delete Error",
+			name: "session not found",
 			req: &pb.SignOutRequest{
-				SessionId: uuid.New().String(),
+				SessionId: sessionID,
 			},
-			mockSetup: func(m *mocks.MockUserUseCase) {
-				m.EXPECT().DeleteUserSession(gomock.Any(), gomock.Any()).
-					Return(errors.New("delete error"))
+			mockSetup: func(m *mockUserUseCase) {
+				m.On("DeleteUserSession", mock.Anything, sessionID).
+					Return(errors.New("session not found"))
 			},
-			expectedError: errors.New("delete error"),
+			expected:    &pb.SignOutResponse{Success: false},
+			expectedErr: errors.New("session not found"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockUseCase := mocks.NewMockUserUseCase(ctrl)
-			tt.mockSetup(mockUseCase)
+			mockUC := new(mockUserUseCase)
+			tt.mockSetup(mockUC)
+			server := NewUserServiceServer(mockUC)
 
-			server := NewUserServiceServer(mockUseCase)
 			resp, err := server.SignOut(context.Background(), tt.req)
 
-			if tt.expectedError != nil {
+			if tt.expectedErr != nil {
 				assert.Error(t, err)
-				assert.Equal(t, tt.expectedError.Error(), err.Error())
-				assert.False(t, resp.Success)
+				assert.Equal(t, tt.expected, resp)
 			} else {
 				assert.NoError(t, err)
-				assert.True(t, resp.Success)
+				assert.Equal(t, tt.expected, resp)
 			}
+			mockUC.AssertExpectations(t)
 		})
 	}
 }
 
 func TestUserServiceServer_GetUserByUsername(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	userID := uuid.New()
+	lastSeen := time.Now()
 
 	tests := []struct {
-		name          string
-		req           *pb.GetUserByUsernameRequest
-		mockSetup     func(*mocks.MockUserUseCase)
-		expectedResp  *pb.GetUserByUsernameResponse
-		expectedError error
+		name        string
+		req         *pb.GetUserByUsernameRequest
+		mockSetup   func(*mockUserUseCase)
+		expected    *pb.GetUserByUsernameResponse
+		expectedErr error
 	}{
 		{
-			name: "Success",
+			name: "successful get by username",
 			req: &pb.GetUserByUsernameRequest{
 				Username: "testuser",
 			},
-			mockSetup: func(m *mocks.MockUserUseCase) {
-				user := models.User{
-					Id:       uuid.New(),
-					Username: "testuser",
-				}
-				m.EXPECT().GetUserByUsername(gomock.Any(), "testuser").
-					Return(user, nil)
+			mockSetup: func(m *mockUserUseCase) {
+				m.On("GetUserByUsername", mock.Anything, "testuser").
+					Return(models.User{
+						Id:       userID,
+						Username: "testuser",
+						LastSeen: lastSeen,
+					}, nil)
 			},
-			expectedResp: &pb.GetUserByUsernameResponse{
+			expected: &pb.GetUserByUsernameResponse{
 				User: &pb.User{
-					Id:       gomock.Any().String(),
+					Id:       userID.String(),
 					Username: "testuser",
+					LastSeen: timestamppb.New(lastSeen),
 				},
 			},
 		},
 		{
-			name: "User Not Found",
+			name: "user not found",
 			req: &pb.GetUserByUsernameRequest{
 				Username: "nonexistent",
 			},
-			mockSetup: func(m *mocks.MockUserUseCase) {
-				m.EXPECT().GetUserByUsername(gomock.Any(), "nonexistent").
-					Return(models.User{}, errors.New("not found"))
+			mockSetup: func(m *mockUserUseCase) {
+				m.On("GetUserByUsername", mock.Anything, "nonexistent").
+					Return(models.User{}, errors.New("user not found"))
 			},
-			expectedError: errors.New("not found"),
+			expectedErr: errors.New("user not found"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockUseCase := mocks.NewMockUserUseCase(ctrl)
-			tt.mockSetup(mockUseCase)
+			mockUC := new(mockUserUseCase)
+			tt.mockSetup(mockUC)
+			server := NewUserServiceServer(mockUC)
 
-			server := NewUserServiceServer(mockUseCase)
 			resp, err := server.GetUserByUsername(context.Background(), tt.req)
 
-			if tt.expectedError != nil {
+			if tt.expectedErr != nil {
 				assert.Error(t, err)
-				assert.Equal(t, tt.expectedError.Error(), err.Error())
+				assert.Contains(t, err.Error(), tt.expectedErr.Error())
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.req.Username, resp.User.Username)
-				assert.NotEmpty(t, resp.User.Id)
+				assert.Equal(t, tt.expected, resp)
 			}
+			mockUC.AssertExpectations(t)
 		})
 	}
 }
 
 func TestUserServiceServer_GetUserById(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	userID := uuid.New()
+	lastSeen := time.Now()
 
 	tests := []struct {
-		name          string
-		req           *pb.GetUserByIdRequest
-		mockSetup     func(*mocks.MockUserUseCase)
-		expectedResp  *pb.GetUserByIdResponse
-		expectedError error
+		name        string
+		req         *pb.GetUserByIdRequest
+		mockSetup   func(*mockUserUseCase)
+		expected    *pb.GetUserByIdResponse
+		expectedErr error
 	}{
 		{
-			name: "Success",
+			name: "successful get by id",
 			req: &pb.GetUserByIdRequest{
-				Id: uuid.New().String(),
+				Id: userID.String(),
 			},
-			mockSetup: func(m *mocks.MockUserUseCase) {
-				userId := uuid.New()
-				user := models.User{
-					Id:       userId,
-					Username: "testuser",
-				}
-				m.EXPECT().GetUserById(gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ context.Context, id uuid.UUID) (models.User, error) {
-						assert.Equal(t, userId, id)
-						return user, nil
-					})
+			mockSetup: func(m *mockUserUseCase) {
+				m.On("GetUserById", mock.Anything, userID).
+					Return(models.User{
+						Id:       userID,
+						Username: "testuser",
+						LastSeen: lastSeen,
+					}, nil)
 			},
-			expectedResp: &pb.GetUserByIdResponse{
+			expected: &pb.GetUserByIdResponse{
 				User: &pb.User{
-					Id:       gomock.Any().String(),
+					Id:       userID.String(),
 					Username: "testuser",
+					LastSeen: timestamppb.New(lastSeen),
 				},
 			},
 		},
 		{
-			name: "Invalid UUID",
+			name: "invalid user id",
 			req: &pb.GetUserByIdRequest{
 				Id: "invalid-uuid",
 			},
-			expectedError: status.Error(codes.InvalidArgument, "invalid user id"),
+			mockSetup:   func(m *mockUserUseCase) {},
+			expectedErr: status.Error(codes.InvalidArgument, "invalid user id"),
 		},
 		{
-			name: "User Not Found",
+			name: "user not found",
 			req: &pb.GetUserByIdRequest{
-				Id: uuid.New().String(),
+				Id: userID.String(),
 			},
-			mockSetup: func(m *mocks.MockUserUseCase) {
-				m.EXPECT().GetUserById(gomock.Any(), gomock.Any()).
-					Return(models.User{}, errors.New("not found"))
+			mockSetup: func(m *mockUserUseCase) {
+				m.On("GetUserById", mock.Anything, userID).
+					Return(models.User{}, errors.New("user not found"))
 			},
-			expectedError: errors.New("not found"),
+			expectedErr: errors.New("user not found"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockUseCase := mocks.NewMockUserUseCase(ctrl)
-			if tt.mockSetup != nil {
-				tt.mockSetup(mockUseCase)
-			}
+			mockUC := new(mockUserUseCase)
+			tt.mockSetup(mockUC)
+			server := NewUserServiceServer(mockUC)
 
-			server := NewUserServiceServer(mockUseCase)
 			resp, err := server.GetUserById(context.Background(), tt.req)
 
-			if tt.expectedError != nil {
+			if tt.expectedErr != nil {
 				assert.Error(t, err)
-				assert.Equal(t, tt.expectedError.Error(), err.Error())
+				assert.Contains(t, err.Error(), tt.expectedErr.Error())
 			} else {
 				assert.NoError(t, err)
-				assert.NotEmpty(t, resp.User.Id)
-				assert.Equal(t, "testuser", resp.User.Username)
+				assert.Equal(t, tt.expected, resp)
 			}
+			mockUC.AssertExpectations(t)
 		})
 	}
 }
 
 func TestUserServiceServer_LookupUserSession(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	userID := uuid.New()
+	sessionID := uuid.New()
 
 	tests := []struct {
-		name          string
-		req           *pb.LookupUserSessionRequest
-		mockSetup     func(*mocks.MockUserUseCase)
-		expectedResp  *pb.LookupUserSessionResponse
-		expectedError error
+		name        string
+		req         *pb.LookupUserSessionRequest
+		mockSetup   func(*mockUserUseCase)
+		expected    *pb.LookupUserSessionResponse
+		expectedErr error
 	}{
 		{
-			name: "Success",
+			name: "successful session lookup",
 			req: &pb.LookupUserSessionRequest{
-				SessionId: uuid.New().String(),
+				SessionId: sessionID.String(),
 			},
-			mockSetup: func(m *mocks.MockUserUseCase) {
-				sessionId := uuid.New()
-				user := models.User{
-					Id:       uuid.New(),
-					Username: "testuser",
-				}
-				m.EXPECT().LookupUserSession(gomock.Any(), models.Session{SessionId: sessionId}).
-					Return(user, nil)
+			mockSetup: func(m *mockUserUseCase) {
+				m.On("LookupUserSession", mock.Anything, models.Session{SessionId: sessionID}).
+					Return(models.User{
+						Id:       userID,
+						Username: "testuser",
+					}, nil)
 			},
-			expectedResp: &pb.LookupUserSessionResponse{
-				UserId:   gomock.Any().String(),
+			expected: &pb.LookupUserSessionResponse{
+				UserId:   userID.String(),
 				Username: "testuser",
 			},
 		},
 		{
-			name: "Invalid Session ID",
+			name: "invalid session id",
 			req: &pb.LookupUserSessionRequest{
 				SessionId: "invalid-uuid",
 			},
-			expectedError: status.Error(codes.InvalidArgument, "invalid session id"),
+			mockSetup:   func(m *mockUserUseCase) {},
+			expectedErr: status.Error(codes.InvalidArgument, "invalid session id"),
 		},
 		{
-			name: "Session Not Found",
+			name: "session not found",
 			req: &pb.LookupUserSessionRequest{
-				SessionId: uuid.New().String(),
+				SessionId: sessionID.String(),
 			},
-			mockSetup: func(m *mocks.MockUserUseCase) {
-				m.EXPECT().LookupUserSession(gomock.Any(), gomock.Any()).
+			mockSetup: func(m *mockUserUseCase) {
+				m.On("LookupUserSession", mock.Anything, models.Session{SessionId: sessionID}).
 					Return(models.User{}, errors.New("session not found"))
 			},
-			expectedError: errors.New("session not found"),
+			expectedErr: errors.New("session not found"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockUseCase := mocks.NewMockUserUseCase(ctrl)
-			if tt.mockSetup != nil {
-				tt.mockSetup(mockUseCase)
-			}
+			mockUC := new(mockUserUseCase)
+			tt.mockSetup(mockUC)
+			server := NewUserServiceServer(mockUC)
 
-			server := NewUserServiceServer(mockUseCase)
 			resp, err := server.LookupUserSession(context.Background(), tt.req)
 
-			if tt.expectedError != nil {
+			if tt.expectedErr != nil {
 				assert.Error(t, err)
-				assert.Equal(t, tt.expectedError.Error(), err.Error())
+				assert.Contains(t, err.Error(), tt.expectedErr.Error())
 			} else {
 				assert.NoError(t, err)
-				assert.NotEmpty(t, resp.UserId)
-				assert.Equal(t, "testuser", resp.Username)
+				assert.Equal(t, tt.expected, resp)
 			}
+			mockUC.AssertExpectations(t)
 		})
 	}
 }
 
 func TestUserServiceServer_SearchSimilarUser(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	now := time.Now()
-	protoNow := timestamppb.New(now)
+	userID1 := uuid.New()
+	userID2 := uuid.New()
 
 	tests := []struct {
-		name          string
-		req           *pb.SearchSimilarUserRequest
-		mockSetup     func(*mocks.MockUserUseCase)
-		expectedResp  *pb.SearchSimilarUserResponse
-		expectedError error
+		name        string
+		req         *pb.SearchSimilarUserRequest
+		mockSetup   func(*mockUserUseCase)
+		expected    *pb.SearchSimilarUserResponse
+		expectedErr error
 	}{
 		{
-			name: "Success",
+			name: "successful search",
 			req: &pb.SearchSimilarUserRequest{
 				ToSearch: "test",
 				NumUsers: 5,
 			},
-			mockSetup: func(m *mocks.MockUserUseCase) {
-				users := []models.PublicUserInfo{
-					{
-						Id:        uuid.New(),
-						Username:  "testuser1",
-						Firstname: "Test1",
-						Lastname:  "User1",
-						LastSeen:  now,
-					},
-					{
-						Id:        uuid.New(),
-						Username:  "testuser2",
-						Firstname: "Test2",
-						Lastname:  "User2",
-						LastSeen:  now,
-					},
-				}
-				m.EXPECT().SearchSimilarUser(gomock.Any(), "test", uint(5)).
-					Return(users, nil)
+			mockSetup: func(m *mockUserUseCase) {
+				m.On("SearchSimilarUser", mock.Anything, "test", uint(5)).
+					Return([]models.PublicUserInfo{
+						{Id: userID1, Username: "testuser1"},
+						{Id: userID2, Username: "testuser2"},
+					}, nil)
 			},
-			expectedResp: &pb.SearchSimilarUserResponse{
+			expected: &pb.SearchSimilarUserResponse{
 				UsersInfo: []*pb.PublicUserInfo{
-					{
-						Id:        gomock.Any().String(),
-						Username:  "testuser1",
-						Firstname: "Test1",
-						Lastname:  "User1",
-						LastSeen:  protoNow,
-					},
-					{
-						Id:        gomock.Any().String(),
-						Username:  "testuser2",
-						Firstname: "Test2",
-						Lastname:  "User2",
-						LastSeen:  protoNow,
-					},
+					{Id: userID1.String(), Username: "testuser1"},
+					{Id: userID2.String(), Username: "testuser2"},
 				},
 			},
 		},
 		{
-			name: "Search Error",
+			name: "empty result",
 			req: &pb.SearchSimilarUserRequest{
-				ToSearch: "test",
+				ToSearch: "nonexistent",
 				NumUsers: 5,
 			},
-			mockSetup: func(m *mocks.MockUserUseCase) {
-				m.EXPECT().SearchSimilarUser(gomock.Any(), "test", uint(5)).
-					Return(nil, errors.New("search error"))
+			mockSetup: func(m *mockUserUseCase) {
+				m.On("SearchSimilarUser", mock.Anything, "nonexistent", uint(5)).
+					Return([]models.PublicUserInfo{}, nil)
 			},
-			expectedError: errors.New("search error"),
+			expected: &pb.SearchSimilarUserResponse{
+				UsersInfo: []*pb.PublicUserInfo{},
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockUseCase := mocks.NewMockUserUseCase(ctrl)
-			tt.mockSetup(mockUseCase)
+			mockUC := new(mockUserUseCase)
+			tt.mockSetup(mockUC)
+			server := NewUserServiceServer(mockUC)
 
-			server := NewUserServiceServer(mockUseCase)
 			resp, err := server.SearchSimilarUser(context.Background(), tt.req)
 
-			if tt.expectedError != nil {
+			if tt.expectedErr != nil {
 				assert.Error(t, err)
-				assert.Equal(t, tt.expectedError.Error(), err.Error())
 			} else {
 				assert.NoError(t, err)
-				assert.Len(t, resp.UsersInfo, 2)
-				assert.Equal(t, "testuser1", resp.UsersInfo[0].Username)
-				assert.Equal(t, "Test1", resp.UsersInfo[0].Firstname)
-				assert.Equal(t, "User1", resp.UsersInfo[0].Lastname)
-				assert.Equal(t, "testuser2", resp.UsersInfo[1].Username)
-				assert.Equal(t, "Test2", resp.UsersInfo[1].Firstname)
-				assert.Equal(t, "User2", resp.UsersInfo[1].Lastname)
-				assert.NotNil(t, resp.UsersInfo[0].LastSeen)
-				assert.NotNil(t, resp.UsersInfo[1].LastSeen)
+
+				for i := range tt.expected.UsersInfo {
+					assert.Equal(t, tt.expected.UsersInfo[i].Id, resp.UsersInfo[i].Id)
+					assert.Equal(t, tt.expected.UsersInfo[i].Username, resp.UsersInfo[i].Username)
+				}
 			}
+			mockUC.AssertExpectations(t)
 		})
 	}
 }

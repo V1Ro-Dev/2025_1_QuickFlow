@@ -40,13 +40,13 @@ func (p *ProfileServiceServer) CreateProfile(ctx context.Context, req *pb.Create
 
 	profile, err := dto.MapProfileDTOToProfile(req.GetProfile())
 	if err != nil {
-		logger.Error(ctx, "invalid profile data:", err)
+		logger.Error(ctx, "invalid profile data: %v", err)
 		return nil, user_errors.ErrInvalidProfileInfo
 	}
 
 	createdProfile, err := p.profileUC.CreateProfile(ctx, *profile)
 	if err != nil {
-		logger.Error(ctx, "failed to create profile:", err)
+		logger.Error(ctx, "failed to create profile: %v", err)
 		return nil, err
 	}
 
@@ -64,13 +64,13 @@ func (p *ProfileServiceServer) UpdateProfile(ctx context.Context, req *pb.Update
 
 	profile, err := dto.MapProfileDTOToProfile(req.GetProfile())
 	if err != nil {
-		logger.Error(ctx, "invalid profile data:", err)
+		logger.Error(ctx, "invalid profile data: %v", err)
 		return nil, user_errors.ErrInvalidProfileInfo
 	}
 
 	updatedProfile, err := p.profileUC.UpdateProfile(ctx, *profile)
 	if err != nil {
-		logger.Error(ctx, "failed to update profile:", err)
+		logger.Error(ctx, "failed to update profile: %v", err)
 		return nil, err
 	}
 
@@ -89,7 +89,7 @@ func (p *ProfileServiceServer) GetProfile(ctx context.Context, req *pb.GetProfil
 
 	profile, err := p.profileUC.GetProfile(ctx, userID)
 	if err != nil {
-		logger.Error(ctx, "failed to get profile:", err)
+		logger.Error(ctx, "failed to get profile: %v", err)
 		return nil, err
 	}
 
@@ -107,7 +107,7 @@ func (p *ProfileServiceServer) GetProfileByUsername(ctx context.Context, req *pb
 
 	profile, err := p.profileUC.GetProfileByUsername(ctx, req.Username)
 	if err != nil {
-		logger.Error(ctx, "failed to get profile by username:", err)
+		logger.Error(ctx, "failed to get profile by username: %v", err)
 		return nil, err
 	}
 
@@ -126,7 +126,7 @@ func (p *ProfileServiceServer) UpdateLastSeen(ctx context.Context, req *pb.Updat
 
 	err = p.profileUC.UpdateLastSeen(ctx, userID)
 	if err != nil {
-		logger.Error(ctx, "failed to update last seen:", err)
+		logger.Error(ctx, "failed to update last seen: %v", err)
 		return nil, err
 	}
 
@@ -143,7 +143,7 @@ func (p *ProfileServiceServer) GetPublicUserInfo(ctx context.Context, req *pb.Ge
 
 	info, err := p.profileUC.GetPublicUserInfo(ctx, userID)
 	if err != nil {
-		logger.Error(ctx, "failed to get public user info:", err)
+		logger.Error(ctx, "failed to get public user info: %v", err)
 		return nil, err
 	}
 
@@ -171,7 +171,7 @@ func (p *ProfileServiceServer) GetPublicUsersInfo(ctx context.Context, req *pb.G
 
 	publicInfo, err := p.profileUC.GetPublicUsersInfo(ctx, parsedUserIds)
 	if err != nil {
-		logger.Error(ctx, "failed to get public users info:", err)
+		logger.Error(ctx, "failed to get public users info: %v", err)
 		return nil, err
 	}
 

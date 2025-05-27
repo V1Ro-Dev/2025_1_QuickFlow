@@ -2,7 +2,7 @@ package grpc
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"io"
 	"os"
 
@@ -18,7 +18,6 @@ import (
 type FileUseCase interface {
 	UploadFile(ctx context.Context, fileModel *models.File) (string, error)
 	UploadManyMedia(ctx context.Context, files []*models.File) ([]string, error)
-	GetFileURL(ctx context.Context, filename string) (string, error)
 	DeleteFile(ctx context.Context, filename string) error
 }
 
@@ -40,6 +39,7 @@ func (s *FileServiceServer) UploadFile(stream pb.FileService_UploadFileServer) e
 	ctx := stream.Context()
 	logger.Info(ctx, "Started streaming UploadFile request")
 
+	flag := false
 	for {
 		req, err := stream.Recv()
 		if err == io.EOF {
@@ -76,6 +76,7 @@ func (s *FileServiceServer) UploadFile(stream pb.FileService_UploadFileServer) e
 
 		switch x := req.Data.(type) {
 		case *pb.UploadFileRequest_Info:
+			flag = true
 			fileInfo = x.Info
 			tempFile, err = os.CreateTemp("", "upload-*")
 			if err != nil {
@@ -85,6 +86,11 @@ func (s *FileServiceServer) UploadFile(stream pb.FileService_UploadFileServer) e
 			defer tempFile.Close()
 
 		case *pb.UploadFileRequest_Chunk:
+			if !flag {
+				logger.Error(ctx, "File info must be sent before chunk")
+				return errors.New("file info must be sent before chunk")
+			}
+			flag = true
 			if tempFile == nil {
 				return status.Errorf(codes.InvalidArgument, "FileInfo must be sent before chunks")
 			}
@@ -107,14 +113,14 @@ func (s *FileServiceServer) UploadManyFiles(stream pb.FileService_UploadManyFile
 	defer func() {
 		if tempFile != nil {
 			tempFile.Close()
-			os.Remove(tempFile.Name()) // чистим tmp
+			os.Remove(tempFile.Name()) // clean tmp
 		}
 	}()
 
 	for {
 		req, err := stream.Recv()
 		if err == io.EOF {
-			// Обработка последнего файла, если был начат
+			// Process the last file if it was started
 			if currentInfo != nil && tempFile != nil {
 				fileURL, err := s.finalizeUploadedFile(ctx, currentInfo, tempFile)
 				if err != nil {
@@ -132,30 +138,30 @@ func (s *FileServiceServer) UploadManyFiles(stream pb.FileService_UploadManyFile
 			return nil
 		}
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Error receiving upload stream: %v", err))
+			logger.Error(ctx, "Error receiving upload stream: %v", err)
 			return err
 		}
 
 		switch data := req.Data.(type) {
 		case *pb.UploadFileRequest_Info:
-			// Завершаем предыдущий файл
+			// Finish previous file
 			if currentInfo != nil && tempFile != nil {
 				fileURL, err := s.finalizeUploadedFile(ctx, currentInfo, tempFile)
 				if err != nil {
-					logger.Error(ctx, fmt.Sprintf("Error finalizing file: %v", err))
+					logger.Error(ctx, "Error finalizing file: %v", err)
 					return err
 				}
 				if err := stream.Send(&pb.UploadFileResponse{
 					FileUrl: fileURL,
 				}); err != nil {
-					logger.Error(ctx, fmt.Sprintf("Failed to send response: %v", err))
+					logger.Error(ctx, "Failed to send response: %v", err)
 					return err
 				}
 				tempFile.Close()
 				os.Remove(tempFile.Name())
 			}
 
-			// Начинаем новый файл
+			// Start new file
 			currentInfo = data.Info
 			tempFile, err = os.CreateTemp("", "upload-*")
 			if err != nil {
@@ -176,7 +182,7 @@ func (s *FileServiceServer) UploadManyFiles(stream pb.FileService_UploadManyFile
 	}
 }
 
-// finalizeUploadedFile обрабатывает файл после его получения
+// finalizeUploadedFile processes the file after it is received
 func (s *FileServiceServer) finalizeUploadedFile(
 	ctx context.Context,
 	info *pb.File,
@@ -212,9 +218,13 @@ func (s *FileServiceServer) finalizeUploadedFile(
 func (s *FileServiceServer) DeleteFile(ctx context.Context, req *pb.DeleteFileRequest) (*pb.DeleteFileResponse, error) {
 	logger.Info(ctx, "Received DeleteFile request")
 
+	if len(req.FileUrl) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "file url is required")
+	}
+
 	err := s.fileUC.DeleteFile(ctx, req.FileUrl)
 	if err != nil {
-		logger.Error(ctx, "Failed to delete file: ", err)
+		logger.Error(ctx, "Failed to delete file: %v", err)
 		return &pb.DeleteFileResponse{Success: false}, err
 	}
 

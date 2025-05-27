@@ -20,9 +20,6 @@ import (
 type FeedbackUseCase interface {
 	SaveFeedback(ctx context.Context, feedback *models.Feedback) error
 	GetAllFeedbackType(ctx context.Context, feedbackType models.FeedbackType, ts time.Time, count int) ([]models.Feedback, error)
-	GetNumMessagesSent(ctx context.Context, userId uuid.UUID) (int64, error)
-	GetNumPostsCreated(ctx context.Context, userId uuid.UUID) (int64, error)
-	GetNumProfileChanges(ctx context.Context, userId uuid.UUID) (int64, error)
 }
 
 type FeedbackHandler struct {

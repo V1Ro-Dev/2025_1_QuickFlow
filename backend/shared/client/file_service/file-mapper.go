@@ -57,6 +57,9 @@ func ModelFileToProto(file *shared_models.File) *file_service.File {
 }
 
 func ProtoFilesToModels(files []*file_service.File) []*shared_models.File {
+	if len(files) == 0 {
+		return nil
+	}
 	res := make([]*shared_models.File, len(files))
 	for i, file := range files {
 		res[i] = ProtoFileToModel(file)
@@ -65,6 +68,9 @@ func ProtoFilesToModels(files []*file_service.File) []*shared_models.File {
 }
 
 func ModelFilesToProto(files []*shared_models.File) []*file_service.File {
+	if len(files) == 0 {
+		return nil
+	}
 	res := make([]*file_service.File, len(files))
 	for i, file := range files {
 		res[i] = ModelFileToProto(file)

@@ -45,10 +45,12 @@ func (c *PostServiceClient) DeletePost(ctx context.Context, userId, postId uuid.
 
 func (c *PostServiceClient) UpdatePost(ctx context.Context, update models.PostUpdate, userId uuid.UUID) (*models.Post, error) {
 	logger.Info(ctx, "Sending request to update post: %v", update)
-	resp, err := c.client.UpdatePost(ctx, &pb.UpdatePostRequest{
+	req := &pb.UpdatePostRequest{
 		Post:   ModelPostUpdateToProto(&update),
 		UserId: userId.String(),
-	})
+	}
+
+	resp, err := c.client.UpdatePost(ctx, req)
 	if err != nil {
 		logger.Error(ctx, "Failed to update post: %v", err)
 		return nil, err
