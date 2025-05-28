@@ -34,21 +34,10 @@ func TestGetEnv(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if test.setValue != nil {
-				err := os.Setenv(key, *test.setValue)
-				if err != nil {
-					return
-				}
-				defer func() {
-					err := os.Unsetenv(key)
-					if err != nil {
-						return
-					}
-				}()
+				os.Setenv(key, *test.setValue)
+				defer os.Unsetenv(key)
 			} else {
-				err := os.Unsetenv(key)
-				if err != nil {
-					return
-				}
+				os.Unsetenv(key)
 			}
 
 			actual := get_env.GetEnv(key, test.defaultValue)
@@ -89,21 +78,10 @@ func TestGetEnvAsInt(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if test.setValue != nil {
-				err := os.Setenv(key, *test.setValue)
-				if err != nil {
-					return
-				}
-				defer func() {
-					err := os.Unsetenv(key)
-					if err != nil {
-						return
-					}
-				}()
+				os.Setenv(key, *test.setValue)
+				defer os.Unsetenv(key)
 			} else {
-				err := os.Unsetenv(key)
-				if err != nil {
-					return
-				}
+				os.Unsetenv(key)
 			}
 
 			actual := get_env.GetEnvAsInt(key, test.defaultValue)
@@ -150,21 +128,10 @@ func TestGetEnvAsBool(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if test.setValue != nil {
-				err := os.Setenv(key, *test.setValue)
-				if err != nil {
-					return
-				}
-				defer func() {
-					err := os.Unsetenv(key)
-					if err != nil {
-						return
-					}
-				}()
+				os.Setenv(key, *test.setValue)
+				defer os.Unsetenv(key)
 			} else {
-				err := os.Unsetenv(key)
-				if err != nil {
-					return
-				}
+				os.Unsetenv(key)
 			}
 
 			actual := get_env.GetEnvAsBool(key, test.defaultValue)

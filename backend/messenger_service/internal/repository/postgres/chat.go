@@ -84,10 +84,7 @@ func NewPostgresChatRepository(db *sql.DB) *ChatRepository {
 
 // Close закрывает пул соединений
 func (c *ChatRepository) Close() {
-	err := c.ConnPool.Close()
-	if err != nil {
-		return
-	}
+	c.ConnPool.Close()
 }
 
 func (c *ChatRepository) CreateChat(ctx context.Context, chat models.Chat) error {
@@ -119,12 +116,7 @@ func (c *ChatRepository) GetUserChats(ctx context.Context, userId uuid.UUID) ([]
 		logger.Error(ctx, "Unable to get user %v chats from database: %s", userId, err.Error())
 		return nil, err
 	}
-	defer func(rows *sql.Rows) {
-		err = rows.Close()
-		if err != nil {
-			return
-		}
-	}(rows)
+	defer rows.Close()
 
 	var chatPostgres pgmodels.ChatPostgres
 
@@ -271,12 +263,7 @@ func (c *ChatRepository) GetChatParticipants(ctx context.Context, chatId uuid.UU
 		logger.Error(ctx, "Unable to get chat %v participants from database: %s", chatId, err.Error())
 		return nil, err
 	}
-	defer func(rows *sql.Rows) {
-		err = rows.Close()
-		if err != nil {
-			return
-		}
-	}(rows)
+	defer rows.Close()
 
 	for rows.Next() {
 		// TODO

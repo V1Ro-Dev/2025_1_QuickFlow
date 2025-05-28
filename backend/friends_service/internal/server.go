@@ -30,12 +30,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
-	defer func(listener net.Listener) {
-		err = listener.Close()
-		if err != nil {
-			log.Fatalf("failed to close listener: %v", err)
-		}
-	}(listener)
+	defer listener.Close()
 
 	db, err := sql.Open("pgx", postgresConfig.NewPostgresConfig().GetURL())
 	if err != nil {

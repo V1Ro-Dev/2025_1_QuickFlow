@@ -2,9 +2,7 @@ package postgres
 
 import (
 	"context"
-	"database/sql"
 	"errors"
-	"log"
 	"testing"
 	"time"
 
@@ -21,12 +19,7 @@ func TestSaveFeedback(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create mock db: %v", err)
 	}
-	defer func(db *sql.DB) {
-		err = db.Close()
-		if err != nil {
-			log.Fatalf("failed to close mock db: %v", err)
-		}
-	}(db)
+	defer db.Close()
 
 	repo := NewFeedbackRepository(db)
 
@@ -55,12 +48,7 @@ func TestSaveFeedback_Error(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create mock db: %v", err)
 	}
-	defer func(db *sql.DB) {
-		err = db.Close()
-		if err != nil {
-			log.Fatalf("failed to close mock db: %v", err)
-		}
-	}(db)
+	defer db.Close()
 
 	repo := NewFeedbackRepository(db)
 
@@ -90,12 +78,7 @@ func TestGetAllFeedbackType(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create mock db: %v", err)
 	}
-	defer func(db *sql.DB) {
-		err = db.Close()
-		if err != nil {
-			log.Fatalf("failed to close mock db: %v", err)
-		}
-	}(db)
+	defer db.Close()
 
 	repo := NewFeedbackRepository(db)
 	feedbackType := models.FeedbackGeneral
@@ -123,12 +106,7 @@ func TestGetAllFeedbackType_Error(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create mock db: %v", err)
 	}
-	defer func(db *sql.DB) {
-		err = db.Close()
-		if err != nil {
-			log.Fatalf("failed to close mock db: %v", err)
-		}
-	}(db)
+	defer db.Close()
 
 	repo := NewFeedbackRepository(db)
 	feedbackType := models.FeedbackGeneral
@@ -152,12 +130,7 @@ func TestGetNumMessagesSent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create mock db: %v", err)
 	}
-	defer func(db *sql.DB) {
-		err = db.Close()
-		if err != nil {
-			log.Fatalf("failed to close mock db: %v", err)
-		}
-	}(db)
+	defer db.Close()
 
 	repo := NewFeedbackRepository(db)
 	userId := uuid.New()
@@ -179,12 +152,7 @@ func TestGetNumMessagesSent_Error(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create mock db: %v", err)
 	}
-	defer func(db *sql.DB) {
-		err = db.Close()
-		if err != nil {
-			log.Fatalf("failed to close mock db: %v", err)
-		}
-	}(db)
+	defer db.Close()
 
 	repo := NewFeedbackRepository(db)
 	userId := uuid.New()

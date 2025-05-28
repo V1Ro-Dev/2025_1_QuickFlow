@@ -56,7 +56,7 @@ func NewCommunityHandler(communityService CommunityService, profileService Profi
 
 func (c *CommunityHandler) CreateCommunity(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	user, ok := ctx.Value(logger.Username).(models.User)
+	user, ok := ctx.Value("user").(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while creating community")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -139,7 +139,7 @@ func (c *CommunityHandler) CreateCommunity(w http.ResponseWriter, r *http.Reques
 
 func (c *CommunityHandler) GetCommunityById(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	user, ok := ctx.Value(logger.Username).(models.User)
+	user, ok := ctx.Value("user").(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while fetching community")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -203,7 +203,7 @@ func (c *CommunityHandler) GetCommunityById(w http.ResponseWriter, r *http.Reque
 
 func (c *CommunityHandler) GetCommunityByName(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	user, ok := ctx.Value(logger.Username).(models.User)
+	user, ok := ctx.Value("user").(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while fetching community")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -261,7 +261,7 @@ func (c *CommunityHandler) GetCommunityByName(w http.ResponseWriter, r *http.Req
 
 func (c *CommunityHandler) GetCommunityMembers(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	user, ok := ctx.Value(logger.Username).(models.User)
+	user, ok := ctx.Value("user").(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while fetching community members")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -342,7 +342,7 @@ func (c *CommunityHandler) GetCommunityMembers(w http.ResponseWriter, r *http.Re
 
 func (c *CommunityHandler) DeleteCommunity(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	user, ok := ctx.Value(logger.Username).(models.User)
+	user, ok := ctx.Value("user").(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while deleting community")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -373,7 +373,7 @@ func (c *CommunityHandler) DeleteCommunity(w http.ResponseWriter, r *http.Reques
 
 func (c *CommunityHandler) UpdateCommunity(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	user, ok := ctx.Value(logger.Username).(models.User)
+	user, ok := ctx.Value("user").(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while updating community")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -472,7 +472,7 @@ func (c *CommunityHandler) UpdateCommunity(w http.ResponseWriter, r *http.Reques
 
 func (c *CommunityHandler) JoinCommunity(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	user, ok := ctx.Value(logger.Username).(models.User)
+	user, ok := ctx.Value("user").(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while joining community")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -509,7 +509,7 @@ func (c *CommunityHandler) JoinCommunity(w http.ResponseWriter, r *http.Request)
 
 func (c *CommunityHandler) LeaveCommunity(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	user, ok := ctx.Value(logger.Username).(models.User)
+	user, ok := ctx.Value("user").(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while leaving community")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -607,7 +607,7 @@ func (c *CommunityHandler) GetUserCommunities(w http.ResponseWriter, r *http.Req
 
 func (c *CommunityHandler) ChangeUserRole(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	user, ok := ctx.Value(logger.Username).(models.User)
+	user, ok := ctx.Value("user").(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while changing community role")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))

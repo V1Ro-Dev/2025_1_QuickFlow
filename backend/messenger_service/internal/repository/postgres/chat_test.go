@@ -2,7 +2,6 @@ package postgres_test
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
@@ -89,12 +88,7 @@ func TestCreateChat(t *testing.T) {
 			// Создание нового mock подключения
 			db, mock, err := sqlmock.New()
 			require.NoError(t, err)
-			defer func(db *sql.DB) {
-				err = db.Close()
-				if err != nil {
-					return
-				}
-			}(db)
+			defer db.Close()
 
 			if tt.mockSetup != nil {
 				tt.mockSetup(mock)

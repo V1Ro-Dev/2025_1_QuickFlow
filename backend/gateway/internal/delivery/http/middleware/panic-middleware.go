@@ -13,10 +13,7 @@ func RecoveryMiddleware(next http.Handler) http.Handler {
 			if err := recover(); err != nil {
 				logger.Error(context.Background(), "Panic: %v, URL: %s", err, r.URL.Path)
 				w.WriteHeader(http.StatusInternalServerError)
-				_, err := w.Write([]byte("500 - Internal Server Error"))
-				if err != nil {
-					return
-				}
+				w.Write([]byte("500 - Internal Server Error"))
 			}
 		}()
 		next.ServeHTTP(w, r)

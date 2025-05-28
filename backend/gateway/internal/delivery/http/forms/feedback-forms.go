@@ -12,7 +12,7 @@ import (
 	"quickflow/shared/models"
 )
 
-var ErrInvalidType = errors.New("invalid type")
+var InvalidTypeError = errors.New("invalid type")
 
 const (
 	FeedbackGeneral        = "general"
@@ -61,7 +61,7 @@ func convertTypeToModel(Type string) (models.FeedbackType, error) {
 	case FeedbackMessenger:
 		return models.FeedbackMessenger, nil
 	}
-	return models.FeedbackGeneral, ErrInvalidType
+	return models.FeedbackGeneral, InvalidTypeError
 }
 
 func (f *FeedbackForm) ToFeedback(respondent uuid.UUID) (*models.Feedback, error) {

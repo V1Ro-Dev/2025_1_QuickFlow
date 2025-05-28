@@ -101,12 +101,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
-	defer func(listener net.Listener) {
-		err = listener.Close()
-		if err != nil {
-			log.Fatalf("failed to close listener: %v", err)
-		}
-	}(listener)
+	defer listener.Close()
 
 	server := grpc.NewServer(grpc.ChainUnaryInterceptor(
 		interceptor.ErrorInterceptor,

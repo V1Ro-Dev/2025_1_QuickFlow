@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	dto "quickflow/shared/client/user_service"
+	userclient "quickflow/shared/client/user_service"
 	"quickflow/shared/logger"
 	shared_models "quickflow/shared/models"
 	pb "quickflow/shared/proto/user_service"
@@ -136,7 +137,7 @@ func (s *UserServiceServer) SearchSimilarUser(ctx context.Context, req *pb.Searc
 
 	protoUsers := make([]*pb.PublicUserInfo, len(users))
 	for i, user := range users {
-		protoUsers[i] = dto.MapPublicUserInfoToDTO(&user)
+		protoUsers[i] = userclient.MapPublicUserInfoToDTO(&user)
 	}
 
 	return &pb.SearchSimilarUserResponse{UsersInfo: protoUsers}, nil

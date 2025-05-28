@@ -17,10 +17,6 @@ type ReqIdKey string
 
 const RequestID ReqIdKey = "requestID"
 
-type User string
-
-const Username User = "user"
-
 func init() {
 	Log = logrus.New()
 	Log.SetFormatter(&CustomFormatter{})

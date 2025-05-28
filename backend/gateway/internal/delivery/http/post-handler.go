@@ -54,7 +54,7 @@ func NewPostHandler(postUseCase PostService, profileUseCase ProfileUseCase,
 func (p *PostHandler) AddPost(w http.ResponseWriter, r *http.Request) {
 	// extracting user from context
 	ctx := r.Context()
-	user, ok := ctx.Value(logger.Username).(models.User)
+	user, ok := ctx.Value("user").(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while adding post")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -162,7 +162,7 @@ func (p *PostHandler) AddPost(w http.ResponseWriter, r *http.Request) {
 // @Router /api/posts/{post_id} [delete]
 func (p *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	user, ok := ctx.Value(logger.Username).(models.User)
+	user, ok := ctx.Value("user").(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while deleting post")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -209,7 +209,7 @@ func (p *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 // @Router /api/post [put]
 func (p *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	user, ok := ctx.Value(logger.Username).(models.User)
+	user, ok := ctx.Value("user").(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while updating post")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -310,7 +310,7 @@ func (p *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 
 func (p *PostHandler) LikePost(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	user, ok := ctx.Value(logger.Username).(models.User)
+	user, ok := ctx.Value("user").(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while liking post")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -339,7 +339,7 @@ func (p *PostHandler) LikePost(w http.ResponseWriter, r *http.Request) {
 
 func (p *PostHandler) UnlikePost(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	user, ok := ctx.Value(logger.Username).(models.User)
+	user, ok := ctx.Value("user").(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while unliking post")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -416,8 +416,7 @@ func (p *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 		postOut.LastComment = &commentOut
 	}
 
-	switch post.CreatorType {
-	case models.PostUser:
+	if post.CreatorType == models.PostUser {
 		publicAuthorInfo, err := p.profileUseCase.GetPublicUserInfo(ctx, post.CreatorId)
 		if err != nil {
 			logger.Error(ctx, "Failed to get public user info: %s", err.Error())
@@ -434,8 +433,7 @@ func (p *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 
 		info := forms.PublicUserInfoToOut(publicAuthorInfo, relation)
 		postOut.Creator = &info
-
-	case models.PostCommunity:
+	} else if post.CreatorType == models.PostCommunity {
 		community, err := p.communityService.GetCommunityById(ctx, post.CreatorId)
 		if err != nil {
 			logger.Error(ctx, "Failed to get community: %s", err.Error())
