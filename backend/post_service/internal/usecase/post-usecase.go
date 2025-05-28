@@ -13,7 +13,6 @@ import (
 	post_errors "quickflow/post_service/internal/errors"
 	"quickflow/post_service/utils/validation"
 	"quickflow/shared/models"
-	shared_models "quickflow/shared/models"
 )
 
 type PostValidator interface {
@@ -36,8 +35,8 @@ type PostRepository interface {
 }
 
 type FileService interface {
-	UploadFile(ctx context.Context, file *shared_models.File) (string, error)
-	UploadManyFiles(ctx context.Context, files []*shared_models.File) ([]string, error)
+	UploadFile(ctx context.Context, file *models.File) (string, error)
+	UploadManyFiles(ctx context.Context, files []*models.File) ([]string, error)
 	DeleteFile(ctx context.Context, filename string) error
 }
 

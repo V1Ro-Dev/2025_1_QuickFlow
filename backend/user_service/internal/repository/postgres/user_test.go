@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"fmt"
 	"testing"
@@ -61,7 +62,12 @@ func TestSaveUser(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to open mock DB: %v", err)
 			}
-			defer mockDB.Close()
+			defer func(mockDB *sql.DB) {
+				err = mockDB.Close()
+				if err != nil {
+					return
+				}
+			}(mockDB)
 
 			userRepo := &PostgresUserRepository{connPool: mockDB}
 			tt.mock(mock)
@@ -72,7 +78,7 @@ func TestSaveUser(t *testing.T) {
 			}
 
 			// Ensure that all expected queries were executed
-			if err := mock.ExpectationsWereMet(); err != nil {
+			if err = mock.ExpectationsWereMet(); err != nil {
 				t.Errorf("there were unfulfilled expectations: %s", err)
 			}
 		})
@@ -147,7 +153,12 @@ func TestGetUser(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to open mock DB: %v", err)
 			}
-			defer mockDB.Close()
+			defer func(mockDB *sql.DB) {
+				err = mockDB.Close()
+				if err != nil {
+					return
+				}
+			}(mockDB)
 
 			userRepo := &PostgresUserRepository{connPool: mockDB}
 			tt.mock(mock)
@@ -160,7 +171,7 @@ func TestGetUser(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 
 			// Ensure that all expected queries were executed
-			if err := mock.ExpectationsWereMet(); err != nil {
+			if err = mock.ExpectationsWereMet(); err != nil {
 				t.Errorf("there were unfulfilled expectations: %s", err)
 			}
 		})
@@ -212,7 +223,12 @@ func TestGetUserByUId(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to open mock DB: %v", err)
 			}
-			defer mockDB.Close()
+			defer func(mockDB *sql.DB) {
+				err = mockDB.Close()
+				if err != nil {
+					return
+				}
+			}(mockDB)
 
 			userRepo := &PostgresUserRepository{connPool: mockDB}
 			tt.mock(mock)
@@ -282,7 +298,12 @@ func TestSearchSimilar(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to open mock DB: %v", err)
 			}
-			defer mockDB.Close()
+			defer func(mockDB *sql.DB) {
+				err = mockDB.Close()
+				if err != nil {
+					return
+				}
+			}(mockDB)
 
 			userRepo := &PostgresUserRepository{connPool: mockDB}
 			tt.mock(mock)
@@ -295,7 +316,7 @@ func TestSearchSimilar(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 
 			// Ensure that all expected queries were executed
-			if err := mock.ExpectationsWereMet(); err != nil {
+			if err = mock.ExpectationsWereMet(); err != nil {
 				t.Errorf("there were unfulfilled expectations: %s", err)
 			}
 		})

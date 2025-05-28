@@ -105,7 +105,10 @@ func NewPostgresProfileRepository(db *sql.DB) *PostgresProfileRepository {
 
 // Close закрывает пул соединений
 func (p *PostgresProfileRepository) Close() {
-	p.connPool.Close()
+	err := p.connPool.Close()
+	if err != nil {
+		return
+	}
 }
 
 // SaveProfile сохраняет профиль пользователя в базе данных.
@@ -134,7 +137,7 @@ func (p *PostgresProfileRepository) GetProfile(ctx context.Context, userId uuid.
 
 	if schoolId.Valid {
 		profile.SchoolEducation = &pgmodels.SchoolEducation{}
-		err := p.connPool.QueryRowContext(ctx, GetSchoolQuery, schoolId).Scan(&profile.SchoolEducation.City, &profile.SchoolEducation.School)
+		err = p.connPool.QueryRowContext(ctx, GetSchoolQuery, schoolId).Scan(&profile.SchoolEducation.City, &profile.SchoolEducation.School)
 		if err != nil {
 			return models.Profile{}, fmt.Errorf("unable to get school: %w", err)
 		}
@@ -155,7 +158,7 @@ func (p *PostgresProfileRepository) GetProfile(ctx context.Context, userId uuid.
 
 	if contactInfoId.Valid {
 		profile.ContactInfo = &pgmodels.ContactInfoPostgres{}
-		err := p.connPool.QueryRowContext(ctx, GetContactInfoQuery, contactInfoId).Scan(&profile.ContactInfo.City, &profile.ContactInfo.Email,
+		err = p.connPool.QueryRowContext(ctx, GetContactInfoQuery, contactInfoId).Scan(&profile.ContactInfo.City, &profile.ContactInfo.Email,
 			&profile.ContactInfo.Phone)
 		if err != nil {
 			return models.Profile{}, fmt.Errorf("unable to get contact info: %w", err)
@@ -174,9 +177,15 @@ func (p *PostgresProfileRepository) UpdateProfileTextInfo(ctx context.Context, n
 	}
 	defer func() {
 		if err != nil {
-			tx.Rollback()
+			err = tx.Rollback()
+			if err != nil {
+				return
+			}
 		} else {
-			tx.Commit()
+			err = tx.Commit()
+			if err != nil {
+				return
+			}
 		}
 	}()
 
@@ -287,7 +296,12 @@ func (p *PostgresProfileRepository) GetPublicUsersInfo(ctx context.Context, user
 	} else if err != nil {
 		return nil, fmt.Errorf("unable to get public user info: %w", err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err = rows.Close()
+		if err != nil {
+			return
+		}
+	}(rows)
 
 	var publicInfos []models.PublicUserInfo
 	for rows.Next() {

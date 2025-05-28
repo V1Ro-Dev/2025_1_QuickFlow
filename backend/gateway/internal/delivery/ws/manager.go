@@ -51,9 +51,7 @@ func (wm *WSConnectionManager) AddConnection(userId uuid.UUID, conn *websocket.C
 // RemoveAndCloseConnection removes a user connection from the manager and closes it
 func (wm *WSConnectionManager) RemoveAndCloseConnection(userId uuid.UUID) {
 	wm.mu.Lock()
-	if _, exists := wm.Connections[userId]; exists {
-		delete(wm.Connections, userId)
-	}
+	delete(wm.Connections, userId)
 	wm.mu.Unlock()
 }
 
@@ -316,5 +314,4 @@ func (wm *PingHandlerWS) Handle(ctx context.Context, conn *websocket.Conn) {
 			}
 		}
 	}()
-	return
 }

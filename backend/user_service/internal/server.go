@@ -33,7 +33,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
-	defer listener.Close()
+	defer func(listener net.Listener) {
+		err = listener.Close()
+		if err != nil {
+			log.Fatalf("failed to close listener: %v", err)
+		}
+	}(listener)
 
 	grpcConn, err := grpc.NewClient(
 		getEnv.GetServiceAddr(addr.DefaultFileServiceAddrEnv, addr.DefaultFileServicePort),
@@ -45,7 +50,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to connect to file service: %v", err)
 	}
-	defer grpcConn.Close()
+	defer func(grpcConn *grpc.ClientConn) {
+		err = grpcConn.Close()
+		if err != nil {
+			log.Fatalf("failed to close grpc connection: %v", err)
+		}
+	}(grpcConn)
 
 	db, err := sql.Open("pgx", postgresConfig.NewPostgresConfig().GetURL())
 	if err != nil {
@@ -64,7 +74,7 @@ func main() {
 	go func() {
 		http.Handle("/metrics", promhttp.Handler())
 		metricsPort := addr.DefaultUserServicePort + 1000
-		logger.Info(context.Background(), fmt.Sprintf("Metrics server is running on :%d/metrics", metricsPort))
+		logger.Info(context.Background(), "Metrics server is running on :%d/metrics", metricsPort)
 		if err = http.ListenAndServe(fmt.Sprintf(":%d", metricsPort), nil); err != nil {
 			log.Fatalf("failed to start metrics HTTP server: %v", err)
 		}

@@ -28,7 +28,13 @@ import (
 	getEnv "quickflow/utils/get-env"
 )
 
-func getFileService() (*file_service.FileClient, error) {
+func Run(cfg *config.Config) error {
+	if cfg == nil {
+		return fmt.Errorf("config is nil")
+	}
+
+	metrics := metrics.NewMetrics("QuickFlow")
+
 	grpcConnFileService, err := grpc.NewClient(
 		getEnv.GetServiceAddr(addr.DefaultFileServiceAddrEnv, addr.DefaultFileServicePort),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -36,18 +42,8 @@ func getFileService() (*file_service.FileClient, error) {
 		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(addr.MaxMessageSize)),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to file service: %w", err)
+		return fmt.Errorf("failed to connect to file service: %w", err)
 	}
-
-	return file_service.NewFileClient(grpcConnFileService), nil
-}
-
-func Run(cfg *config.Config) error {
-	if cfg == nil {
-		return fmt.Errorf("config is nil")
-	}
-
-	metrics := metrics.NewMetrics("QuickFlow")
 
 	grpcConnPostService, err := grpc.NewClient(
 		getEnv.GetServiceAddr(addr.DefaultPostServiceAddrEnv, addr.DefaultPostServicePort),
@@ -75,6 +71,9 @@ func Run(cfg *config.Config) error {
 		grpc.WithUnaryInterceptor(interceptors.RequestIDClientInterceptor()),
 		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(addr.MaxMessageSize)),
 	)
+	if err != nil {
+		return fmt.Errorf("failed to connect to Messenger service: %w", err)
+	}
 
 	grpcConnFeedbackService, err := grpc.NewClient(
 		getEnv.GetServiceAddr(addr.DefaultFeedbackServiceAddrEnv, addr.DefaultFeedbackServicePort),
@@ -82,21 +81,30 @@ func Run(cfg *config.Config) error {
 		grpc.WithUnaryInterceptor(interceptors.RequestIDClientInterceptor()),
 		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(addr.MaxMessageSize)),
 	)
+	if err != nil {
+		return fmt.Errorf("failed to connect to Feedback service: %w", err)
+	}
 
 	grpcConnFriendsService, err := grpc.NewClient(
 		getEnv.GetServiceAddr(addr.DefaultFriendsServiceAddrEnv, addr.DefaultFriendsServicePort),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(addr.MaxMessageSize)),
 	)
+	if err != nil {
+		return fmt.Errorf("failed to connect to Friends service: %w", err)
+	}
 
 	grcpConnCommunityService, err := grpc.NewClient(
 		getEnv.GetServiceAddr(addr.DefaultCommunityServiceAddrEnv, addr.DefaultCommunityServicePort),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(addr.MaxMessageSize)),
 	)
+	if err != nil {
+		return fmt.Errorf("failed to connect to Community service: %w", err)
+	}
 
 	// services
-	fileService, err := getFileService()
+	fileService := file_service.NewFileClient(grpcConnFileService)
 	UserService := userService.NewUserClient(grpcConnUserService)
 	profileService := userService.NewProfileClient(grpcConnUserService)
 	PostService := postService.NewPostServiceClient(grpcConnPostService)

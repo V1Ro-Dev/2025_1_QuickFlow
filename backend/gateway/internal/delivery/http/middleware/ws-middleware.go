@@ -26,7 +26,7 @@ func WebSocketMiddleware(connManager http2.IWebSocketConnectionManager, handler 
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			logger.Info(context.Background(), "[MIDDLEWARE] WebSocket request received on: %s", r.URL.Path)
 
-			user, ok := r.Context().Value("user").(models.User)
+			user, ok := r.Context().Value(logger.Username).(models.User)
 			if !ok {
 				logger.Error(r.Context(), "Failed to get user from context while upgrading to WebSocket")
 				httpUtils.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -44,8 +44,7 @@ func WebSocketMiddleware(connManager http2.IWebSocketConnectionManager, handler 
 			logger.Info(context.Background(), "[MIDDLEWARE] WebSocket connection established")
 
 			// Устанавливаем WebSocket соединение и пользователя в контекст запроса
-			ctx := context.WithValue(r.Context(), "wsConn", conn)
-			ctx = context.WithValue(ctx, "user", user)
+			ctx := context.WithValue(r.Context(), logger.Username, user)
 			r = r.WithContext(ctx)
 
 			connManager.AddConnection(user.Id, conn)

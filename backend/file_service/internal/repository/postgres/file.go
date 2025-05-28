@@ -27,7 +27,10 @@ func NewPostgresFileRepository(db *sql.DB) *PostgresFileRepository {
 // Close закрывает пул соединений
 func (p *PostgresFileRepository) Close() {
 	if p.connPool != nil {
-		p.connPool.Close()
+		err := p.connPool.Close()
+		if err != nil {
+			return
+		}
 	}
 }
 
@@ -47,13 +50,18 @@ func (p *PostgresFileRepository) AddFilesRecords(ctx context.Context, files []*m
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func(tx *sql.Tx) {
+		err = tx.Rollback()
+		if err != nil {
+			return
+		}
+	}(tx)
 
 	for _, file := range files {
 		if file == nil {
 			return errors.New("file cannot be nil")
 		}
-		_, err := tx.ExecContext(ctx, addFileQuery, file.URL, file.Name)
+		_, err = tx.ExecContext(ctx, addFileQuery, file.URL, file.Name)
 		if err != nil {
 			return err
 		}

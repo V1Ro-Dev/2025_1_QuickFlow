@@ -53,7 +53,10 @@ func NewPostgresStickerRepository(db *sql.DB) *StickerRepository {
 
 // Close закрывает пул соединений
 func (s *StickerRepository) Close() {
-	s.ConnPool.Close()
+	err := s.ConnPool.Close()
+	if err != nil {
+		return
+	}
 }
 
 func (s *StickerRepository) AddStickerPack(ctx context.Context, stickerPack models.StickerPack) error {
@@ -93,7 +96,12 @@ func (s *StickerRepository) GetStickerPack(ctx context.Context, packId uuid.UUID
 	if err != nil {
 		return models.StickerPack{}, fmt.Errorf("could not get stickers: %v", err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err = rows.Close()
+		if err != nil {
+			return
+		}
+	}(rows)
 
 	var stickers []postgres_models.PostgresFile
 	for rows.Next() {
@@ -118,7 +126,12 @@ func (s *StickerRepository) GetStickerPacks(ctx context.Context, _ uuid.UUID, co
 	} else if err != nil {
 		return nil, fmt.Errorf("could not get sticker packs: %v", err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err = rows.Close()
+		if err != nil {
+			return
+		}
+	}(rows)
 
 	for rows.Next() {
 		var stickerPack postgres_models.StickerPackPostgres
@@ -142,7 +155,10 @@ func (s *StickerRepository) GetStickerPacks(ctx context.Context, _ uuid.UUID, co
 			stickers = append(stickers, sticker)
 		}
 		stickerPack.Stickers = stickers
-		stickerRows.Close()
+		err = stickerRows.Close()
+		if err != nil {
+			return nil, err
+		}
 
 		stickerPacks = append(stickerPacks, stickerPack.ToStickerPack())
 	}
@@ -194,7 +210,12 @@ func (s *StickerRepository) GetStickerPackByName(ctx context.Context, name strin
 	if err != nil {
 		return models.StickerPack{}, fmt.Errorf("could not get stickers: %v", err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err = rows.Close()
+		if err != nil {
+			return
+		}
+	}(rows)
 
 	var stickers []postgres_models.PostgresFile
 	for rows.Next() {

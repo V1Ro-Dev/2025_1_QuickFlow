@@ -181,7 +181,7 @@ func (s *FileServiceServer) UploadManyFiles(stream pb.FileService_UploadManyFile
     }
 }
 
-// finalizeUploadedFile processes the file after it is received
+// finalizeUploadedFile обрабатывает файл после его получения
 func (s *FileServiceServer) finalizeUploadedFile(
     ctx context.Context,
     info *pb.File,
@@ -212,11 +212,11 @@ func (s *FileServiceServer) finalizeUploadedFile(
     }
 
     return fileURL, nil
+
 }
 
 func (s *FileServiceServer) DeleteFile(ctx context.Context, req *pb.DeleteFileRequest) (*pb.DeleteFileResponse, error) {
     logger.Info(ctx, "Received DeleteFile request")
-
     if len(req.FileUrl) == 0 {
         return nil, status.Error(codes.InvalidArgument, "file url is required")
     }
@@ -226,6 +226,7 @@ func (s *FileServiceServer) DeleteFile(ctx context.Context, req *pb.DeleteFileRe
         logger.Error(ctx, "Failed to delete file: %v", err)
         return &pb.DeleteFileResponse{Success: false}, err
     }
+
 
     logger.Info(ctx, "Successfully deleted file")
     return &pb.DeleteFileResponse{Success: true}, nil

@@ -65,16 +65,16 @@ func (p *ProfileHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 	// user whose profile is requested
 	ctx := r.Context()
 	userRequested := mux.Vars(r)["username"]
-	logger.Info(ctx, "Request profile of %s", userRequested)
+	logger.Info(ctx, fmt.Sprintf("Request profile of %s", userRequested))
 
 	profileInfo, err := p.profileUC.GetProfileByUsername(ctx, userRequested)
 	if err != nil {
 		err := errors2.FromGRPCError(err)
-		logger.Error(ctx, "Unexpected error: %s", err.Error())
+		logger.Error(ctx, fmt.Sprintf("Unexpected error: %s", err.Error()))
 		http2.WriteJSONError(w, err)
 		return
 	}
-	logger.Info(ctx, "Profile of %s was successfully fetched", userRequested)
+	logger.Info(ctx, fmt.Sprintf("Profile of %s was successfully fetched", userRequested))
 
 	_, isOnline := p.connService.IsConnected(profileInfo.UserId)
 
@@ -84,7 +84,7 @@ func (p *ProfileHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 		// parse session
 		sessionUuid, err := uuid.Parse(session.Value)
 		if err != nil {
-			logger.Error(ctx, "Failed to parse session: %s", err.Error())
+			logger.Error(ctx, fmt.Sprintf("Failed to parse session: %s", err.Error()))
 			http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Failed to parse session", http.StatusBadRequest))
 			return
 		}
@@ -93,14 +93,14 @@ func (p *ProfileHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 		user, err := p.authUseCase.LookupUserSession(r.Context(), models.Session{SessionId: sessionUuid})
 		if err != nil {
 			err := errors2.FromGRPCError(err)
-			logger.Error(ctx, "Failed to lookup user by session: %s", err.Error())
+			logger.Error(ctx, fmt.Sprintf("Failed to lookup user by session: %s", err.Error()))
 			http2.WriteJSONError(w, err)
 			return
 		}
 
 		rel, err := p.friendsUseCase.GetUserRelation(ctx, user.Id, profileInfo.UserId)
 		if err != nil {
-			logger.Error(ctx, "Failed to get user relation: %s", err.Error())
+			logger.Error(ctx, fmt.Sprintf("Failed to get user relation: %s", err.Error()))
 			http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user relation", http.StatusInternalServerError))
 			return
 		}
@@ -110,7 +110,7 @@ func (p *ProfileHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 		chat, err := p.chatUseCase.GetPrivateChat(ctx, user.Id, profileInfo.UserId)
 		appErr := errors2.FromGRPCError(err)
 		if err != nil && appErr.HTTPStatus != http.StatusNotFound {
-			logger.Error(ctx, "Failed to get chat id: %s", appErr.Error())
+			logger.Error(ctx, fmt.Sprintf("Failed to get chat id: %s", appErr.Error()))
 			http2.WriteJSONError(w, appErr)
 			return
 		} else {
@@ -124,7 +124,7 @@ func (p *ProfileHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	if _, err := easyjson.MarshalToWriter(out, w); err != nil {
-		logger.Error(ctx, "Failed to encode profile: %s", err.Error())
+		logger.Error(ctx, fmt.Sprintf("Failed to encode profile: %s", err.Error()))
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode profile", http.StatusInternalServerError))
 		return
 	}
@@ -148,41 +148,42 @@ func (p *ProfileHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 // @Router /api/profile [post]
 func (p *ProfileHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	user, ok := ctx.Value("user").(models.User)
+	user, ok := ctx.Value(logger.Username).(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while updating profile")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
 		return
 	}
-	logger.Info(ctx, "User %s requested to update profile", user.Username)
+	logger.Info(ctx, fmt.Sprintf("User %s requested to update profile", user.Username))
 
 	var profileForm forms.ProfileForm
 	err := r.ParseMultipartForm(15 << 20) // 10 MB
 	if err != nil {
-		logger.Error(ctx, "Failed to parse form: %s", err.Error())
+		logger.Error(ctx, fmt.Sprintf("Failed to parse form: %s", err.Error()))
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, fmt.Sprintf("Failed to parse form: %v", err), http.StatusBadRequest))
 		return
 	}
+
 	logger.Info(ctx, "Loading pictures")
 	// retrieving files if passed
 	profileForm.Avatar, err = http2.GetFile(r, "avatar")
 	if err != nil {
-		logger.Error(ctx, "Failed to get avatar: %s", err.Error())
+		logger.Error(ctx, fmt.Sprintf("Failed to get avatar: %s", err.Error()))
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, fmt.Sprintf("Failed to get avatar: %v", err), http.StatusBadRequest))
 		return
 	}
 	if profileForm.Avatar != nil {
-		logger.Info(ctx, "Loaded avatar: %v size: %v", profileForm.Avatar.Name, profileForm.Avatar.Size)
+		logger.Info(ctx, fmt.Sprintf("Loaded avatar: %v size: %v", profileForm.Avatar.Name, profileForm.Avatar.Size))
 	}
 
 	profileForm.Background, err = http2.GetFile(r, "cover")
 	if err != nil {
-		logger.Error(ctx, "Failed to get cover: %s", err.Error())
+		logger.Error(ctx, fmt.Sprintf("Failed to get cover: %s", err.Error()))
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, fmt.Sprintf("Failed to get cover: %v", err), http.StatusBadRequest))
 		return
 	}
 	if profileForm.Background != nil {
-		logger.Info(ctx, "Loaded cover: %v size: %v", profileForm.Background.Name, profileForm.Background.Size)
+		logger.Info(ctx, fmt.Sprintf("Loaded cover: %v size: %v", profileForm.Background.Name, profileForm.Background.Size))
 	}
 
 	var recievedValidInfo = profileForm.Avatar != nil || profileForm.Background != nil
@@ -233,44 +234,45 @@ func (p *ProfileHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	// converting form to model
 	profile, err := profileForm.FormToModel()
 	if err != nil {
-		logger.Error(ctx, "Failed to convert form to model: %s", err.Error())
+		logger.Error(ctx, fmt.Sprintf("Failed to convert form to model: %s", err.Error()))
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, fmt.Sprintf("Failed to parse form: %+v", err), http.StatusBadRequest))
 		return
 	}
 
-	logger.Info(ctx, "Recieved profile update: %v", profile)
+	logger.Info(ctx, fmt.Sprintf("Recieved profile update: %v", profile))
+
 	profile.UserId = user.Id
 	_, err = p.profileUC.UpdateProfile(ctx, profile)
 	if err != nil {
 		err := errors2.FromGRPCError(err)
-		logger.Error(ctx, "Failed to update profile: %s", err.Error())
+		logger.Error(ctx, fmt.Sprintf("Failed to update profile: %s", err.Error()))
 		http2.WriteJSONError(w, err)
 		return
 	}
 
-	logger.Info(ctx, "Profile of %s was successfully updated", user.Username)
+	logger.Info(ctx, fmt.Sprintf("Profile of %s was successfully updated", user.Username))
 }
 
 func (p *ProfileHandler) GetMyProfile(w http.ResponseWriter, r *http.Request) {
 	// user whose profile is requested
 	ctx := r.Context()
-	user, ok := ctx.Value("user").(models.User)
+	user, ok := ctx.Value(logger.Username).(models.User)
 	if !ok {
 		logger.Error(ctx, "User not found in context")
 		http.NotFound(w, r)
 		return
 	}
-	logger.Info(ctx, "Request profile of himself %s", user.Username)
-	logger.Info(ctx, "User: %v", user)
+	logger.Info(ctx, fmt.Sprintf("Request profile of himself %s", user.Username))
+	logger.Info(ctx, fmt.Sprintf("User: %v", user))
 
 	profileInfo, err := p.profileUC.GetProfileByUsername(ctx, user.Username)
 	if err != nil {
 		err := errors2.FromGRPCError(err)
-		logger.Error(ctx, "Unexpected error: %s", err.Error())
+		logger.Error(ctx, fmt.Sprintf("Unexpected error: %s", err.Error()))
 		http2.WriteJSONError(w, err)
 		return
 	}
-	logger.Info(ctx, "Profile of %s was successfully fetched", user.Username)
+	logger.Info(ctx, fmt.Sprintf("Profile of %s was successfully fetched", user.Username))
 
 	_, isOnline := p.connService.IsConnected(profileInfo.UserId)
 
@@ -280,23 +282,23 @@ func (p *ProfileHandler) GetMyProfile(w http.ResponseWriter, r *http.Request) {
 		// parse session
 		sessionUuid, err := uuid.Parse(session.Value)
 		if err != nil {
-			logger.Error(ctx, "Failed to parse session: %s", err.Error())
+			logger.Error(ctx, fmt.Sprintf("Failed to parse session: %s", err.Error()))
 			http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Failed to parse session", http.StatusBadRequest))
 			return
 		}
 
 		// lookup user by session
-		user, err := p.authUseCase.LookupUserSession(r.Context(), models.Session{SessionId: sessionUuid})
+		user, err = p.authUseCase.LookupUserSession(r.Context(), models.Session{SessionId: sessionUuid})
 		if err != nil {
 			err := errors2.FromGRPCError(err)
-			logger.Error(ctx, "Failed to lookup user by session: %s", err.Error())
+			logger.Error(ctx, fmt.Sprintf("Failed to lookup user by session: %s", err.Error()))
 			http2.WriteJSONError(w, err)
 			return
 		}
 
 		rel, err := p.friendsUseCase.GetUserRelation(ctx, user.Id, profileInfo.UserId)
 		if err != nil {
-			logger.Error(ctx, "Failed to get user relation: %s", err.Error())
+			logger.Error(ctx, fmt.Sprintf("Failed to get user relation: %s", err.Error()))
 			http2.WriteJSONError(w, err)
 			return
 		}
@@ -306,7 +308,7 @@ func (p *ProfileHandler) GetMyProfile(w http.ResponseWriter, r *http.Request) {
 		chat, err := p.chatUseCase.GetPrivateChat(ctx, user.Id, profileInfo.UserId)
 		appErr := errors2.FromGRPCError(err)
 		if err != nil && appErr.HTTPStatus != http.StatusNotFound {
-			logger.Error(ctx, "Failed to get chat id: %s", appErr.Error())
+			logger.Error(ctx, fmt.Sprintf("Failed to get chat id: %s", appErr.Error()))
 			http2.WriteJSONError(w, appErr)
 			return
 		} else {
@@ -320,7 +322,7 @@ func (p *ProfileHandler) GetMyProfile(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	if _, err := easyjson.MarshalToWriter(out, w); err != nil {
-		logger.Error(ctx, "Failed to encode profile: %s", err.Error())
+		logger.Error(ctx, fmt.Sprintf("Failed to encode profile: %s", err.Error()))
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode profile", http.StatusInternalServerError))
 		return
 	}

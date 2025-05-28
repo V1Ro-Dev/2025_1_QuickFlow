@@ -112,7 +112,12 @@ func (c *PostgresCommentRepository) GetCommentFiles(ctx context.Context, comment
 		logger.Error(ctx, "Unable to get comment files %v from database: %s", commentId, err.Error())
 		return nil, fmt.Errorf("unable to get comment files from database: %w", err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err = rows.Close()
+		if err != nil {
+			return
+		}
+	}(rows)
 
 	var result []string
 	for rows.Next() {
@@ -150,7 +155,12 @@ func (c *PostgresCommentRepository) GetCommentsForPost(ctx context.Context, post
 		logger.Error(ctx, "Unable to get comments from database for post %v, numComments %v, timestamp %v: %s", postId, numComments, timestamp, err.Error())
 		return nil, fmt.Errorf("unable to get comments from database: %w", err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err = rows.Close()
+		if err != nil {
+			return
+		}
+	}(rows)
 
 	var result []models.Comment
 	for rows.Next() {
@@ -186,7 +196,10 @@ func (c *PostgresCommentRepository) GetCommentsForPost(ctx context.Context, post
 
 			commentPostgres.Files = append(commentPostgres.Files, &postgres_models.PostgresFile{URL: pic, DisplayType: displayType, Name: filename})
 		}
-		files.Close()
+		err = files.Close()
+		if err != nil {
+			return nil, err
+		}
 
 		result = append(result, commentPostgres.ToComment())
 	}
@@ -221,7 +234,10 @@ func (c *PostgresCommentRepository) GetComment(ctx context.Context, commentId uu
 
 		commentPostgres.Files = append(commentPostgres.Files, &postgres_models.PostgresFile{URL: pic, DisplayType: displayType, Name: filename})
 	}
-	files.Close()
+	err = files.Close()
+	if err != nil {
+		return models.Comment{}, err
+	}
 
 	isLiked, err := c.CheckIfCommentLiked(ctx, commentPostgres.Id.Bytes, commentPostgres.UserId.Bytes)
 	if err != nil {
