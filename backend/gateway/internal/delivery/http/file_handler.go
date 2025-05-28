@@ -54,7 +54,7 @@ func (p *FileHandler) AddFiles(w http.ResponseWriter, r *http.Request) {
 
 	// SendMessage video files
 	media, err := http2.GetFiles(r, "media")
-	if errors.Is(err, http2.TooManyFilesErr) {
+	if errors.Is(err, http2.ErrTooManyFilesErr) {
 		logger.Error(ctx, fmt.Sprintf("Too many media files requested: %s", err.Error()))
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Too many media files requested", http.StatusBadRequest))
 		return
@@ -67,7 +67,7 @@ func (p *FileHandler) AddFiles(w http.ResponseWriter, r *http.Request) {
 
 	// SendMessage audio files
 	audios, err := http2.GetFiles(r, "audio")
-	if errors.Is(err, http2.TooManyFilesErr) {
+	if errors.Is(err, http2.ErrTooManyFilesErr) {
 		logger.Error(ctx, fmt.Sprintf("Too many audio files requested: %s", err.Error()))
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Too many audio files requested", http.StatusBadRequest))
 		return
@@ -79,7 +79,7 @@ func (p *FileHandler) AddFiles(w http.ResponseWriter, r *http.Request) {
 	}
 
 	stickers, err := http2.GetFiles(r, "stickers")
-	if errors.Is(err, http2.TooManyFilesErr) {
+	if errors.Is(err, http2.ErrTooManyFilesErr) {
 		logger.Error(ctx, fmt.Sprintf("Too many sticker files requested: %s", err.Error()))
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Too many sticker files requested", http.StatusBadRequest))
 		return
@@ -91,7 +91,7 @@ func (p *FileHandler) AddFiles(w http.ResponseWriter, r *http.Request) {
 
 	// SendMessage other files
 	otherFiles, err := http2.GetFiles(r, "files")
-	if errors.Is(err, http2.TooManyFilesErr) {
+	if errors.Is(err, http2.ErrTooManyFilesErr) {
 		logger.Error(ctx, fmt.Sprintf("Too many files requested: %s", err.Error()))
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Too many files requested", http.StatusBadRequest))
 		return
