@@ -1,45 +1,42 @@
-GO_FILES=$(shell go list ./... | grep -v 'mocks')
+# Устанавливаем переменные для путей
+GO_FILES=$(shell go list ./... | grep -v 'mocks' | grep -v 'proto')
+EASYJSON_FILES=$(shell find gateway/internal/delivery/http/forms -name '*_easyjson.go')
 MOCKGEN=go run github.com/golang/mock/mockgen
-DELIEVERY_PATH=internal/delivery
+DELIVERY_PATH=internal/delivery
 USECASE_PATH=internal/usecase
 REPOSITORY_PATH=internal/repository
+MODEL_PATH=gateway/internal/delivery/http/forms
+EASYJSON=go run github.com/mailru/easyjson/easyjson
+
+coverage.out.clean: coverage.out
+	 cat coverage.out | grep -v '_easyjson.go:' > coverage.filtered.out
 
 
+# Генерация отчета покрытия тестами
 coverage.out:
 	go test $(GO_FILES) -coverprofile=coverage.out
+#-coverpkg=$(shell echo $(GO_FILES) | sed 's/\([^ ]*\)/\1,.../g') --exclude=$(EASYJSON_FILES)
 
+# Выводить отчет по покрытию
 .PHONY: summarize-coverage
-summarize-coverage: coverage.out
-	go tool cover -func=coverage.out
+summarize-coverage: coverage.out.clean
+	go tool cover -func=coverage.filtered.out
 
+
+# Генерация моков
 .PHONY: mockgen
 mockgen:
-	${MOCKGEN} -source=$(DELIEVERY_PATH)/http/auth-handler.go -destination=$(DELIEVERY_PATH)/http/mocks/auth-mock.go -package=mocks
-	${MOCKGEN} -source=$(DELIEVERY_PATH)/http/feed-handler.go -destination=$(DELIEVERY_PATH)/http/mocks/feed-mock.go -package=mocks
-	${MOCKGEN} -source=$(DELIEVERY_PATH)/http/feed-handler.go -destination=$(DELIEVERY_PATH)/http/mocks/feed-mock.go -package=mocks
-	${MOCKGEN} -source=$(DELIEVERY_PATH)/http/chat-handler.go -destination=$(DELIEVERY_PATH)/http/mocks/chat-mock.go -package=mocks
-	${MOCKGEN} -source=$(DELIEVERY_PATH)/http/friends-handler.go -destination=$(DELIEVERY_PATH)/http/mocks/friends-mock.go -package=mocks
-	${MOCKGEN} -source=$(DELIEVERY_PATH)/http/message-handler.go -destination=$(DELIEVERY_PATH)/http/mocks/message-mock.go -package=mocks
-	${MOCKGEN} -source=$(DELIEVERY_PATH)/http/message-handlerWS.go -destination=$(DELIEVERY_PATH)/http/mocks/messageWS-mock.go -package=mocks
-	${MOCKGEN} -source=$(DELIEVERY_PATH)/http/profile-handler.go -destination=$(DELIEVERY_PATH)/http/mocks/profile-mock.go -package=mocks
-	${MOCKGEN} -source=$(DELIEVERY_PATH)/http/search-handler.go -destination=$(DELIEVERY_PATH)/http/mocks/search-mock.go -package=mocks
-	${MOCKGEN} -source=$(DELIEVERY_PATH)/ws/manager.go -destination=$(DELIEVERY_PATH)/ws/mocks/manager-mock.go -package=mocks
+	sh ./generate_mocks.sh
 
-	${MOCKGEN} -source=$(USECASE_PATH)/auth-usecase.go -destination=$(USECASE_PATH)/mocks/auth-mock.go -package=mocks
-	${MOCKGEN} -source=$(USECASE_PATH)/post-usecase.go -destination=$(USECASE_PATH)/mocks/post-mock.go -package=mocks
-	${MOCKGEN} -source=$(USECASE_PATH)/chat-usecase.go -destination=$(USECASE_PATH)/mocks/chat-mock.go -package=mocks
-	${MOCKGEN} -source=$(USECASE_PATH)/friends-usecase.go -destination=$(USECASE_PATH)/mocks/friends-mock.go -package=mocks
-	${MOCKGEN} -source=$(USECASE_PATH)/message-usecase.go -destination=$(USECASE_PATH)/mocks/message-mock.go -package=mocks
-	${MOCKGEN} -source=$(USECASE_PATH)/profile-usecase.go -destination=$(USECASE_PATH)/mocks/profile-mock.go -package=mocks
-	${MOCKGEN} -source=$(USECASE_PATH)/search-usecase.go -destination=$(USECASE_PATH)/mocks/search-mock.go -package=mocks
+# Очистка сгенерированных easyjson файлов
+clean-easyjson:
+	rm -f $(MODEL_PATH)/*_easyjson.go
 
-	${MOCKGEN} -source=$(REPOSITORY_PATH)/postgres/user.go -destination=$(REPOSITORY_PATH)/postgres/mocks/user-mock.go -package=mocks
-	${MOCKGEN} -source=$(REPOSITORY_PATH)/postgres/post.go -destination=$(REPOSITORY_PATH)/postgres/mocks/post-mock.go -package=mocks
-	${MOCKGEN} -source=$(REPOSITORY_PATH)/postgres/friends.go -destination=$(REPOSITORY_PATH)/postgres/mocks/friends-mock.go -package=mocks
-	${MOCKGEN} -source=$(REPOSITORY_PATH)/postgres/message.go -destination=$(REPOSITORY_PATH)/postgres/mocks/message-mock.go -package=mocks
-	${MOCKGEN} -source=$(REPOSITORY_PATH)/postgres/profile.go -destination=$(REPOSITORY_PATH)/postgres/mocks/profile-mock.go -package=mocks
+# Генерация файлов easyjson
+.PHONY: easyjson
+easyjson: clean-easyjson
+	$(EASYJSON) $(shell find $(MODEL_PATH) -name "*.go" ! -name "*_test.go")
 
-
-
+# Генерация документации с помощью swag
 gendock:
 	swag init --parseDependency --parseInternal --parseDepth=2 --output ../docs/docs.go --dir .
