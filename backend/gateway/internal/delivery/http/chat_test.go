@@ -12,6 +12,7 @@ import (
 
 	"quickflow/gateway/internal/delivery/http/mocks"
 	"quickflow/shared/models"
+	"sha"
 )
 
 func TestGetUserChats(t *testing.T) {
