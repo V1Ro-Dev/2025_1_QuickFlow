@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -127,7 +128,10 @@ func NewSqlCommunityRepository(connPool *sql.DB) *SqlCommunityRepository {
 
 // Close закрывает пул соединений
 func (c *SqlCommunityRepository) Close() {
-	c.connPool.Close()
+	err := c.connPool.Close()
+	if err != nil {
+		log.Fatal("Error closing sql community repository")
+	}
 }
 
 func (c *SqlCommunityRepository) CreateCommunity(ctx context.Context, community models.Community) error {
@@ -221,7 +225,12 @@ func (c *SqlCommunityRepository) GetCommunityMembers(ctx context.Context, id uui
 		logger.Error(ctx, "unable to get community members: %v", err)
 		return nil, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err = rows.Close()
+		if err != nil {
+			return
+		}
+	}(rows)
 
 	var members []models.CommunityMember
 	for rows.Next() {
@@ -387,7 +396,12 @@ func (c *SqlCommunityRepository) GetUserCommunities(ctx context.Context, userId 
 		logger.Error(ctx, "unable to get user communities by id: %v", err)
 		return nil, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err = rows.Close()
+		if err != nil {
+			return
+		}
+	}(rows)
 
 	var communities []models.Community
 	for rows.Next() {
@@ -409,7 +423,12 @@ func (c *SqlCommunityRepository) SearchSimilarCommunities(ctx context.Context, n
 		logger.Error(ctx, "unable to search similar communities: %v", err)
 		return nil, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err = rows.Close()
+		if err != nil {
+			return
+		}
+	}(rows)
 
 	var communities []models.Community
 	for rows.Next() {
@@ -479,7 +498,12 @@ func (c *SqlCommunityRepository) GetControlledCommunities(ctx context.Context, u
 		logger.Error(ctx, "unable to get user communities by id: %v", err)
 		return nil, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err = rows.Close()
+		if err != nil {
+			return
+		}
+	}(rows)
 
 	var communities []models.Community
 	for rows.Next() {

@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"testing"
 	"time"
@@ -75,7 +76,12 @@ func TestCreateCommunity(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to open mock DB: %v", err)
 			}
-			defer mockDB.Close()
+			defer func(mockDB *sql.DB) {
+				err = mockDB.Close()
+				if err != nil {
+					return
+				}
+			}(mockDB)
 
 			repo := &SqlCommunityRepository{connPool: mockDB}
 			tt.mock(mock)
@@ -85,7 +91,7 @@ func TestCreateCommunity(t *testing.T) {
 				t.Errorf("CreateCommunity() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if err := mock.ExpectationsWereMet(); err != nil {
+			if err = mock.ExpectationsWereMet(); err != nil {
 				t.Errorf("there were unfulfilled expectations: %s", err)
 			}
 		})
@@ -144,7 +150,12 @@ func TestGetCommunityById(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to open mock DB: %v", err)
 			}
-			defer mockDB.Close()
+			defer func(mockDB *sql.DB) {
+				err = mockDB.Close()
+				if err != nil {
+					return
+				}
+			}(mockDB)
 
 			repo := &SqlCommunityRepository{connPool: mockDB}
 			tt.mock(mock)
@@ -163,7 +174,7 @@ func TestGetCommunityById(t *testing.T) {
 			tt.want.CreatedAt = got.CreatedAt
 			assert.Equal(t, tt.want, got)
 
-			if err := mock.ExpectationsWereMet(); err != nil {
+			if err = mock.ExpectationsWereMet(); err != nil {
 				t.Errorf("there were unfulfilled expectations: %s", err)
 			}
 		})
@@ -219,7 +230,12 @@ func TestUpdateCommunityTextInfo(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to open mock DB: %v", err)
 			}
-			defer mockDB.Close()
+			defer func(mockDB *sql.DB) {
+				err = mockDB.Close()
+				if err != nil {
+					return
+				}
+			}(mockDB)
 
 			repo := &SqlCommunityRepository{connPool: mockDB}
 			tt.mock(mock)
@@ -229,7 +245,7 @@ func TestUpdateCommunityTextInfo(t *testing.T) {
 				t.Errorf("UpdateCommunityTextInfo() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if err := mock.ExpectationsWereMet(); err != nil {
+			if err = mock.ExpectationsWereMet(); err != nil {
 				t.Errorf("there were unfulfilled expectations: %s", err)
 			}
 		})

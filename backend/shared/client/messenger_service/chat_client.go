@@ -2,6 +2,7 @@ package messenger_service
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -31,10 +32,10 @@ func (c *ChatServiceClient) GetUserChats(ctx context.Context, userId uuid.UUID, 
 		UpdatedAt: timestamppb.New(updatedAt),
 	}
 
-	logger.Info(ctx, "Getting user chats for userId: %s", userId.String())
+	logger.Info(ctx, fmt.Sprintf("Getting user chats for userId: %s", userId.String()))
 	resp, err := c.client.GetUserChats(ctx, req)
 	if err != nil {
-		logger.Error(ctx, "Failed to get user chats: %v", err)
+		logger.Error(ctx, fmt.Sprintf("Failed to get user chats: %v", err))
 		return nil, err
 	}
 	return MapProtoToChats(resp.Chats), nil
@@ -50,27 +51,27 @@ func (c *ChatServiceClient) CreateChat(ctx context.Context, userId uuid.UUID, in
 		},
 	}
 
-	logger.Info(ctx, "Creating chat for userId: %s", userId.String())
+	logger.Info(ctx, fmt.Sprintf("Creating chat for userId: %s", userId.String()))
 	resp, err := c.client.CreateChat(ctx, req)
 	if err != nil {
-		logger.Error(ctx, "Failed to create chat: %v", err)
+		logger.Error(ctx, fmt.Sprintf("Failed to create chat: %v", err))
 		return nil, err
 	}
 	return MapProtoToChat(resp.Chat), nil
 }
 
 func (c *ChatServiceClient) GetChatParticipants(ctx context.Context, chatId uuid.UUID) ([]uuid.UUID, error) {
-	logger.Info(ctx, "Getting chat participants for chatId: %s", chatId.String())
+	logger.Info(ctx, fmt.Sprintf("Getting chat participants for chatId: %s", chatId.String()))
 	resp, err := c.client.GetChatParticipants(ctx, &pb.GetChatParticipantsRequest{ChatId: chatId.String()})
 	if err != nil {
-		logger.Error(ctx, "Failed to get chat participants: %v", err)
+		logger.Error(ctx, fmt.Sprintf("Failed to get chat participants: %v", err))
 		return nil, err
 	}
 	ids := make([]uuid.UUID, len(resp.ParticipantIds))
 	for i, s := range resp.ParticipantIds {
 		id, err := uuid.Parse(s)
 		if err != nil {
-			logger.Error(ctx, "Failed to parse participant ID: %v", err)
+			logger.Error(ctx, fmt.Sprintf("Failed to parse participant ID: %v", err))
 			return nil, err
 		}
 		ids[i] = id
@@ -79,36 +80,36 @@ func (c *ChatServiceClient) GetChatParticipants(ctx context.Context, chatId uuid
 }
 
 func (c *ChatServiceClient) GetPrivateChat(ctx context.Context, user1, user2 uuid.UUID) (*models.Chat, error) {
-	logger.Info(ctx, "Getting private chat between %s and %s", user1.String(), user2.String())
+	logger.Info(ctx, fmt.Sprintf("Getting private chat between %s and %s", user1.String(), user2.String()))
 	resp, err := c.client.GetPrivateChat(ctx, &pb.GetPrivateChatRequest{
 		User1Id: user1.String(),
 		User2Id: user2.String(),
 	})
 	if err != nil {
-		logger.Error(ctx, "Failed to get private chat: %v", err)
+		logger.Error(ctx, fmt.Sprintf("Failed to get private chat: %v", err))
 		return nil, err
 	}
 	return MapProtoToChat(resp.Chat), nil
 }
 
 func (c *ChatServiceClient) DeleteChat(ctx context.Context, chatId uuid.UUID) error {
-	logger.Info(ctx, "Deleting chat for userId: %s", chatId.String())
+	logger.Info(ctx, fmt.Sprintf("Deleting chat for userId: %s", chatId.String()))
 	_, err := c.client.DeleteChat(ctx, &pb.DeleteChatRequest{ChatId: chatId.String()})
 	return err
 }
 
 func (c *ChatServiceClient) GetChat(ctx context.Context, chatId uuid.UUID) (*models.Chat, error) {
-	logger.Info(ctx, "Getting chat for chatId: %s", chatId.String())
+	logger.Info(ctx, fmt.Sprintf("Getting chat for chatId: %s", chatId.String()))
 	resp, err := c.client.GetChat(ctx, &pb.GetChatRequest{ChatId: chatId.String()})
 	if err != nil {
-		logger.Error(ctx, "Failed to get chat: %v", err)
+		logger.Error(ctx, fmt.Sprintf("Failed to get chat: %v", err))
 		return nil, err
 	}
 	return MapProtoToChat(resp.Chat), nil
 }
 
 func (c *ChatServiceClient) JoinChat(ctx context.Context, chatId, userId uuid.UUID) error {
-	logger.Info(ctx, "Joining chat for userId: %s", userId.String())
+	logger.Info(ctx, fmt.Sprintf("Joining chat for userId: %s", userId.String()))
 	_, err := c.client.JoinChat(ctx, &pb.JoinChatRequest{
 		ChatId: chatId.String(),
 		UserId: userId.String(),
@@ -117,7 +118,7 @@ func (c *ChatServiceClient) JoinChat(ctx context.Context, chatId, userId uuid.UU
 }
 
 func (c *ChatServiceClient) LeaveChat(ctx context.Context, chatId, userId uuid.UUID) error {
-	logger.Info(ctx, "Leaving chat for userId: %s", userId.String())
+	logger.Info(ctx, fmt.Sprintf("Leaving chat for userId: %s", userId.String()))
 	_, err := c.client.LeaveChat(ctx, &pb.LeaveChatRequest{
 		ChatId: chatId.String(),
 		UserId: userId.String(),
@@ -126,10 +127,10 @@ func (c *ChatServiceClient) LeaveChat(ctx context.Context, chatId, userId uuid.U
 }
 
 func (c *ChatServiceClient) GetNumUnreadChats(ctx context.Context, userId uuid.UUID) (int, error) {
-	logger.Info(ctx, "Getting number of unread chats for userId: %s", userId.String())
+	logger.Info(ctx, fmt.Sprintf("Getting number of unread chats for userId: %s", userId.String()))
 	resp, err := c.client.GetNumUnreadChats(ctx, &pb.GetNumUnreadChatsRequest{UserId: userId.String()})
 	if err != nil {
-		logger.Error(ctx, "Failed to get number of unread chats: %v", err)
+		logger.Error(ctx, fmt.Sprintf("Failed to get number of unread chats: %v", err))
 		return 0, err
 	}
 	return int(resp.NumChats), nil

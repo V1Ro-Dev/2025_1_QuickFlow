@@ -45,7 +45,7 @@ func TestValidateFile(t *testing.T) {
 				Ext:      ".jpg",
 				MimeType: "image/jpeg",
 			},
-			expectedErr: errors.New("file size exceeds the limit"),
+			expectedErr: errors.New("invalid file size"),
 		},
 		{
 			name: "unsupported file type",

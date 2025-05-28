@@ -52,7 +52,7 @@ func (s *StickerHandler) AddStickerPack(w http.ResponseWriter, r *http.Request) 
 	ctx := r.Context()
 	logger.Info(ctx, "Received AddStickerPack request")
 
-	user, ok := ctx.Value("user").(models.User)
+	user, ok := ctx.Value(logger.Username).(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while adding sticker pack")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -201,7 +201,7 @@ func (s *StickerHandler) GetStickerPacks(w http.ResponseWriter, r *http.Request)
 	ctx := r.Context()
 	logger.Info(ctx, "Received GetStickerPacks request")
 
-	user, ok := ctx.Value("user").(models.User)
+	user, ok := ctx.Value(logger.Username).(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while fetching sticker packs")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -274,7 +274,7 @@ func (s *StickerHandler) DeleteStickerPack(w http.ResponseWriter, r *http.Reques
 	}
 
 	// Call DeleteStickerPack from the usecase
-	user, ok := ctx.Value("user").(models.User)
+	user, ok := ctx.Value(logger.Username).(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while deleting sticker pack")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))

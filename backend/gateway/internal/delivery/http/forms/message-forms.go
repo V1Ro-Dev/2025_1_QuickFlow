@@ -77,15 +77,17 @@ func ToMessageOut(message models.Message, info models.PublicUserInfo) MessageOut
 	stickerUrls := make([]FileOut, 0)
 
 	for _, file := range message.Attachments {
-		if file.DisplayType == models.DisplayTypeMedia {
+		switch file.DisplayType {
+		case models.DisplayTypeMedia:
 			mediaURLs = append(mediaURLs, ToFileOut(*file))
-		} else if file.DisplayType == models.DisplayTypeAudio {
+		case models.DisplayTypeAudio:
 			audioURLs = append(audioURLs, ToFileOut(*file))
-		} else if file.DisplayType == models.DisplayTypeSticker {
+		case models.DisplayTypeSticker:
 			stickerUrls = append(stickerUrls, ToFileOut(*file))
-		} else {
+		default:
 			fileURLs = append(fileURLs, ToFileOut(*file))
 		}
+
 	}
 
 	return MessageOut{
