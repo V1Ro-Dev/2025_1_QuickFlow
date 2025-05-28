@@ -417,7 +417,8 @@ func (p *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 		postOut.LastComment = &commentOut
 	}
 
-	if post.CreatorType == models.PostUser {
+	switch post.CreatorType {
+	case models.PostUser:
 		publicAuthorInfo, err := p.profileUseCase.GetPublicUserInfo(ctx, post.CreatorId)
 		if err != nil {
 			logger.Error(ctx, fmt.Sprintf("Failed to get public user info: %s", err.Error()))
@@ -434,7 +435,8 @@ func (p *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 
 		info := forms.PublicUserInfoToOut(publicAuthorInfo, relation)
 		postOut.Creator = &info
-	} else if post.CreatorType == models.PostCommunity {
+
+	case models.PostCommunity:
 		community, err := p.communityService.GetCommunityById(ctx, post.CreatorId)
 		if err != nil {
 			logger.Error(ctx, fmt.Sprintf("Failed to get community: %s", err.Error()))

@@ -105,7 +105,10 @@ func NewPostgresProfileRepository(db *sql.DB) *PostgresProfileRepository {
 
 // Close закрывает пул соединений
 func (p *PostgresProfileRepository) Close() {
-	p.connPool.Close()
+	err := p.connPool.Close()
+	if err != nil {
+		return
+	}
 }
 
 // SaveProfile сохраняет профиль пользователя в базе данных.

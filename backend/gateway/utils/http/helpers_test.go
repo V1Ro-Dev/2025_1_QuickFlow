@@ -12,7 +12,6 @@ import (
 
 	"quickflow/gateway/internal/delivery/http/forms"
 	errors2 "quickflow/gateway/internal/errors"
-	customErr "quickflow/gateway/utils/http"
 	http2 "quickflow/gateway/utils/http"
 )
 
@@ -113,7 +112,7 @@ func TestGetFiles_Table(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := createMultipartRequest(t, tt.field, tt.files)
-			files, err := customErr.GetFiles(req, tt.field)
+			files, err := http2.GetFiles(req, tt.field)
 
 			if tt.expectError {
 				require.Error(t, err)

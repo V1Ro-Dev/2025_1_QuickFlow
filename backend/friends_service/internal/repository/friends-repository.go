@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgconn"
@@ -100,7 +101,10 @@ func NewPostgresFriendsRepository(db *sql.DB) *PostgresFriendsRepository {
 
 // Close закрывает пул соединений
 func (p *PostgresFriendsRepository) Close() {
-	p.connPool.Close()
+	err := p.connPool.Close()
+	if err != nil {
+		log.Fatal("Couldn't close PostgresFriendsRepository")
+	}
 }
 
 // GetFriendsPublicInfo Отдает структуру с информацией по друзьям + количество друзей + ошибку
@@ -303,12 +307,14 @@ func (p *PostgresFriendsRepository) GetUserRelation(ctx context.Context, user1 u
 	logger.Info(ctx, fmt.Sprintf("Relation between sender: %s and receiver: %s already exists", user1, user2))
 
 	if user1.String() > user2.String() {
-		if status == models.RelationFollowedBy {
+		switch status {
+		case models.RelationFollowedBy:
 			status = models.RelationFollowing
-		} else if status == models.RelationFollowing {
+		case models.RelationFollowing:
 			status = models.RelationFollowedBy
 		}
 	}
+
 	return status, nil
 }
 

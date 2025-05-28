@@ -64,7 +64,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to connect to file service: %v", err)
 	}
-	defer grpcConnFileService.Close()
+	defer func(grpcConnFileService *grpc.ClientConn) {
+		err = grpcConnFileService.Close()
+		if err != nil {
+			log.Fatalf("failed to close grpc connection: %v", err)
+		}
+	}(grpcConnFileService)
 
 	db, err := sql.Open("pgx", postgresConfig.NewPostgresConfig().GetURL())
 	if err != nil {

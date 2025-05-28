@@ -83,7 +83,14 @@ func (c *CommentHandler) AddComment(w http.ResponseWriter, r *http.Request) {
 		http2.WriteJSONError(w, errors2.New("BAD_REQUEST", fmt.Sprintf("Unable to read request body: %v", err), http.StatusBadRequest))
 		return
 	}
-	defer r.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err = Body.Close()
+		if err != nil {
+			logger.Error(ctx, fmt.Sprintf("Error closing body: %v", err))
+			http2.WriteJSONError(w, errors2.New("BAD_REQUEST", fmt.Sprintf("Unable to close body: %v", err), http.StatusInternalServerError))
+			return
+		}
+	}(r.Body)
 
 	if err = commentForm.UnmarshalJSON(body); err != nil {
 		logger.Error(ctx, fmt.Sprintf("Failed to parse comment form: %s", err.Error()))

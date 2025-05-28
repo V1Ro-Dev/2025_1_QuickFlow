@@ -108,7 +108,10 @@ func NewPostgresPostRepository(connPool *sql.DB) *PostgresPostRepository {
 
 // Close закрывает пул соединений
 func (p *PostgresPostRepository) Close() {
-	p.connPool.Close()
+	err := p.connPool.Close()
+	if err != nil {
+		return
+	}
 }
 
 // AddPost adds post to the repository.

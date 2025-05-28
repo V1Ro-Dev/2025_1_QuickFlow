@@ -16,7 +16,6 @@ import (
 
 	http2 "quickflow/gateway/internal/delivery/http"
 	"quickflow/gateway/internal/delivery/http/mocks"
-	wsMocks "quickflow/gateway/internal/delivery/http/mocks"
 	"quickflow/shared/models"
 )
 
@@ -25,7 +24,7 @@ func TestFriendsHandler_GetFriends(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockFriendsUseCase := mocks.NewMockFriendsUseCase(ctrl)
-	mockWS := wsMocks.NewMockIWebSocketConnectionManager(ctrl)
+	mockWS := mocks.NewMockIWebSocketConnectionManager(ctrl)
 	handler := http2.NewFriendsHandler(mockFriendsUseCase, mockWS)
 
 	t.Run("OK (Current User)", func(t *testing.T) {
@@ -90,7 +89,7 @@ func TestFriendsHandler_SendFriendRequest(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockFriendsUseCase := mocks.NewMockFriendsUseCase(ctrl)
-	mockWS := wsMocks.NewMockIWebSocketConnectionManager(ctrl)
+	mockWS := mocks.NewMockIWebSocketConnectionManager(ctrl)
 	handler := http2.NewFriendsHandler(mockFriendsUseCase, mockWS)
 
 	userID := uuid.New()
@@ -169,7 +168,7 @@ func TestFriendsHandler_AcceptFriendRequest(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockFriendsUseCase := mocks.NewMockFriendsUseCase(ctrl)
-	mockWS := wsMocks.NewMockIWebSocketConnectionManager(ctrl)
+	mockWS := mocks.NewMockIWebSocketConnectionManager(ctrl)
 	handler := http2.NewFriendsHandler(mockFriendsUseCase, mockWS)
 
 	userID := uuid.New()
@@ -237,7 +236,7 @@ func TestFriendsHandler_DeleteFriend(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockFriendsUseCase := mocks.NewMockFriendsUseCase(ctrl)
-	mockWS := wsMocks.NewMockIWebSocketConnectionManager(ctrl)
+	mockWS := mocks.NewMockIWebSocketConnectionManager(ctrl)
 	handler := http2.NewFriendsHandler(mockFriendsUseCase, mockWS)
 
 	userID := uuid.New()
@@ -305,7 +304,7 @@ func TestFriendsHandler_Unfollow(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockFriendsUseCase := mocks.NewMockFriendsUseCase(ctrl)
-	mockWS := wsMocks.NewMockIWebSocketConnectionManager(ctrl)
+	mockWS := mocks.NewMockIWebSocketConnectionManager(ctrl)
 	handler := http2.NewFriendsHandler(mockFriendsUseCase, mockWS)
 
 	userID := uuid.New()

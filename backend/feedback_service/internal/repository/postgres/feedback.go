@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -65,7 +66,10 @@ func NewFeedbackRepository(db *sql.DB) *FeedbackRepository {
 
 // Close закрывает пул соединений
 func (f *FeedbackRepository) Close() {
-	f.ConnPool.Close()
+	err := f.ConnPool.Close()
+	if err != nil {
+		log.Fatalf("failed to close connection: %v", err)
+	}
 }
 
 func (f *FeedbackRepository) SaveFeedback(ctx context.Context, feedback *models.Feedback) error {
@@ -89,7 +93,12 @@ func (f *FeedbackRepository) GetAllFeedbackType(ctx context.Context, feedbackTyp
 		logger.Error(ctx, fmt.Sprintf("failed to get feedback: %v", err))
 		return nil, fmt.Errorf("get feedback: %w", err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err = rows.Close()
+		if err != nil {
+			return
+		}
+	}(rows)
 	var feedback []models.Feedback
 	for rows.Next() {
 		var r postgres_models.PgFeedback

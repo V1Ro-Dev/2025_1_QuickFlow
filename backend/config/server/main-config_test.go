@@ -1,6 +1,7 @@
 package server_config
 
 import (
+	"log"
 	"os"
 	"testing"
 	"time"
@@ -20,7 +21,12 @@ func TestLoadConfig_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp file: %v", err)
 	}
-	defer os.Remove(file.Name())
+	defer func(name string) {
+		err = os.Remove(name)
+		if err != nil {
+			log.Fatalf("failed to remove temp file: %v", err)
+		}
+	}(file.Name())
 
 	// Сохраняем конфигурацию в файл
 	encoder := toml.NewEncoder(file)

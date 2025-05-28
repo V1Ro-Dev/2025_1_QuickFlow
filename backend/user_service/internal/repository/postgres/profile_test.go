@@ -2,7 +2,9 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
+	"log"
 	"testing"
 	"time"
 
@@ -73,7 +75,12 @@ func TestSaveProfile(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to open mock DB: %v", err)
 			}
-			defer mockDB.Close()
+			defer func(mockDB *sql.DB) {
+				err = mockDB.Close()
+				if err != nil {
+					log.Fatalf("failed to close mock DB: %v", err)
+				}
+			}(mockDB)
 
 			pgRepo := &PostgresProfileRepository{connPool: mockDB}
 			tt.mock(mock)
@@ -154,7 +161,12 @@ func TestGetProfile(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to open mock DB: %v", err)
 			}
-			defer mockDB.Close()
+			defer func(mockDB *sql.DB) {
+				err = mockDB.Close()
+				if err != nil {
+					log.Fatalf("failed to close mock DB: %v", err)
+				}
+			}(mockDB)
 
 			pgRepo := &PostgresProfileRepository{connPool: mockDB}
 			tt.mock(mock)
@@ -234,7 +246,12 @@ func TestUpdateProfileTextInfo(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to open mock DB: %v", err)
 			}
-			defer mockDB.Close()
+			defer func(mockDB *sql.DB) {
+				err = mockDB.Close()
+				if err != nil {
+					log.Fatalf("failed to close mock DB: %v", err)
+				}
+			}(mockDB)
 
 			pgRepo := &PostgresProfileRepository{connPool: mockDB}
 			tt.mock(mock)

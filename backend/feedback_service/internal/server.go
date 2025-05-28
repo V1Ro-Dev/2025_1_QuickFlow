@@ -32,7 +32,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
-	defer listener.Close()
+	defer func(listener net.Listener) {
+		err = listener.Close()
+		if err != nil {
+			log.Fatalf("failed to close listener: %v", err)
+		}
+	}(listener)
 
 	grpcConnUserService, err := grpc.NewClient(
 		getEnv.GetServiceAddr(addr.DefaultFileServiceAddrEnv, addr.DefaultFileServicePort),
@@ -44,7 +49,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to connect to file service: %v", err)
 	}
-	defer grpcConnUserService.Close()
+	defer func(grpcConnUserService *grpc.ClientConn) {
+		err = grpcConnUserService.Close()
+		if err != nil {
+			log.Fatalf("failed to close grpc connection: %v", err)
+		}
+	}(grpcConnUserService)
 
 	db, err := sql.Open("pgx", postgresConfig.NewPostgresConfig().GetURL())
 	if err != nil {

@@ -75,9 +75,10 @@ func (g *GetChatsForm) GetParams(values url.Values) error {
 
 func ToChatOut(chat models.Chat, lastMessageSenderInfo models.PublicUserInfo, privateChatOnlineStatus *PrivateChatInfo) ChatOut {
 	chatType := "unknown"
-	if chat.Type == models.ChatTypePrivate {
+	switch chat.Type {
+	case models.ChatTypePrivate:
 		chatType = "private"
-	} else if chat.Type == models.ChatTypeGroup {
+	case models.ChatTypeGroup:
 		chatType = "group"
 	}
 
@@ -116,11 +117,12 @@ func ToChatsOut(chats []models.Chat, lastMessageSenderInfo map[uuid.UUID]models.
 	var chatsOut []ChatOut
 	var chatType string
 	for _, chat := range chats {
-		if chat.Type == models.ChatTypePrivate {
+		switch chat.Type {
+		case models.ChatTypePrivate:
 			chatType = "private"
-		} else if chat.Type == models.ChatTypeGroup {
+		case models.ChatTypeGroup:
 			chatType = "group"
-		} else {
+		default:
 			chatType = "unknown"
 		}
 

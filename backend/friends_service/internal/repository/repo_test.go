@@ -2,6 +2,8 @@ package postgres_test
 
 import (
 	"context"
+	"database/sql"
+	"log"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -19,7 +21,12 @@ func TestGetFriendsPublicInfo(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not open db mock: %v", err)
 	}
-	defer db.Close()
+	defer func(db *sql.DB) {
+		err = db.Close()
+		if err != nil {
+			log.Fatalf("failed to close db connection: %v", err)
+		}
+	}(db)
 
 	repo := postgres.NewPostgresFriendsRepository(db)
 	userID := "user-123"
@@ -60,7 +67,12 @@ func TestSendFriendRequest(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not open db mock: %v", err)
 	}
-	defer db.Close()
+	defer func(db *sql.DB) {
+		err = db.Close()
+		if err != nil {
+			log.Fatalf("failed to close db connection: %v", err)
+		}
+	}(db)
 
 	repo := postgres.NewPostgresFriendsRepository(db)
 	senderID := "user-123"
@@ -88,7 +100,12 @@ func TestIsExistsFriendRequest(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not open db mock: %v", err)
 	}
-	defer db.Close()
+	defer func(db *sql.DB) {
+		err = db.Close()
+		if err != nil {
+			log.Fatalf("failed to close db connection: %v", err)
+		}
+	}(db)
 
 	repo := postgres.NewPostgresFriendsRepository(db)
 	senderID := "user-123"
@@ -117,7 +134,12 @@ func TestAcceptFriendRequest(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not open db mock: %v", err)
 	}
-	defer db.Close()
+	defer func(db *sql.DB) {
+		err = db.Close()
+		if err != nil {
+			log.Fatalf("failed to close db connection: %v", err)
+		}
+	}(db)
 
 	repo := postgres.NewPostgresFriendsRepository(db)
 	senderID := "user-123"
@@ -145,7 +167,12 @@ func TestUnfollow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not open db mock: %v", err)
 	}
-	defer db.Close()
+	defer func(db *sql.DB) {
+		err = db.Close()
+		if err != nil {
+			log.Fatalf("failed to close db connection: %v", err)
+		}
+	}(db)
 
 	repo := postgres.NewPostgresFriendsRepository(db)
 	userID := "user-123"

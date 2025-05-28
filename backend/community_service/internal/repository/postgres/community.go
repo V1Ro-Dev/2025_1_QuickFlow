@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -127,7 +128,10 @@ func NewSqlCommunityRepository(connPool *sql.DB) *SqlCommunityRepository {
 
 // Close закрывает пул соединений
 func (c *SqlCommunityRepository) Close() {
-	c.connPool.Close()
+	err := c.connPool.Close()
+	if err != nil {
+		log.Fatal("Error closing sql community repository")
+	}
 }
 
 func (c *SqlCommunityRepository) CreateCommunity(ctx context.Context, community models.Community) error {
