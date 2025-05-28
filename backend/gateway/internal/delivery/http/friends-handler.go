@@ -3,7 +3,6 @@ package http
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -82,22 +81,22 @@ func (f *FriendHandler) GetFriends(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !validation.ValidateFriendReqType(reqType) {
-		logger.Error(ctx, fmt.Sprintf("Invalid request type: %s", reqType))
+		logger.Error(ctx, "Invalid request type: %s", reqType)
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Invalid request type", http.StatusBadRequest))
 		return
 	}
 
-	logger.Info(ctx, fmt.Sprintf("User %s requested friends", targetUserID))
+	logger.Info(ctx, "User %s requested friends", targetUserID)
 
 	friendsInfo, friendsCount, err := f.FriendsUseCase.GetFriendsInfo(ctx, targetUserID, limit, offset, reqType)
 	if err != nil {
 		err = errors2.FromGRPCError(err)
-		logger.Error(ctx, fmt.Sprintf("Unable to get list of friends for user %s: %s", user.Username, err.Error()))
+		logger.Error(ctx, "Unable to get list of friends for user %s: %s", user.Username, err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
 
-	logger.Info(ctx, fmt.Sprintf("Successfully got friends info for user %s", user.Username))
+	logger.Info(ctx, "Successfully got friends info for user %s", user.Username)
 
 	var friendsOnline []bool
 	for _, friend := range friendsInfo {
@@ -110,12 +109,12 @@ func (f *FriendHandler) GetFriends(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(friendsInfoOut.ToJson(friendsInfo, friendsOnline, friendsCount))
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to encode friends info to json: %s", err))
+		logger.Error(ctx, "Unable to encode friends info to json: %s", err)
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Unable to encode friends info to json", http.StatusInternalServerError))
 		return
 	}
 
-	logger.Info(ctx, fmt.Sprintf("Successfully processed friends request for user: %s", user.Username))
+	logger.Info(ctx, "Successfully processed friends request for user: %s", user.Username)
 }
 
 // SendFriendRequest отправояет заявку в друзья
@@ -143,21 +142,21 @@ func (f *FriendHandler) SendFriendRequest(w http.ResponseWriter, r *http.Request
 	var req forms.FriendRequest
 	err := easyjson.UnmarshalFromReader(r.Body, &req)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to decode request body: %s", err))
+		logger.Error(ctx, "Unable to decode request body: %s", err)
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Unable to decode request body", http.StatusBadRequest))
 		return
 	}
 
-	logger.Info(ctx, fmt.Sprintf("User %s trying to add friend %s", user.Username, req.ReceiverID))
+	logger.Info(ctx, "User %s trying to add friend %s", user.Username, req.ReceiverID)
 
 	if err = f.FriendsUseCase.SendFriendRequest(ctx, user.Id.String(), req.ReceiverID); err != nil {
 		err := errors2.FromGRPCError(err)
-		logger.Error(ctx, fmt.Sprintf("Unable to send friend request: %s", err))
+		logger.Error(ctx, "Unable to send friend request: %s", err)
 		http2.WriteJSONError(w, err)
 		return
 	}
 
-	logger.Info(ctx, fmt.Sprintf("Successfully processed friend request to user %s", req.ReceiverID))
+	logger.Info(ctx, "Successfully processed friend request to user %s", req.ReceiverID)
 }
 
 func (f *FriendHandler) AcceptFriendRequest(w http.ResponseWriter, r *http.Request) {
@@ -175,21 +174,21 @@ func (f *FriendHandler) AcceptFriendRequest(w http.ResponseWriter, r *http.Reque
 	var req forms.FriendRequest
 	err := easyjson.UnmarshalFromReader(r.Body, &req)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to decode request body: %s", err))
+		logger.Error(ctx, "Unable to decode request body: %s", err)
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Unable to decode request body", http.StatusBadRequest))
 		return
 	}
 
-	logger.Info(ctx, fmt.Sprintf("User %s trying to accept friend %s", user.Username, req.ReceiverID))
+	logger.Info(ctx, "User %s trying to accept friend %s", user.Username, req.ReceiverID)
 
 	if err = f.FriendsUseCase.AcceptFriendRequest(ctx, user.Id.String(), req.ReceiverID); err != nil {
 		err := errors2.FromGRPCError(err)
-		logger.Error(ctx, fmt.Sprintf("Unable to accept friend request: %s", err))
+		logger.Error(ctx, "Unable to accept friend request: %s", err)
 		http2.WriteJSONError(w, err)
 		return
 	}
 
-	logger.Info(ctx, fmt.Sprintf("Successfully accepted friend request from user %s", req.ReceiverID))
+	logger.Info(ctx, "Successfully accepted friend request from user %s", req.ReceiverID)
 }
 
 func (f *FriendHandler) DeleteFriend(w http.ResponseWriter, r *http.Request) {
@@ -207,21 +206,21 @@ func (f *FriendHandler) DeleteFriend(w http.ResponseWriter, r *http.Request) {
 	var req forms.FriendRequestDel
 	err := easyjson.UnmarshalFromReader(r.Body, &req)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to decode request body: %s", err))
+		logger.Error(ctx, "Unable to decode request body: %s", err)
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Unable to decode request body", http.StatusBadRequest))
 		return
 	}
 
-	logger.Info(ctx, fmt.Sprintf("User %s trying to delete friend %s", user.Username, req.FriendID))
+	logger.Info(ctx, "User %s trying to delete friend %s", user.Username, req.FriendID)
 
 	if err = f.FriendsUseCase.DeleteFriend(ctx, user.Id.String(), req.FriendID); err != nil {
 		err := errors2.FromGRPCError(err)
-		logger.Error(ctx, fmt.Sprintf("Unable to delete friend: %s", err))
+		logger.Error(ctx, "Unable to delete friend: %s", err)
 		http2.WriteJSONError(w, err)
 		return
 	}
 
-	logger.Info(ctx, fmt.Sprintf("Successfully deleted friend from user %s", req.FriendID))
+	logger.Info(ctx, "Successfully deleted friend from user %s", req.FriendID)
 }
 
 func (f *FriendHandler) Unfollow(w http.ResponseWriter, r *http.Request) {
@@ -239,21 +238,21 @@ func (f *FriendHandler) Unfollow(w http.ResponseWriter, r *http.Request) {
 	var req forms.FriendRequestDel
 	err := easyjson.UnmarshalFromReader(r.Body, &req)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to decode request body: %s", err))
+		logger.Error(ctx, "Unable to decode request body: %s", err)
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Unable to decode request body", http.StatusBadRequest))
 		return
 	}
 
-	logger.Info(ctx, fmt.Sprintf("User %s trying to unfollow user %s", user.Username, req.FriendID))
+	logger.Info(ctx, "User %s trying to unfollow user %s", user.Username, req.FriendID)
 
 	if err = f.FriendsUseCase.Unfollow(ctx, user.Id.String(), req.FriendID); err != nil {
 		err := errors2.FromGRPCError(err)
-		logger.Error(ctx, fmt.Sprintf("Unable to unfollow user: %s", err))
+		logger.Error(ctx, "Unable to unfollow user: %s", err)
 		http2.WriteJSONError(w, err)
 		return
 	}
 
-	logger.Info(ctx, fmt.Sprintf("Successfully unfollowed user %s", req.FriendID))
+	logger.Info(ctx, "Successfully unfollowed user %s", req.FriendID)
 }
 
 func (f *FriendHandler) MarkRead(w http.ResponseWriter, r *http.Request) {
@@ -271,19 +270,19 @@ func (f *FriendHandler) MarkRead(w http.ResponseWriter, r *http.Request) {
 	var req forms.FriendRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to decode request body: %s", err))
+		logger.Error(ctx, "Unable to decode request body: %s", err)
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Unable to decode request body", http.StatusBadRequest))
 		return
 	}
 
-	logger.Info(ctx, fmt.Sprintf("User %s trying to mark read friend request from user %s", user.Username, req.ReceiverID))
+	logger.Info(ctx, "User %s trying to mark read friend request from user %s", user.Username, req.ReceiverID)
 
 	if err = f.FriendsUseCase.MarkRead(ctx, user.Id.String(), req.ReceiverID); err != nil {
 		err = errors2.FromGRPCError(err)
-		logger.Error(ctx, fmt.Sprintf("Unable to mark read friend request: %s", err))
+		logger.Error(ctx, "Unable to mark read friend request: %s", err)
 		http2.WriteJSONError(w, err)
 		return
 	}
 
-	logger.Info(ctx, fmt.Sprintf("Successfully marked read friend request from user %s", req.ReceiverID))
+	logger.Info(ctx, "Successfully marked read friend request from user %s", req.ReceiverID)
 }

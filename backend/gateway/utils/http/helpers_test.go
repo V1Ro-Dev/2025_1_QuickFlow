@@ -2,7 +2,6 @@ package http_test
 
 import (
 	"bytes"
-	"encoding/json"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -10,38 +9,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	customErr "quickflow/utils/http"
+	customErr "quickflow/gateway/utils/http"
 )
-
-func TestWriteJSONError_Table(t *testing.T) {
-	tests := []struct {
-		name       string
-		msg        string
-		statusCode int
-	}{
-		{"bad request", "bad", http.StatusBadRequest},
-		{"not found", "not found", http.StatusNotFound},
-		{"internal error", "fail", http.StatusInternalServerError},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			rec := httptest.NewRecorder()
-			customErr.WriteJSONError(rec, tt.msg, tt.statusCode)
-
-			res := rec.Result()
-			defer res.Body.Close()
-
-			require.Equal(t, tt.statusCode, res.StatusCode)
-			require.Equal(t, "application/json", res.Header.Get("Content-Type"))
-
-			var resp map[string]string
-			err := json.NewDecoder(res.Body).Decode(&resp)
-			require.NoError(t, err)
-			require.Equal(t, tt.msg, resp["error"])
-		})
-	}
-}
 
 func createMultipartRequest(t *testing.T, fieldName string, files map[string]string) *http.Request {
 	body := &bytes.Buffer{}

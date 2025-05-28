@@ -2,7 +2,6 @@ package http
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"quickflow/gateway/internal/delivery/http/forms"
@@ -36,14 +35,14 @@ func (s *SearchHandler) SearchSimilarUsers(w http.ResponseWriter, r *http.Reques
 	var searchForm forms.SearchForm
 	err := searchForm.Unpack(r.URL.Query())
 	if err != nil {
-		logger.Error(ctx, "Failed to decode request body for user search: "+err.Error())
+		logger.Error(ctx, "Failed to decode request body for user search: %v", err)
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Failed to decode request body", http.StatusBadRequest))
 		return
 	}
 
 	users, err := s.searchUseCase.SearchSimilarUser(ctx, searchForm.ToSearch, searchForm.Count)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to search similar users: %s", err.Error()))
+		logger.Error(ctx, "Failed to search similar users: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -58,12 +57,12 @@ func (s *SearchHandler) SearchSimilarUsers(w http.ResponseWriter, r *http.Reques
 	w.Header().Set("Content-Type", "application/json")
 	js, err := out.MarshalJSON()
 	if err != nil {
-		logger.Error(ctx, "Failed to marshal json payload", err)
+		logger.Error(ctx, "Failed to marshal json payload %v", err)
 		http2.WriteJSONError(w, err)
 		return
 	}
 	if _, err = w.Write(js); err != nil {
-		logger.Error(ctx, "Failed to encode feedback output", err)
+		logger.Error(ctx, "Failed to encode feedback output %v", err)
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode feedback output", http.StatusInternalServerError))
 	}
 }
@@ -74,14 +73,14 @@ func (s *SearchHandler) SearchSimilarCommunities(w http.ResponseWriter, r *http.
 	var searchForm forms.SearchForm
 	err := searchForm.Unpack(r.URL.Query())
 	if err != nil {
-		logger.Error(ctx, "Failed to decode request body for user search: "+err.Error())
+		logger.Error(ctx, "Failed to decode request body for user search: %v", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Failed to decode request body", http.StatusBadRequest))
 		return
 	}
 
 	communities, err := s.communityService.SearchSimilarCommunities(ctx, searchForm.ToSearch, int(searchForm.Count))
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to search similar communities: %s", err.Error()))
+		logger.Error(ctx, "Failed to search similar communities: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -90,7 +89,7 @@ func (s *SearchHandler) SearchSimilarCommunities(w http.ResponseWriter, r *http.
 	for i, community := range communities {
 		info, err := s.profileService.GetPublicUserInfo(ctx, community.OwnerID)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Failed to get user info: %s", err.Error()))
+			logger.Error(ctx, "Failed to get user info: %s", err.Error())
 			http2.WriteJSONError(w, err)
 		}
 		communitiesOut[i] = forms.ToCommunityForm(*community, info)
@@ -101,12 +100,12 @@ func (s *SearchHandler) SearchSimilarCommunities(w http.ResponseWriter, r *http.
 	w.Header().Set("Content-Type", "application/json")
 	js, err := out.MarshalJSON()
 	if err != nil {
-		logger.Error(ctx, "Failed to marshal json payload", err)
+		logger.Error(ctx, "Failed to marshal json payload %v", err)
 		http2.WriteJSONError(w, err)
 		return
 	}
 	if _, err = w.Write(js); err != nil {
-		logger.Error(ctx, "Failed to encode feedback output", err)
+		logger.Error(ctx, "Failed to encode feedback output %v", err)
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode feedback output", http.StatusInternalServerError))
 	}
 }

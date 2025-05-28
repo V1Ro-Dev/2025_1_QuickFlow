@@ -211,7 +211,7 @@ func (f *FeedHandler) GetRecommendations(w http.ResponseWriter, r *http.Request)
 	var feedForm forms.FeedForm
 	err := feedForm.GetParams(r.URL.Query())
 	if err != nil {
-		logger.Error(ctx, "Failed to parse query params", err)
+		logger.Error(ctx, "Failed to parse query params%v", err)
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Invalid query parameters", http.StatusBadRequest))
 		return
 	}
@@ -224,7 +224,7 @@ func (f *FeedHandler) GetRecommendations(w http.ResponseWriter, r *http.Request)
 	posts, err := f.postService.FetchRecommendations(ctx, feedForm.Posts, ts, user.Id)
 	appErr := errors2.FromGRPCError(err)
 	if appErr != nil && appErr.HTTPStatus != http.StatusNotFound {
-		logger.Error(ctx, "Failed to fetch recommendations", err)
+		logger.Error(ctx, "Failed to fetch recommendations%v", err)
 		http2.WriteJSONError(w, appErr)
 		return
 	}
@@ -268,7 +268,7 @@ func (f *FeedHandler) GetRecommendations(w http.ResponseWriter, r *http.Request)
 	publicAuthorsInfo, err := f.profileUseCase.GetPublicUsersInfo(ctx, authors)
 	if err != nil {
 		err := errors2.FromGRPCError(err)
-		logger.Error(ctx, "Failed to get public author info", err)
+		logger.Error(ctx, "Failed to get public author info%v", err)
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -283,7 +283,7 @@ func (f *FeedHandler) GetRecommendations(w http.ResponseWriter, r *http.Request)
 		infosCommunityMap[communityId], err = f.communityService.GetCommunityById(ctx, communityId)
 		if err != nil {
 			err := errors2.FromGRPCError(err)
-			logger.Error(ctx, "Failed to load community info", err)
+			logger.Error(ctx, "Failed to load community info%v", err)
 			http2.WriteJSONError(w, err)
 			return
 		}
@@ -291,7 +291,7 @@ func (f *FeedHandler) GetRecommendations(w http.ResponseWriter, r *http.Request)
 		infosMap[infosCommunityMap[communityId].OwnerID], err = f.profileUseCase.GetPublicUserInfo(ctx, infosCommunityMap[communityId].OwnerID)
 		if err != nil {
 			err := errors2.FromGRPCError(err)
-			logger.Error(ctx, "Failed to load user info for community owner", err)
+			logger.Error(ctx, "Failed to load user info for community owner%v", err)
 			http2.WriteJSONError(w, err)
 			return
 		}
@@ -303,7 +303,7 @@ func (f *FeedHandler) GetRecommendations(w http.ResponseWriter, r *http.Request)
 			rel, err := f.friendUseCase.GetUserRelation(ctx, user.Id, authors[i-numComm])
 			if err != nil {
 				err := errors2.FromGRPCError(err)
-				logger.Error(ctx, "Failed to get user relation", err)
+				logger.Error(ctx, "Failed to get user relation%v", err)
 				http2.WriteJSONError(w, err)
 				return
 			}
@@ -354,7 +354,7 @@ func (f *FeedHandler) FetchUserPosts(w http.ResponseWriter, r *http.Request) {
 	user, err := f.authUseCase.GetUserByUsername(ctx, username)
 	if err != nil {
 		appErr := errors2.FromGRPCError(err)
-		logger.Error(ctx, "Failed to fetch user by username", err)
+		logger.Error(ctx, "Failed to fetch user by username%v", err)
 		http2.WriteJSONError(w, appErr)
 		return
 	}
@@ -362,7 +362,7 @@ func (f *FeedHandler) FetchUserPosts(w http.ResponseWriter, r *http.Request) {
 	var feedForm forms.FeedForm
 	err = feedForm.GetParams(r.URL.Query())
 	if err != nil {
-		logger.Error(ctx, "Failed to parse query params while fetching user posts", err)
+		logger.Error(ctx, "Failed to parse query params while fetching user posts%v", err)
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Invalid query parameters", http.StatusBadRequest))
 		return
 	}
@@ -375,7 +375,7 @@ func (f *FeedHandler) FetchUserPosts(w http.ResponseWriter, r *http.Request) {
 	posts, err := f.postService.FetchCreatorPosts(ctx, user.Id, requester.Id, feedForm.Posts, ts)
 	appErr := errors2.FromGRPCError(err)
 	if appErr != nil && appErr.HTTPStatus != http.StatusNotFound {
-		logger.Error(ctx, "Failed to fetch user posts", err)
+		logger.Error(ctx, "Failed to fetch user posts%v", err)
 		http2.WriteJSONError(w, appErr)
 		return
 	}
@@ -383,7 +383,7 @@ func (f *FeedHandler) FetchUserPosts(w http.ResponseWriter, r *http.Request) {
 	publicUserInfo, err := f.profileUseCase.GetPublicUserInfo(ctx, user.Id)
 	if err != nil {
 		appErr := errors2.FromGRPCError(err)
-		logger.Error(ctx, "Failed to load public user info", err)
+		logger.Error(ctx, "Failed to load public user info%v", err)
 		http2.WriteJSONError(w, appErr)
 		return
 	}
@@ -446,7 +446,7 @@ func (f *FeedHandler) FetchCommunityPosts(w http.ResponseWriter, r *http.Request
 	community, err := f.communityService.GetCommunityByName(ctx, commName)
 	if err != nil {
 		appErr := errors2.FromGRPCError(err)
-		logger.Error(ctx, "Failed to fetch community by name", err)
+		logger.Error(ctx, "Failed to fetch community by name%v", err)
 		http2.WriteJSONError(w, appErr)
 		return
 	}
@@ -454,7 +454,7 @@ func (f *FeedHandler) FetchCommunityPosts(w http.ResponseWriter, r *http.Request
 	var feedForm forms.FeedForm
 	err = feedForm.GetParams(r.URL.Query())
 	if err != nil {
-		logger.Error(ctx, "Failed to parse query params for community posts", err)
+		logger.Error(ctx, "Failed to parse query params for community posts%v", err)
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Invalid query parameters", http.StatusBadRequest))
 		return
 	}
@@ -467,7 +467,7 @@ func (f *FeedHandler) FetchCommunityPosts(w http.ResponseWriter, r *http.Request
 	posts, err := f.postService.FetchCreatorPosts(ctx, community.ID, requester.Id, feedForm.Posts, ts)
 	appErr := errors2.FromGRPCError(err)
 	if appErr != nil && appErr.HTTPStatus != http.StatusNotFound {
-		logger.Error(ctx, "Failed to fetch community posts", err)
+		logger.Error(ctx, "Failed to fetch community posts%v", err)
 		http2.WriteJSONError(w, appErr)
 		return
 	}
@@ -475,7 +475,7 @@ func (f *FeedHandler) FetchCommunityPosts(w http.ResponseWriter, r *http.Request
 	ownerInfo, err := f.profileUseCase.GetPublicUserInfo(ctx, community.OwnerID)
 	if err != nil {
 		appErr := errors2.FromGRPCError(err)
-		logger.Error(ctx, "Failed to load community owner info", err)
+		logger.Error(ctx, "Failed to load community owner info%v", err)
 		http2.WriteJSONError(w, appErr)
 		return
 	}

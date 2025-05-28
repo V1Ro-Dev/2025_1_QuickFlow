@@ -3,7 +3,6 @@ package http
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -63,11 +62,11 @@ func (c *CommunityHandler) CreateCommunity(w http.ResponseWriter, r *http.Reques
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
 		return
 	}
-	logger.Info(ctx, fmt.Sprintf("User %s requested community creation", user.Username))
+	logger.Info(ctx, "User %s requested community creation", user.Username)
 
 	err := r.ParseMultipartForm(15 << 20)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to parse form: %s", err.Error()))
+		logger.Error(ctx, "Failed to parse form: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Failed to parse form", http.StatusBadRequest))
 		return
 	}
@@ -78,7 +77,7 @@ func (c *CommunityHandler) CreateCommunity(w http.ResponseWriter, r *http.Reques
 	communityForm.Description = r.FormValue("description")
 
 	if utf8.RuneCountInString(communityForm.Description) > 500 {
-		logger.Error(ctx, fmt.Sprintf("Text length validation failed: length=%d", utf8.RuneCountInString(communityForm.Description)))
+		logger.Error(ctx, "Text length validation failed: length=%d", utf8.RuneCountInString(communityForm.Description))
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Text must be between 1 and 4096 characters", http.StatusBadRequest))
 		return
 	}
@@ -87,33 +86,33 @@ func (c *CommunityHandler) CreateCommunity(w http.ResponseWriter, r *http.Reques
 
 	communityForm.Avatar, err = http2.GetFile(r, "avatar")
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to get avatar: %s", err.Error()))
+		logger.Error(ctx, "Failed to get avatar: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Failed to get avatar", http.StatusBadRequest))
 		return
 	}
 
 	communityForm.Cover, err = http2.GetFile(r, "cover")
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to get cover: %s", err.Error()))
+		logger.Error(ctx, "Failed to get cover: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Failed to get cover", http.StatusBadRequest))
 		return
 	}
 
-	logger.Info(ctx, fmt.Sprintf("Recieved community: %+v", communityForm))
+	logger.Info(ctx, "Recieved community: %+v", communityForm)
 
 	community := communityForm.CreateFormToModel()
 	community.OwnerID = user.Id
 
 	newCommunity, err := c.communityService.CreateCommunity(ctx, &community)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to create community: %s", err.Error()))
+		logger.Error(ctx, "Failed to create community: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
 
 	info, err := c.profileService.GetPublicUserInfo(ctx, newCommunity.OwnerID)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to get user info: %s", err.Error()))
+		logger.Error(ctx, "Failed to get user info: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -126,13 +125,13 @@ func (c *CommunityHandler) CreateCommunity(w http.ResponseWriter, r *http.Reques
 	out := forms.PayloadWrapper[forms.CommunityForm]{Payload: communityOut}
 	js, err := out.MarshalJSON()
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to marshal json response: %v", err))
+		logger.Error(ctx, "Failed to marshal json response: %v", err)
 		http2.WriteJSONError(w, err)
 		return
 	}
 
 	if _, err = w.Write(js); err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to encode community: %s", err.Error()))
+		logger.Error(ctx, "Failed to encode community: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode community", http.StatusInternalServerError))
 		return
 	}
@@ -146,7 +145,7 @@ func (c *CommunityHandler) GetCommunityById(w http.ResponseWriter, r *http.Reque
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
 		return
 	}
-	logger.Info(ctx, fmt.Sprintf("User %s requested community info", user.Username))
+	logger.Info(ctx, "User %s requested community info", user.Username)
 
 	communityIdStr := mux.Vars(r)["id"]
 	if len(communityIdStr) == 0 {
@@ -162,21 +161,21 @@ func (c *CommunityHandler) GetCommunityById(w http.ResponseWriter, r *http.Reque
 
 	community, err := c.communityService.GetCommunityById(ctx, communityId)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to get community: %s", err.Error()))
+		logger.Error(ctx, "Failed to get community: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
 
 	isMember, role, err := c.communityService.IsCommunityMember(ctx, user.Id, communityId)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to check community membership: %s", err.Error()))
+		logger.Error(ctx, "Failed to check community membership: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
 
 	info, err := c.profileService.GetPublicUserInfo(ctx, community.OwnerID)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to get user info: %s", err.Error()))
+		logger.Error(ctx, "Failed to get user info: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -190,13 +189,13 @@ func (c *CommunityHandler) GetCommunityById(w http.ResponseWriter, r *http.Reque
 	out := forms.PayloadWrapper[forms.CommunityForm]{Payload: communityOut}
 	js, err := out.MarshalJSON()
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to marshal json response: %v", err))
+		logger.Error(ctx, "Failed to marshal json response: %v", err)
 		http2.WriteJSONError(w, err)
 		return
 	}
 
 	if _, err = w.Write(js); err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to encode community: %s", err.Error()))
+		logger.Error(ctx, "Failed to encode community: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode community", http.StatusInternalServerError))
 		return
 	}
@@ -210,7 +209,7 @@ func (c *CommunityHandler) GetCommunityByName(w http.ResponseWriter, r *http.Req
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
 		return
 	}
-	logger.Info(ctx, fmt.Sprintf("User %s requested community info", user.Username))
+	logger.Info(ctx, "User %s requested community info", user.Username)
 
 	communityName := mux.Vars(r)["name"]
 	if len(communityName) == 0 {
@@ -220,21 +219,21 @@ func (c *CommunityHandler) GetCommunityByName(w http.ResponseWriter, r *http.Req
 
 	community, err := c.communityService.GetCommunityByName(ctx, communityName)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to get community: %s", err.Error()))
+		logger.Error(ctx, "Failed to get community: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
 
 	isMember, role, err := c.communityService.IsCommunityMember(ctx, user.Id, community.ID)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to check community membership: %s", err.Error()))
+		logger.Error(ctx, "Failed to check community membership: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
 
 	info, err := c.profileService.GetPublicUserInfo(ctx, community.OwnerID)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to get user info: %s", err.Error()))
+		logger.Error(ctx, "Failed to get user info: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -248,13 +247,13 @@ func (c *CommunityHandler) GetCommunityByName(w http.ResponseWriter, r *http.Req
 	out := forms.PayloadWrapper[forms.CommunityForm]{Payload: communityOut}
 	js, err := out.MarshalJSON()
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to marshal json response: %v", err))
+		logger.Error(ctx, "Failed to marshal json response: %v", err)
 		http2.WriteJSONError(w, err)
 		return
 	}
 
 	if _, err = w.Write(js); err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to encode community: %s", err.Error()))
+		logger.Error(ctx, "Failed to encode community: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode community", http.StatusInternalServerError))
 		return
 	}
@@ -268,7 +267,7 @@ func (c *CommunityHandler) GetCommunityMembers(w http.ResponseWriter, r *http.Re
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
 		return
 	}
-	logger.Info(ctx, fmt.Sprintf("User %s requested community members", user.Username))
+	logger.Info(ctx, "User %s requested community members", user.Username)
 
 	communityIdStr := mux.Vars(r)["id"]
 	if len(communityIdStr) == 0 {
@@ -285,14 +284,14 @@ func (c *CommunityHandler) GetCommunityMembers(w http.ResponseWriter, r *http.Re
 	var pagination forms.PaginationForm
 	err = pagination.GetParams(r.URL.Query())
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to parse query params: %v", err))
+		logger.Error(ctx, "Failed to parse query params: %v", err)
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Failed to parse query params", http.StatusBadRequest))
 		return
 	}
 
 	members, err := c.communityService.GetCommunityMembers(ctx, communityId, pagination.Count, pagination.Ts)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to get community members: %s", err.Error()))
+		logger.Error(ctx, "Failed to get community members: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -304,7 +303,7 @@ func (c *CommunityHandler) GetCommunityMembers(w http.ResponseWriter, r *http.Re
 
 	publicInfos, err := c.profileService.GetPublicUsersInfo(ctx, memberIds)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to get public user info: %s", err.Error()))
+		logger.Error(ctx, "Failed to get public user info: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get public user info", http.StatusInternalServerError))
 		return
 	}
@@ -329,13 +328,13 @@ func (c *CommunityHandler) GetCommunityMembers(w http.ResponseWriter, r *http.Re
 	out := forms.PayloadWrapper[[]forms.CommunityMemberOut]{Payload: membersOut}
 	js, err := out.MarshalJSON()
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to marshal json response: %v", err))
+		logger.Error(ctx, "Failed to marshal json response: %v", err)
 		http2.WriteJSONError(w, err)
 		return
 	}
 
 	if _, err = w.Write(js); err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to encode community: %s", err.Error()))
+		logger.Error(ctx, "Failed to encode community: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode community", http.StatusInternalServerError))
 		return
 	}
@@ -349,7 +348,7 @@ func (c *CommunityHandler) DeleteCommunity(w http.ResponseWriter, r *http.Reques
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
 		return
 	}
-	logger.Info(ctx, fmt.Sprintf("User %s requested community deletion", user.Username))
+	logger.Info(ctx, "User %s requested community deletion", user.Username)
 
 	communityIdStr := mux.Vars(r)["id"]
 	if len(communityIdStr) == 0 {
@@ -365,7 +364,7 @@ func (c *CommunityHandler) DeleteCommunity(w http.ResponseWriter, r *http.Reques
 
 	err = c.communityService.DeleteCommunity(ctx, communityId, user.Id)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to delete community: %s", err.Error()))
+		logger.Error(ctx, "Failed to delete community: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -380,11 +379,11 @@ func (c *CommunityHandler) UpdateCommunity(w http.ResponseWriter, r *http.Reques
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
 		return
 	}
-	logger.Info(ctx, fmt.Sprintf("User %s requested community update", user.Username))
+	logger.Info(ctx, "User %s requested community update", user.Username)
 
 	err := r.ParseMultipartForm(15 << 20)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to parse form: %s", err.Error()))
+		logger.Error(ctx, "Failed to parse form: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Failed to parse form", http.StatusBadRequest))
 		return
 	}
@@ -407,7 +406,7 @@ func (c *CommunityHandler) UpdateCommunity(w http.ResponseWriter, r *http.Reques
 	communityForm.Description = r.FormValue("description")
 
 	if utf8.RuneCountInString(communityForm.Description) > 4000 {
-		logger.Error(ctx, fmt.Sprintf("Text length validation failed: length=%d", utf8.RuneCountInString(communityForm.Description)))
+		logger.Error(ctx, "Text length validation failed: length=%d", utf8.RuneCountInString(communityForm.Description))
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Text must be between 1 and 4096 characters", http.StatusBadRequest))
 		return
 	}
@@ -416,14 +415,14 @@ func (c *CommunityHandler) UpdateCommunity(w http.ResponseWriter, r *http.Reques
 
 	communityForm.Avatar, err = http2.GetFile(r, "avatar")
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to get avatar: %s", err.Error()))
+		logger.Error(ctx, "Failed to get avatar: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Failed to get avatar", http.StatusBadRequest))
 		return
 	}
 
 	communityForm.Cover, err = http2.GetFile(r, "cover")
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to get cover: %s", err.Error()))
+		logger.Error(ctx, "Failed to get cover: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Failed to get cover", http.StatusBadRequest))
 		return
 	}
@@ -437,11 +436,11 @@ func (c *CommunityHandler) UpdateCommunity(w http.ResponseWriter, r *http.Reques
 		community.ContactInfo = forms.ContactInfoFormToModel(&contactInfo)
 	}
 
-	logger.Info(ctx, fmt.Sprintf("Recieved community: %+v", communityForm))
+	logger.Info(ctx, "Recieved community: %+v", communityForm)
 
 	newCommunity, err := c.communityService.UpdateCommunity(ctx, &community, user.Id)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to update community: %s", err.Error()))
+		logger.Error(ctx, "Failed to update community: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -449,7 +448,7 @@ func (c *CommunityHandler) UpdateCommunity(w http.ResponseWriter, r *http.Reques
 
 	info, err := c.profileService.GetPublicUserInfo(ctx, newCommunity.OwnerID)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to get user info: %s", err.Error()))
+		logger.Error(ctx, "Failed to get user info: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -459,13 +458,13 @@ func (c *CommunityHandler) UpdateCommunity(w http.ResponseWriter, r *http.Reques
 	out := forms.PayloadWrapper[forms.CommunityForm]{Payload: communityOut}
 	js, err := out.MarshalJSON()
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to marshal json response: %v", err))
+		logger.Error(ctx, "Failed to marshal json response: %v", err)
 		http2.WriteJSONError(w, err)
 		return
 	}
 
 	if _, err = w.Write(js); err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to encode community: %s", err.Error()))
+		logger.Error(ctx, "Failed to encode community: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode community", http.StatusInternalServerError))
 		return
 	}
@@ -479,7 +478,7 @@ func (c *CommunityHandler) JoinCommunity(w http.ResponseWriter, r *http.Request)
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
 		return
 	}
-	logger.Info(ctx, fmt.Sprintf("User %s requested to join community", user.Username))
+	logger.Info(ctx, "User %s requested to join community", user.Username)
 
 	communityIdStr := mux.Vars(r)["id"]
 	if len(communityIdStr) == 0 {
@@ -501,7 +500,7 @@ func (c *CommunityHandler) JoinCommunity(w http.ResponseWriter, r *http.Request)
 
 	err = c.communityService.JoinCommunity(ctx, &member)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to join community: %s", err.Error()))
+		logger.Error(ctx, "Failed to join community: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -516,7 +515,7 @@ func (c *CommunityHandler) LeaveCommunity(w http.ResponseWriter, r *http.Request
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
 		return
 	}
-	logger.Info(ctx, fmt.Sprintf("User %s requested to leave community", user.Username))
+	logger.Info(ctx, "User %s requested to leave community", user.Username)
 
 	communityIdStr := mux.Vars(r)["id"]
 	if len(communityIdStr) == 0 {
@@ -532,7 +531,7 @@ func (c *CommunityHandler) LeaveCommunity(w http.ResponseWriter, r *http.Request
 
 	err = c.communityService.LeaveCommunity(ctx, user.Id, communityId)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to leave community: %s", err.Error()))
+		logger.Error(ctx, "Failed to leave community: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -557,14 +556,14 @@ func (c *CommunityHandler) GetUserCommunities(w http.ResponseWriter, r *http.Req
 	var pagination forms.PaginationForm
 	err = pagination.GetParams(r.URL.Query())
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to parse query params: %v", err))
+		logger.Error(ctx, "Failed to parse query params: %v", err)
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Failed to parse query params", http.StatusBadRequest))
 		return
 	}
 
 	communities, err := c.communityService.GetUserCommunities(ctx, user.Id, pagination.Count, pagination.Ts)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to get user communities: %s", err.Error()))
+		logger.Error(ctx, "Failed to get user communities: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -573,7 +572,7 @@ func (c *CommunityHandler) GetUserCommunities(w http.ResponseWriter, r *http.Req
 	for i, community := range communities {
 		info, err := c.profileService.GetPublicUserInfo(ctx, community.OwnerID)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Failed to get user info: %s", err.Error()))
+			logger.Error(ctx, "Failed to get user info: %s", err.Error())
 			http2.WriteJSONError(w, err)
 			return
 		}
@@ -581,7 +580,7 @@ func (c *CommunityHandler) GetUserCommunities(w http.ResponseWriter, r *http.Req
 		communityOut[i] = forms.ToCommunityForm(*community, info)
 		isMember, role, err := c.communityService.IsCommunityMember(ctx, user.Id, community.ID)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Failed to check community membership: %s", err.Error()))
+			logger.Error(ctx, "Failed to check community membership: %s", err.Error())
 			http2.WriteJSONError(w, err)
 			return
 		}
@@ -594,13 +593,13 @@ func (c *CommunityHandler) GetUserCommunities(w http.ResponseWriter, r *http.Req
 	out := forms.PayloadWrapper[[]forms.CommunityForm]{Payload: communityOut}
 	js, err := out.MarshalJSON()
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to marshal json response: %v", err))
+		logger.Error(ctx, "Failed to marshal json response: %v", err)
 		http2.WriteJSONError(w, err)
 		return
 	}
 
 	if _, err = w.Write(js); err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to encode community: %s", err.Error()))
+		logger.Error(ctx, "Failed to encode community: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode community", http.StatusInternalServerError))
 		return
 	}
@@ -614,7 +613,7 @@ func (c *CommunityHandler) ChangeUserRole(w http.ResponseWriter, r *http.Request
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
 		return
 	}
-	logger.Info(ctx, fmt.Sprintf("User %s requested to change community role", user.Username))
+	logger.Info(ctx, "User %s requested to change community role", user.Username)
 
 	communityIdStr := mux.Vars(r)["id"]
 	if len(communityIdStr) == 0 {
@@ -624,7 +623,7 @@ func (c *CommunityHandler) ChangeUserRole(w http.ResponseWriter, r *http.Request
 
 	communityId, err := uuid.Parse(communityIdStr)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Invalid community ID: %s", err.Error()))
+		logger.Error(ctx, "Invalid community ID: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Invalid community ID", http.StatusBadRequest))
 		return
 	}
@@ -638,7 +637,7 @@ func (c *CommunityHandler) ChangeUserRole(w http.ResponseWriter, r *http.Request
 
 	userIdParsed, err := uuid.Parse(userId)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Invalid user ID: %s", err.Error()))
+		logger.Error(ctx, "Invalid user ID: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Invalid user ID", http.StatusBadRequest))
 		return
 	}
@@ -667,7 +666,7 @@ func (c *CommunityHandler) ChangeUserRole(w http.ResponseWriter, r *http.Request
 
 	err = c.communityService.ChangeUserRole(ctx, userIdParsed, communityId, roleParsed, user.Id)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to change community role: %s", err.Error()))
+		logger.Error(ctx, "Failed to change community role: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -692,14 +691,14 @@ func (c *CommunityHandler) GetControlledCommunities(w http.ResponseWriter, r *ht
 	var pagination forms.PaginationForm
 	err = pagination.GetParams(r.URL.Query())
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to parse query params: %v", err))
+		logger.Error(ctx, "Failed to parse query params: %v", err)
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Failed to parse query params", http.StatusBadRequest))
 		return
 	}
 
 	communities, err := c.communityService.GetControlledCommunities(ctx, user.Id, pagination.Count, pagination.Ts)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to get user communities: %s", err.Error()))
+		logger.Error(ctx, "Failed to get user communities: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -708,7 +707,7 @@ func (c *CommunityHandler) GetControlledCommunities(w http.ResponseWriter, r *ht
 	for i, community := range communities {
 		info, err := c.profileService.GetPublicUserInfo(ctx, community.OwnerID)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Failed to get user info: %s", err.Error()))
+			logger.Error(ctx, "Failed to get user info: %s", err.Error())
 			http2.WriteJSONError(w, err)
 			return
 		}
@@ -716,7 +715,7 @@ func (c *CommunityHandler) GetControlledCommunities(w http.ResponseWriter, r *ht
 		communitiesOut[i] = forms.ToCommunityForm(*community, info)
 		isMember, role, err := c.communityService.IsCommunityMember(ctx, user.Id, community.ID)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Failed to check community membership: %s", err.Error()))
+			logger.Error(ctx, "Failed to check community membership: %s", err.Error())
 			http2.WriteJSONError(w, err)
 			return
 		}
@@ -729,13 +728,13 @@ func (c *CommunityHandler) GetControlledCommunities(w http.ResponseWriter, r *ht
 	out := forms.PayloadWrapper[[]forms.CommunityForm]{Payload: communitiesOut}
 	js, err := out.MarshalJSON()
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to marshal json response: %v", err))
+		logger.Error(ctx, "Failed to marshal json response: %v", err)
 		http2.WriteJSONError(w, err)
 		return
 	}
 
 	if _, err = w.Write(js); err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to encode community: %s", err.Error()))
+		logger.Error(ctx, "Failed to encode community: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode community", http.StatusInternalServerError))
 		return
 	}

@@ -85,7 +85,7 @@ func (m *MessageListenerWS) HandleMessages(w http.ResponseWriter, r *http.Reques
 
 	conn, found := m.WebSocketManager.IsConnected(user.Id)
 	if !found {
-		logger.Error(ctx, fmt.Sprintf("WebSocket connection not found for user: %s", user.Id))
+		logger.Error(ctx, "WebSocket connection not found for user: %s", user.Id)
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "WebSocket connection not found", http.StatusInternalServerError))
 		return
 	}
@@ -93,7 +93,7 @@ func (m *MessageListenerWS) HandleMessages(w http.ResponseWriter, r *http.Reques
 	defer func() {
 		if err := m.profileUseCase.UpdateLastSeen(ctx, user.Id); err != nil {
 			err = errors2.FromGRPCError(err)
-			logger.Error(ctx, fmt.Sprintf("Failed to update last seen: %s", err))
+			logger.Error(ctx, "Failed to update last seen: %s", err)
 			http2.WriteJSONError(w, err)
 		}
 	}()
@@ -105,21 +105,21 @@ func (m *MessageListenerWS) HandleMessages(w http.ResponseWriter, r *http.Reques
 		if err != nil {
 			var closeErr *websocket.CloseError
 			if errors.As(err, &closeErr) {
-				logger.Info(ctx, fmt.Sprintf("WebSocket closed by user %v: %v", user.Id, closeErr))
+				logger.Info(ctx, "WebSocket closed by user %v: %v", user.Id, err)
 			} else {
-				logger.Error(ctx, fmt.Sprintf("Error reading WS message for user %v: %v", user.Id, err))
+				logger.Error(ctx, "Error reading WS message for user %v: %v", user.Id, err)
 			}
 			return
 		}
 
 		if err := json.Unmarshal(msg, &messageRequest); err != nil {
-			logger.Error(ctx, fmt.Sprintf("Failed to unmarshal WS message: %v", err))
+			logger.Error(ctx, "Failed to unmarshal WS message: %v", err)
 			writeErrorToWS(conn, fmt.Sprintf("Invalid message format: %v", err))
 			continue
 		}
 
 		if err := m.WebSocketRouter.Route(ctx, messageRequest.Type, user, messageRequest.Payload); err != nil {
-			logger.Error(ctx, fmt.Sprintf("Failed to route WS message: %v", err))
+			logger.Error(ctx, "Failed to route WS message: %v", err)
 			writeErrorToWS(conn, fmt.Sprintf("Failed to process message: %v", err))
 			continue
 		}

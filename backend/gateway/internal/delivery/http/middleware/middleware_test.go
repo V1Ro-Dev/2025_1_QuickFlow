@@ -2,18 +2,19 @@ package middleware
 
 import (
 	"errors"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
 	"quickflow/config/cors"
-	"quickflow/internal/delivery/http/mocks"
-	"quickflow/internal/models"
+	"quickflow/gateway/internal/delivery/http/mocks"
+	"quickflow/shared/models"
 )
 
 func TestContentTypeMiddleware(t *testing.T) {
