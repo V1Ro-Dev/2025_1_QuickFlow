@@ -2,6 +2,7 @@ package friends_service
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
