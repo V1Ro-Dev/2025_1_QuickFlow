@@ -2,6 +2,7 @@ package postgres_test
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
@@ -14,7 +15,12 @@ func TestAddFileRecord_Success(t *testing.T) {
 	// Инициализация мока
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer db.Close()
+	defer func(db *sql.DB) {
+		err = db.Close()
+		if err != nil {
+			return
+		}
+	}(db)
 
 	// Создание экземпляра репозитория
 	repo := postgres.NewPostgresFileRepository(db)
@@ -39,7 +45,12 @@ func TestAddFileRecord_SQLQueryError(t *testing.T) {
 	// Инициализация мока
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer db.Close()
+	defer func(db *sql.DB) {
+		err = db.Close()
+		if err != nil {
+			return
+		}
+	}(db)
 
 	// Создание экземпляра репозитория
 	repo := postgres.NewPostgresFileRepository(db)
@@ -65,7 +76,12 @@ func TestAddFilesRecords_Success(t *testing.T) {
 	// Инициализация мока
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer db.Close()
+	defer func(db *sql.DB) {
+		err = db.Close()
+		if err != nil {
+			return
+		}
+	}(db)
 
 	// Создание экземпляра репозитория
 	repo := postgres.NewPostgresFileRepository(db)
@@ -102,7 +118,12 @@ func TestAddFilesRecords_TxError(t *testing.T) {
 	// Инициализация мока
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer db.Close()
+	defer func(db *sql.DB) {
+		err = db.Close()
+		if err != nil {
+			return
+		}
+	}(db)
 
 	// Создание экземпляра репозитория
 	repo := postgres.NewPostgresFileRepository(db)
@@ -142,7 +163,12 @@ func TestAddFilesRecords_FileIsNil(t *testing.T) {
 	// Инициализация мока
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer db.Close()
+	defer func(db *sql.DB) {
+		err = db.Close()
+		if err != nil {
+			return
+		}
+	}(db)
 
 	// Создание экземпляра репозитория
 	repo := postgres.NewPostgresFileRepository(db)

@@ -35,15 +35,30 @@ func TestFileHandler(t *testing.T) {
 
 				// Add test files
 				part, _ := writer.CreateFormFile("media", "test1.jpg")
-				part.Write([]byte("test"))
+				_, err := part.Write([]byte("test"))
+				if err != nil {
+					return nil
+				}
 				part, _ = writer.CreateFormFile("audio", "test2.mp3")
-				part.Write([]byte("test"))
+				_, err = part.Write([]byte("test"))
+				if err != nil {
+					return nil
+				}
 				part, _ = writer.CreateFormFile("stickers", "test3.png")
-				part.Write([]byte("test"))
+				_, err = part.Write([]byte("test"))
+				if err != nil {
+					return nil
+				}
 				part, _ = writer.CreateFormFile("files", "test4.txt")
-				part.Write([]byte("test"))
+				_, err = part.Write([]byte("test"))
+				if err != nil {
+					return nil
+				}
 
-				writer.Close()
+				err = writer.Close()
+				if err != nil {
+					return nil
+				}
 
 				req := httptest.NewRequest(http.MethodPost, "/files", body)
 				req.Header.Set("Content-Type", writer.FormDataContentType())
@@ -76,10 +91,16 @@ func TestFileHandler(t *testing.T) {
 				// Add more than 10 files for one type
 				for i := 0; i < 11; i++ {
 					part, _ := writer.CreateFormFile("media", "test.jpg")
-					part.Write([]byte("test"))
+					_, err := part.Write([]byte("test"))
+					if err != nil {
+						return nil
+					}
 				}
 
-				writer.Close()
+				err := writer.Close()
+				if err != nil {
+					return nil
+				}
 
 				req := httptest.NewRequest(http.MethodPost, "/files", body)
 				req.Header.Set("Content-Type", writer.FormDataContentType())
@@ -98,9 +119,15 @@ func TestFileHandler(t *testing.T) {
 				writer := multipart.NewWriter(body)
 
 				part, _ := writer.CreateFormFile("media", "test.jpg")
-				part.Write([]byte("test"))
+				_, err := part.Write([]byte("test"))
+				if err != nil {
+					return nil
+				}
 
-				writer.Close()
+				err = writer.Close()
+				if err != nil {
+					return nil
+				}
 
 				req := httptest.NewRequest(http.MethodPost, "/files", body)
 				req.Header.Set("Content-Type", writer.FormDataContentType())
