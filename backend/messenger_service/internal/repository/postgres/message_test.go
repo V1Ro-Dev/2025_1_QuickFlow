@@ -14,7 +14,12 @@ import (
 func TestMessageRepository_GetLastChatMessage(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer func(db *sql.DB) {
+		err = db.Close()
+		if err != nil {
+			return
+		}
+	}(db)
 
 	repo := NewPostgresMessageRepository(db)
 

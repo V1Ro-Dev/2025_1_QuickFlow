@@ -137,7 +137,7 @@ func (p *PostgresProfileRepository) GetProfile(ctx context.Context, userId uuid.
 
 	if schoolId.Valid {
 		profile.SchoolEducation = &pgmodels.SchoolEducation{}
-		err := p.connPool.QueryRowContext(ctx, GetSchoolQuery, schoolId).Scan(&profile.SchoolEducation.City, &profile.SchoolEducation.School)
+		err = p.connPool.QueryRowContext(ctx, GetSchoolQuery, schoolId).Scan(&profile.SchoolEducation.City, &profile.SchoolEducation.School)
 		if err != nil {
 			return models.Profile{}, fmt.Errorf("unable to get school: %w", err)
 		}
@@ -158,7 +158,7 @@ func (p *PostgresProfileRepository) GetProfile(ctx context.Context, userId uuid.
 
 	if contactInfoId.Valid {
 		profile.ContactInfo = &pgmodels.ContactInfoPostgres{}
-		err := p.connPool.QueryRowContext(ctx, GetContactInfoQuery, contactInfoId).Scan(&profile.ContactInfo.City, &profile.ContactInfo.Email,
+		err = p.connPool.QueryRowContext(ctx, GetContactInfoQuery, contactInfoId).Scan(&profile.ContactInfo.City, &profile.ContactInfo.Email,
 			&profile.ContactInfo.Phone)
 		if err != nil {
 			return models.Profile{}, fmt.Errorf("unable to get contact info: %w", err)
