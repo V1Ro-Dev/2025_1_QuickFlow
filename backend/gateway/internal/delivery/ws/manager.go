@@ -99,7 +99,7 @@ func (m *InternalWSMessageHandler) SendMessage(ctx context.Context, user models.
 
 	message := messageForm.ToMessageModel()
 	if err := validation.ValidateMessage(message); err != nil {
-		logger.Error(ctx, "Invalid message:", err)
+		logger.Error(ctx, "Invalid message: %v", err)
 		return fmt.Errorf("invalid message: %w", err)
 	}
 
@@ -303,7 +303,7 @@ func NewPingHandlerWS() *PingHandlerWS {
 
 func (wm *PingHandlerWS) Handle(ctx context.Context, conn *websocket.Conn) {
 	conn.SetPongHandler(func(appData string) error {
-		logger.Info(ctx, "Received pong:", appData)
+		logger.Info(ctx, "Received pong: %v", appData)
 		return nil
 	})
 
@@ -311,7 +311,7 @@ func (wm *PingHandlerWS) Handle(ctx context.Context, conn *websocket.Conn) {
 		for {
 			time.Sleep(30 * time.Second) // отправка ping каждые 30 секунд
 			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-				logger.Info(ctx, "Failed to send ping:", err)
+				logger.Info(ctx, "Failed to send ping: %v", err)
 				return
 			}
 		}

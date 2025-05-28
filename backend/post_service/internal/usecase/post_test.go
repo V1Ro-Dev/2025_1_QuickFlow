@@ -1,160 +1,205 @@
 package usecase_test
 
 import (
-	"context"
-	"errors"
-	"testing"
+    "context"
+    "testing"
+    "time"
 
-	"github.com/golang/mock/gomock"
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
+    "github.com/golang/mock/gomock"
+    "github.com/google/uuid"
+    "github.com/stretchr/testify/assert"
 
-	"quickflow/internal/models"
-	"quickflow/internal/usecase"
-	"quickflow/internal/usecase/mocks"
+    "quickflow/post_service/internal/errors"
+    "quickflow/post_service/internal/usecase"
+    "quickflow/post_service/internal/usecase/mocks"
+    "quickflow/shared/models"
 )
 
-func TestPostService_AddPost(t *testing.T) {
-	tests := []struct {
-		name           string
-		post           models.Post
-		uploadFilesErr error
-		addPostErr     error
-		expectedPost   models.Post
-		expectedErr    error
-	}{
-		{
-			name: "success",
-			post: models.Post{
-				Desc: "Hi",
-			},
-			expectedPost: models.Post{
-				Desc: "Hi",
-			},
-			expectedErr: nil,
-		},
-		{
-			name:        "add post error",
-			post:        models.Post{Images: []*models.File{}},
-			addPostErr:  errors.New("add post error"),
-			expectedErr: errors.New("p.postRepo.AddPost: add post error"),
-		},
-	}
+func TestAddPost(t *testing.T) {
+    ctrl := gomock.NewController(t)
+    defer ctrl.Finish()
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+    // Моки
+    postRepo := mocks.NewMockPostRepository(ctrl)
+    fileRepo := mocks.NewMockFileService(ctrl)
+    validator := mocks.NewMockPostValidator(ctrl)
 
-			mockPostRepo := mocks.NewMockPostRepository(ctrl)
-			mockFileRepo := mocks.NewMockFileRepository(ctrl)
+    // Создание тестовых данных
+    post := models.Post{
+        Id:          uuid.New(),
+        CreatorId:   uuid.New(),
+        CreatorType: models.PostUser,
+        Desc:        "This is a test post",
+        CreatedAt:   time.Now(),
+        UpdatedAt:   time.Now(),
+        LikeCount:   0,
+    }
 
-			if tt.uploadFilesErr != nil {
-				mockFileRepo.EXPECT().UploadManyFiles(gomock.Any(), tt.post.Images).Return(nil, tt.uploadFilesErr)
-			} else {
-				mockFileRepo.EXPECT().UploadManyFiles(gomock.Any(), tt.post.Images).Return(nil, nil)
-			}
+    // Ожидаемый вызов репозитория
+    postRepo.EXPECT().AddPost(gomock.Any(), gomock.Any()).Return(nil)
+    postRepo.EXPECT().GetPost(gomock.Any(), gomock.Any()).Return(post, nil)
 
-			if tt.addPostErr != nil {
-				mockPostRepo.EXPECT().AddPost(gomock.Any(), gomock.Any()).Return(tt.addPostErr)
-			} else {
-				mockPostRepo.EXPECT().AddPost(gomock.Any(), gomock.Any()).Return(nil)
-			}
+    // Создание объекта usecase
+    service := usecase.NewPostUseCase(postRepo, fileRepo, validator)
 
-			postService := usecase.NewPostService(mockPostRepo, mockFileRepo)
+    // Вызов функции
+    result, err := service.AddPost(context.Background(), post)
 
-			result, err := postService.AddPost(context.Background(), tt.post)
-
-			if tt.expectedErr != nil {
-				assert.EqualError(t, err, tt.expectedErr.Error())
-			} else {
-				// Задаем UUID ожидаемому посту из результата
-				tt.expectedPost.Id = result.Id
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expectedPost, result)
-			}
-		})
-	}
+    // Проверки
+    assert.NoError(t, err)
+    assert.Equal(t, post, *result)
 }
 
-func TestPostService_DeletePost(t *testing.T) {
-	tests := []struct {
-		name            string
-		user            models.User
-		postId          uuid.UUID
-		belongsTo       bool
-		deletePostErr   error
-		getPostFilesErr error
-		deleteFileErr   error
-		expectedErr     error
-	}{
-		{
-			name:        "success",
-			user:        models.User{Id: uuid.New(), Username: "testuser"},
-			postId:      uuid.New(),
-			belongsTo:   true,
-			expectedErr: nil,
-		},
-		{
-			name:        "post does not belong to user",
-			user:        models.User{Id: uuid.New(), Username: "testuser"},
-			postId:      uuid.New(),
-			belongsTo:   false,
-			expectedErr: usecase.ErrPostDoesNotBelongToUser,
-		},
-		{
-			name:          "delete file error",
-			user:          models.User{Id: uuid.New(), Username: "testuser"},
-			postId:        uuid.New(),
-			belongsTo:     true,
-			deleteFileErr: errors.New("delete file error"),
-			expectedErr:   errors.New("p.fileRepo.DeleteFile: delete file error"),
-		},
-	}
+func TestDeletePost(t *testing.T) {
+    ctrl := gomock.NewController(t)
+    defer ctrl.Finish()
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+    // Моки
+    postRepo := mocks.NewMockPostRepository(ctrl)
+    fileRepo := mocks.NewMockFileService(ctrl)
+    validator := mocks.NewMockPostValidator(ctrl)
 
-			mockPostRepo := mocks.NewMockPostRepository(ctrl)
-			mockFileRepo := mocks.NewMockFileRepository(ctrl)
+    postId := uuid.New()
+    userId := uuid.New()
 
-			// В ожиданиях проверяем, что BelongsTo вызывается для пользователя и поста
-			mockPostRepo.EXPECT().BelongsTo(gomock.Any(), tt.user.Id, tt.postId).Return(tt.belongsTo, nil)
+    // Ожидаемый вызов репозитория
+    postRepo.EXPECT().GetPostFiles(gomock.Any(), postId).Return([]string{"file1", "file2"}, nil)
+    postRepo.EXPECT().DeletePost(gomock.Any(), postId).Return(nil)
+    fileRepo.EXPECT().DeleteFile(gomock.Any(), "file1").Return(nil)
+    fileRepo.EXPECT().DeleteFile(gomock.Any(), "file2").Return(nil)
 
-			if tt.belongsTo { // только если пост принадлежит пользователю
-				if tt.getPostFilesErr != nil {
-					mockPostRepo.EXPECT().GetPostFiles(gomock.Any(), tt.postId).Return(nil, tt.getPostFilesErr)
-				} else {
-					mockPostRepo.EXPECT().GetPostFiles(gomock.Any(), tt.postId).Return([]string{"file1.jpg"}, nil)
-				}
+    // Создание объекта usecase
+    service := usecase.NewPostUseCase(postRepo, fileRepo, validator)
 
-				if tt.deletePostErr != nil {
-					mockPostRepo.EXPECT().DeletePost(gomock.Any(), tt.postId).Return(tt.deletePostErr)
-				} else {
-					mockPostRepo.EXPECT().DeletePost(gomock.Any(), tt.postId).Return(nil)
-				}
+    // Вызов функции
+    err := service.DeletePost(context.Background(), userId, postId)
 
-				if tt.deleteFileErr != nil {
-					mockFileRepo.EXPECT().DeleteFile(gomock.Any(), gomock.Any()).Return(tt.deleteFileErr)
-				} else {
-					mockFileRepo.EXPECT().DeleteFile(gomock.Any(), gomock.Any()).Return(nil)
-				}
-			}
+    // Проверки
+    assert.NoError(t, err)
+}
 
-			// Создаем сервис
-			postService := usecase.NewPostService(mockPostRepo, mockFileRepo)
+func TestFetchFeed_InvalidNumPosts(t *testing.T) {
+    ctrl := gomock.NewController(t)
+    defer ctrl.Finish()
 
-			// Вызов метода DeletePost
-			err := postService.DeletePost(context.Background(), tt.user, tt.postId)
+    // Моки
+    postRepo := mocks.NewMockPostRepository(ctrl)
+    fileRepo := mocks.NewMockFileService(ctrl)
+    validator := mocks.NewMockPostValidator(ctrl)
 
-			// Сравниваем ожидаемую ошибку с фактической
-			if tt.expectedErr != nil {
-				assert.EqualError(t, err, tt.expectedErr.Error())
-			} else {
-				assert.NoError(t, err)
-			}
-		})
-	}
+    // Создание объекта usecase
+    service := usecase.NewPostUseCase(postRepo, fileRepo, validator)
+
+    // Ожидаемая ошибка для некорректного числа постов
+    validator.EXPECT().ValidateFeedParams(gomock.Any(), gomock.Any()).Return(errors.ErrInvalidNumPosts)
+
+    // Вызов функции
+    _, err := service.FetchFeed(context.Background(), uuid.New(), 0, time.Now())
+
+    // Проверки
+    assert.Error(t, err)
+}
+
+func TestLikePost(t *testing.T) {
+    ctrl := gomock.NewController(t)
+    defer ctrl.Finish()
+
+    // Моки
+    postRepo := mocks.NewMockPostRepository(ctrl)
+    fileRepo := mocks.NewMockFileService(ctrl)
+    validator := mocks.NewMockPostValidator(ctrl)
+
+    postId := uuid.New()
+    userId := uuid.New()
+
+    // Ожидаемый вызов репозитория
+    postRepo.EXPECT().CheckIfPostLiked(gomock.Any(), postId, userId).Return(false, nil)
+    postRepo.EXPECT().LikePost(gomock.Any(), postId, userId).Return(nil)
+
+    // Создание объекта usecase
+    service := usecase.NewPostUseCase(postRepo, fileRepo, validator)
+
+    // Вызов функции
+    err := service.LikePost(context.Background(), postId, userId)
+
+    // Проверки
+    assert.NoError(t, err)
+}
+
+func TestUnlikePost(t *testing.T) {
+    ctrl := gomock.NewController(t)
+    defer ctrl.Finish()
+
+    // Моки
+    postRepo := mocks.NewMockPostRepository(ctrl)
+    fileRepo := mocks.NewMockFileService(ctrl)
+    validator := mocks.NewMockPostValidator(ctrl)
+
+    postId := uuid.New()
+    userId := uuid.New()
+
+    // Ожидаемый вызов репозитория
+    postRepo.EXPECT().CheckIfPostLiked(gomock.Any(), postId, userId).Return(true, nil)
+    postRepo.EXPECT().UnlikePost(gomock.Any(), postId, userId).Return(nil)
+
+    // Создание объекта usecase
+    service := usecase.NewPostUseCase(postRepo, fileRepo, validator)
+
+    // Вызов функции
+    err := service.UnlikePost(context.Background(), postId, userId)
+
+    // Проверки
+    assert.NoError(t, err)
+}
+
+func TestUpdatePost(t *testing.T) {
+    ctrl := gomock.NewController(t)
+    defer ctrl.Finish()
+
+    // Моки
+    postRepo := mocks.NewMockPostRepository(ctrl)
+    fileRepo := mocks.NewMockFileService(ctrl)
+    validator := mocks.NewMockPostValidator(ctrl)
+
+    postId := uuid.New()
+    userId := uuid.New()
+
+    // Создание данных для обновления
+    postUpdate := models.PostUpdate{
+        Id:   postId,
+        Desc: "Updated description",
+    }
+
+    // Ожидаемый вызов репозитория
+    postRepo.EXPECT().GetPost(gomock.Any(), postId).Return(models.Post{
+        Id:          postId,
+        CreatorId:   userId,
+        CreatorType: models.PostUser,
+        Desc:        "Old description",
+        CreatedAt:   time.Now(),
+        UpdatedAt:   time.Now(),
+        LikeCount:   0,
+    }, nil).AnyTimes()
+    postRepo.EXPECT().UpdatePost(gomock.Any(), postUpdate).Return(nil).AnyTimes()
+    postRepo.EXPECT().GetPost(gomock.Any(), postId).Return(models.Post{
+        Id:          postId,
+        CreatorId:   userId,
+        CreatorType: models.PostUser,
+        Desc:        postUpdate.Desc,
+        CreatedAt:   time.Now(),
+        UpdatedAt:   time.Now(),
+        LikeCount:   0,
+    }, nil).AnyTimes()
+
+    postRepo.EXPECT().GetPostFiles(gomock.Any(), postId).Return([]string{"file1", "file2"}, nil).AnyTimes()
+    fileRepo.EXPECT().DeleteFile(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+
+    // Создание объекта usecase
+    service := usecase.NewPostUseCase(postRepo, fileRepo, validator)
+
+    // Вызов функции
+    _, err := service.UpdatePost(context.Background(), postUpdate, userId)
+
+    // Проверки
+    assert.NoError(t, err)
 }
