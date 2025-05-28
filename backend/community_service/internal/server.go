@@ -52,7 +52,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
-	defer listener.Close()
+	defer func(listener net.Listener) {
+		err = listener.Close()
+		if err != nil {
+			log.Fatalf("failed to close listener: %v", err)
+		}
+	}(listener)
 
 	grpcConnFileService, err := grpc.NewClient(
 		getEnv.GetServiceAddr(addr.DefaultFileServiceAddrEnv, addr.DefaultFileServicePort),

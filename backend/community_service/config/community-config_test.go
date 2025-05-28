@@ -19,7 +19,12 @@ community_avatar_max_size = "1MB"
 	// Создаем временный файл
 	tempFile, err := os.CreateTemp("", "config_test_*.toml")
 	assert.NoError(t, err)
-	defer os.Remove(tempFile.Name())
+	defer func(name string) {
+		err = os.Remove(name)
+		if err != nil {
+			return
+		}
+	}(tempFile.Name())
 
 	_, err = tempFile.WriteString(configContent)
 	assert.NoError(t, err)

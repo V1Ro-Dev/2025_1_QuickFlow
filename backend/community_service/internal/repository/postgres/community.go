@@ -225,7 +225,12 @@ func (c *SqlCommunityRepository) GetCommunityMembers(ctx context.Context, id uui
 		logger.Error(ctx, fmt.Sprintf("unable to get community members: %v", err))
 		return nil, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err = rows.Close()
+		if err != nil {
+			return
+		}
+	}(rows)
 
 	var members []models.CommunityMember
 	for rows.Next() {
@@ -391,7 +396,12 @@ func (c *SqlCommunityRepository) GetUserCommunities(ctx context.Context, userId 
 		logger.Error(ctx, fmt.Sprintf("unable to get user communities by id: %v", err))
 		return nil, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err = rows.Close()
+		if err != nil {
+			return
+		}
+	}(rows)
 
 	var communities []models.Community
 	for rows.Next() {
@@ -413,7 +423,12 @@ func (c *SqlCommunityRepository) SearchSimilarCommunities(ctx context.Context, n
 		logger.Error(ctx, fmt.Sprintf("unable to search similar communities: %v", err))
 		return nil, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err = rows.Close()
+		if err != nil {
+			return
+		}
+	}(rows)
 
 	var communities []models.Community
 	for rows.Next() {
@@ -483,7 +498,12 @@ func (c *SqlCommunityRepository) GetControlledCommunities(ctx context.Context, u
 		logger.Error(ctx, fmt.Sprintf("unable to get user communities by id: %v", err))
 		return nil, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err = rows.Close()
+		if err != nil {
+			return
+		}
+	}(rows)
 
 	var communities []models.Community
 	for rows.Next() {

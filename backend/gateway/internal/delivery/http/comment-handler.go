@@ -217,7 +217,13 @@ func (c *CommentHandler) UpdateComment(w http.ResponseWriter, r *http.Request) {
 		http2.WriteJSONError(w, errors2.New("BAD_REQUEST", fmt.Sprintf("Unable to read request body: %v", err), http.StatusBadRequest))
 		return
 	}
-	defer r.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err = Body.Close()
+		if err != nil {
+			logger.Error(ctx, fmt.Sprintf("Error closing body: %v", err))
+			http2.WriteJSONError(w, err)
+		}
+	}(r.Body)
 
 	var commentForm forms.CommentUpdateForm
 	if err = commentForm.UnmarshalJSON(body); err != nil {

@@ -3,6 +3,7 @@ package http_test
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -52,7 +53,12 @@ func TestWriteJSONError_Table(t *testing.T) {
 			http2.WriteJSONError(rec, tt.err)
 
 			res := rec.Result()
-			defer res.Body.Close()
+			defer func(Body io.ReadCloser) {
+				err := Body.Close()
+				if err != nil {
+					return
+				}
+			}(res.Body)
 
 			require.Equal(t, tt.wantCode, res.StatusCode)
 			require.Equal(t, "application/json", res.Header.Get("Content-Type"))
