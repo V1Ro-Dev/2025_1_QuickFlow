@@ -1,0 +1,59 @@
+name: Test
+
+on:
+  push:
+    branches: [ "RK4" ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '1.24'
+
+      - name: Prepare dependencies
+        run: go mod tidy
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.1.2
+          working-directory: backend
+
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '1.24'
+
+      - name: Summarize coverage
+        run: make summarize-coverage
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: rebuild docker-compose
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd quickflow_backend/
+            git pull
+            make up
