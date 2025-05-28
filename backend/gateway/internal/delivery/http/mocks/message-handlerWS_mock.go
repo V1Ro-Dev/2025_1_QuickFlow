@@ -7,7 +7,6 @@ package mocks
 import (
 	context "context"
 	json "encoding/json"
-	http "quickflow/gateway/internal/delivery/http"
 	models "quickflow/shared/models"
 	reflect "reflect"
 	time "time"
@@ -229,7 +228,10 @@ func (m *MockIWebSocketRouter) EXPECT() *MockIWebSocketRouterMockRecorder {
 }
 
 // RegisterHandler mocks base method.
-func (m *MockIWebSocketRouter) RegisterHandler(command string, handler http.CommandHandler) {
+
+type CommandHandler func(ctx context.Context, user models.User, payload json.RawMessage) error
+
+func (m *MockIWebSocketRouter) RegisterHandler(command string, handler CommandHandler) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "RegisterHandler", command, handler)
 }

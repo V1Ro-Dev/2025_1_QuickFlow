@@ -38,19 +38,19 @@ func (m *MessageServiceServer) GetMessagesForChat(ctx context.Context, req *pb.G
 	logger.Info(ctx, "GetMessagesForChat request received")
 	chatId, err := uuid.Parse(req.ChatId)
 	if err != nil {
-		logger.Error(ctx, "Invalid chatId: ", err)
+		logger.Error(ctx, "Invalid chatId: %v", err)
 		return nil, err
 	}
 
 	userId, err := uuid.Parse(req.UserAuthId)
 	if err != nil {
-		logger.Error(ctx, "Invalid userAuthId: ", err)
+		logger.Error(ctx, "Invalid userAuthId: %v", err)
 		return nil, status.Error(codes.Unauthenticated, "user not found in context")
 	}
 
 	messages, err := m.MessageUseCase.GetMessagesForChatOlder(ctx, chatId, userId, int(req.MessagesNum), req.UpdatedAt.AsTime())
 	if err != nil {
-		logger.Error(ctx, "Failed to get messages: ", err)
+		logger.Error(ctx, "Failed to get messages: %v", err)
 		return nil, err
 	}
 
@@ -61,13 +61,13 @@ func (m *MessageServiceServer) GetMessageById(ctx context.Context, req *pb.GetMe
 	logger.Info(ctx, "GetMessageById request received")
 	messageId, err := uuid.Parse(req.MessageId)
 	if err != nil {
-		logger.Error(ctx, "Invalid messageId: ", err)
+		logger.Error(ctx, "Invalid messageId: %v", err)
 		return nil, err
 	}
 
 	message, err := m.MessageUseCase.GetMessageById(ctx, messageId)
 	if err != nil {
-		logger.Error(ctx, "Failed to get message by ID: ", err)
+		logger.Error(ctx, "Failed to get message by ID: %v", err)
 		return nil, err
 	}
 
@@ -78,20 +78,20 @@ func (m *MessageServiceServer) SendMessage(ctx context.Context, req *pb.SendMess
 	logger.Info(ctx, "SendMessage request received")
 	userId, err := uuid.Parse(req.UserAuthId)
 	if err != nil {
-		logger.Error(ctx, "Invalid userAuthId: ", err)
+		logger.Error(ctx, "Invalid userAuthId: %v", err)
 		return nil, status.Error(codes.Unauthenticated, "user not found in context")
 	}
 
 	message, err := dto.MapProtoToMessage(req.Message)
 	if err != nil {
-		logger.Error(ctx, "Failed to map proto to message: ", err)
+		logger.Error(ctx, "Failed to map proto to message: %v", err)
 		return nil, err
 	}
 	message.SenderID = userId
 
 	savedMessage, err := m.MessageUseCase.SaveMessage(ctx, *message)
 	if err != nil {
-		logger.Error(ctx, "Failed to save message: ", err)
+		logger.Error(ctx, "Failed to save message: %v", err)
 		return nil, err
 	}
 
@@ -102,13 +102,13 @@ func (m *MessageServiceServer) DeleteMessage(ctx context.Context, req *pb.Delete
 	logger.Info(ctx, "DeleteMessage request received")
 	messageId, err := uuid.Parse(req.MessageId)
 	if err != nil {
-		logger.Error(ctx, "Invalid messageId: ", err)
+		logger.Error(ctx, "Invalid messageId: %v", err)
 		return nil, err
 	}
 
 	err = m.MessageUseCase.DeleteMessage(ctx, messageId)
 	if err != nil {
-		logger.Error(ctx, "Failed to delete message: ", err)
+		logger.Error(ctx, "Failed to delete message: %v", err)
 		return nil, err
 	}
 
@@ -119,19 +119,19 @@ func (m *MessageServiceServer) UpdateLastReadTs(ctx context.Context, req *pb.Upd
 	logger.Info(ctx, "UpdateLastReadTs request received")
 	chatId, err := uuid.Parse(req.ChatId)
 	if err != nil {
-		logger.Error(ctx, "Invalid chatId: ", err)
+		logger.Error(ctx, "Invalid chatId: %v", err)
 		return nil, err
 	}
 
 	userId, err := uuid.Parse(req.UserAuthId)
 	if err != nil {
-		logger.Error(ctx, "Invalid userAuthId: ", err)
+		logger.Error(ctx, "Invalid userAuthId: %v", err)
 		return nil, status.Error(codes.Unauthenticated, "user not found in context")
 	}
 
 	err = m.MessageUseCase.UpdateLastReadTs(ctx, req.LastReadTimestamp.AsTime(), chatId, userId)
 	if err != nil {
-		logger.Error(ctx, "Failed to update last read timestamp: ", err)
+		logger.Error(ctx, "Failed to update last read timestamp: %v", err)
 		return nil, err
 	}
 
@@ -142,20 +142,25 @@ func (m *MessageServiceServer) GetLastReadTs(ctx context.Context, req *pb.GetLas
 	logger.Info(ctx, "GetLastReadTs request received")
 	chatId, err := uuid.Parse(req.ChatId)
 	if err != nil {
-		logger.Error(ctx, "Invalid chatId: ", err)
+		logger.Error(ctx, "Invalid chatId: %v", err)
 		return nil, err
 	}
 
 	userId, err := uuid.Parse(req.UserId)
 	if err != nil {
-		logger.Error(ctx, "Invalid userId: ", err)
+		logger.Error(ctx, "Invalid userId: %v", err)
 		return nil, status.Error(codes.Unauthenticated, "user not found in context")
 	}
 
 	lastReadTs, err := m.MessageUseCase.GetLastReadTs(ctx, chatId, userId)
 	if err != nil {
-		logger.Error(ctx, "Failed to get last read timestamp: ", err)
+		logger.Error(ctx, "Failed to get last read timestamp: %v", err)
 		return nil, err
+	}
+
+	if lastReadTs == nil {
+		logger.Error(ctx, "No last read timestamp found")
+		return nil, status.Error(codes.NotFound, "user not found in context")
 	}
 
 	return &pb.GetLastReadTsResponse{
@@ -167,19 +172,19 @@ func (m *MessageServiceServer) GetNumUnreadMessages(ctx context.Context, req *pb
 	logger.Info(ctx, "GetNumUnreadMessages request received")
 	chatId, err := uuid.Parse(req.ChatId)
 	if err != nil {
-		logger.Error(ctx, "Invalid chatId: ", err)
+		logger.Error(ctx, "Invalid chatId: %v", err)
 		return nil, err
 	}
 
 	userId, err := uuid.Parse(req.UserId)
 	if err != nil {
-		logger.Error(ctx, "Invalid userId: ", err)
+		logger.Error(ctx, "Invalid userId: %v", err)
 		return nil, status.Error(codes.Unauthenticated, "user not found in context")
 	}
 
 	numUnreadMessages, err := m.MessageUseCase.GetNumUnreadMessages(ctx, chatId, userId)
 	if err != nil {
-		logger.Error(ctx, "Failed to get number of unread messages: ", err)
+		logger.Error(ctx, "Failed to get number of unread messages: %v", err)
 		return nil, err
 	}
 

@@ -38,6 +38,9 @@ func MapStickerPacksToProto(stickerPacks []*models.StickerPack) []*pb.StickerPac
 
 // MapProtoToStickerPack преобразует StickerPack из Proto сообщения в модель
 func MapProtoToStickerPack(stickerPack *pb.StickerPack) (*models.StickerPack, error) {
+	if stickerPack == nil {
+		return nil, nil
+	}
 	id, err := uuid.Parse(stickerPack.Id)
 	if err != nil {
 		return nil, err

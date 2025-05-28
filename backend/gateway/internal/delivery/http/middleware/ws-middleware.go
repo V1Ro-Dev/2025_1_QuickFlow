@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/gorilla/websocket"
@@ -25,7 +24,7 @@ func WebSocketMiddleware(connManager http2.IWebSocketConnectionManager, handler 
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			logger.Info(context.Background(), "[MIDDLEWARE] WebSocket request received on:", r.URL.Path)
+			logger.Info(context.Background(), "[MIDDLEWARE] WebSocket request received on: %s", r.URL.Path)
 
 			user, ok := r.Context().Value(logger.Username).(models.User)
 			if !ok {
@@ -37,7 +36,7 @@ func WebSocketMiddleware(connManager http2.IWebSocketConnectionManager, handler 
 			// Апгрейд соединения на WebSocket
 			conn, err := upgrader.Upgrade(w, r, nil)
 			if err != nil {
-				logger.Error(r.Context(), fmt.Sprintf("Failed to upgrade connection to WebSocket: %s", err.Error()))
+				logger.Error(r.Context(), "Failed to upgrade connection to WebSocket: %s", err.Error())
 				httpUtils.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Failed to upgrade to WebSocket", http.StatusBadRequest))
 				return
 			}

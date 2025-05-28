@@ -172,7 +172,7 @@ func (p *PostgresProfileRepository) GetProfile(ctx context.Context, userId uuid.
 func (p *PostgresProfileRepository) UpdateProfileTextInfo(ctx context.Context, newProfile models.Profile) error {
 	tx, err := p.connPool.Begin()
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("failed to begin transaction: %v", err))
+		logger.Error(ctx, "failed to begin transaction: %v", err)
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer func() {
@@ -195,7 +195,7 @@ func (p *PostgresProfileRepository) UpdateProfileTextInfo(ctx context.Context, n
 			newProfile.BasicInfo.Name, newProfile.BasicInfo.Surname, newProfile.BasicInfo.Sex,
 			newProfile.BasicInfo.DateOfBirth)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("unable to update profile: %v", err))
+			logger.Error(ctx, "unable to update profile: %v", err)
 			return fmt.Errorf("unable to update profile: %w", err)
 		}
 		if rows, err := commandTag.RowsAffected(); rows == 0 || err != nil {
@@ -207,7 +207,7 @@ func (p *PostgresProfileRepository) UpdateProfileTextInfo(ctx context.Context, n
 	if newProfile.Username != "" {
 		_, err = tx.ExecContext(ctx, `update "user" set username = $1 where id = $2`, newProfile.Username, newProfile.UserId)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("unable to update username: %v", err))
+			logger.Error(ctx, "unable to update username: %v", err)
 			return fmt.Errorf("unable to update username: %w", err)
 		}
 	}
@@ -217,7 +217,7 @@ func (p *PostgresProfileRepository) UpdateProfileTextInfo(ctx context.Context, n
 	if newProfile.ContactInfo != nil {
 		contactInfoID, err = updateContactInfo(ctx, tx, *newProfile.ContactInfo)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("unable to update contact info: %v", err))
+			logger.Error(ctx, "unable to update contact info: %v", err)
 			return fmt.Errorf("unable to update contact info: %w", err)
 		}
 	}
@@ -226,7 +226,7 @@ func (p *PostgresProfileRepository) UpdateProfileTextInfo(ctx context.Context, n
 	if newProfile.SchoolEducation != nil {
 		schoolID, err = updateSchoolInfo(ctx, tx, *newProfile.SchoolEducation)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("unable to update education: %v", err))
+			logger.Error(ctx, "unable to update education: %v", err)
 			return fmt.Errorf("unable to update school education: %w", err)
 		}
 	}
@@ -235,7 +235,7 @@ func (p *PostgresProfileRepository) UpdateProfileTextInfo(ctx context.Context, n
 	if newProfile.UniversityEducation != nil {
 		err = updateUniversityInfo(ctx, tx, newProfile.UserId, *newProfile.UniversityEducation)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("unable to update university education: %v", err))
+			logger.Error(ctx, "unable to update university education: %v", err)
 			return fmt.Errorf("unable to update university education: %w", err)
 		}
 	}
@@ -248,7 +248,7 @@ func (p *PostgresProfileRepository) UpdateProfileTextInfo(ctx context.Context, n
 			WHERE id = $1;
 		`, newProfile.UserId, contactInfoID, schoolID)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("unable to update profile relations to education tables: %v", err))
+			logger.Error(ctx, "unable to update profile relations to education tables: %v", err)
 			return fmt.Errorf("unable to update profile relations: %w", err)
 		}
 	}

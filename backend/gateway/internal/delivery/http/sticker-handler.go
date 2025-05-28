@@ -2,7 +2,6 @@ package http
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -62,7 +61,7 @@ func (s *StickerHandler) AddStickerPack(w http.ResponseWriter, r *http.Request) 
 
 	var form forms.StickerPackForm
 	if err := easyjson.UnmarshalFromReader(r.Body, &form); err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to parse request body: %v", err))
+		logger.Error(ctx, "Failed to parse request body: %v", err)
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Invalid request body", http.StatusBadRequest))
 		return
 	}
@@ -71,7 +70,7 @@ func (s *StickerHandler) AddStickerPack(w http.ResponseWriter, r *http.Request) 
 
 	createdStickerPack, err := s.stickerUseCase.AddStickerPack(ctx, form.ToStickerPackModel(user.Id))
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to add sticker pack: %v", err))
+		logger.Error(ctx, "Failed to add sticker pack: %v", err)
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -83,12 +82,12 @@ func (s *StickerHandler) AddStickerPack(w http.ResponseWriter, r *http.Request) 
 	out := forms.PayloadWrapper[forms.StickerPackOut]{Payload: response}
 	js, err := out.MarshalJSON()
 	if err != nil {
-		logger.Error(ctx, "Failed to marshal json payload", err)
+		logger.Error(ctx, "Failed to marshal json payload %v", err)
 		http2.WriteJSONError(w, err)
 		return
 	}
 	if _, err = w.Write(js); err != nil {
-		logger.Error(ctx, "Failed to encode feedback output", err)
+		logger.Error(ctx, "Failed to encode feedback output %v", err)
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode feedback output", http.StatusInternalServerError))
 	}
 }
@@ -111,14 +110,14 @@ func (s *StickerHandler) GetStickerPack(w http.ResponseWriter, r *http.Request) 
 	packIdString := mux.Vars(r)["pack_id"]
 	packId, err := uuid.Parse(packIdString)
 	if err != nil {
-		logger.Error(ctx, "Invalid Sticker Pack ID: ", err)
+		logger.Error(ctx, "Invalid Sticker Pack ID:  %v", err)
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Invalid Sticker Pack ID", http.StatusBadRequest))
 		return
 	}
 
 	stickerPack, err := s.stickerUseCase.GetStickerPack(ctx, packId)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to get StickerPack with ID %s: %v", packId.String(), err))
+		logger.Error(ctx, "Failed to get StickerPack with ID %s: %v", packId.String(), err)
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -129,12 +128,12 @@ func (s *StickerHandler) GetStickerPack(w http.ResponseWriter, r *http.Request) 
 	out := forms.PayloadWrapper[forms.StickerPackOut]{Payload: response}
 	js, err := out.MarshalJSON()
 	if err != nil {
-		logger.Error(ctx, "Failed to marshal json payload", err)
+		logger.Error(ctx, "Failed to marshal json payload %v", err)
 		http2.WriteJSONError(w, err)
 		return
 	}
 	if _, err = w.Write(js); err != nil {
-		logger.Error(ctx, "Failed to encode feedback output", err)
+		logger.Error(ctx, "Failed to encode feedback output %v", err)
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode feedback output", http.StatusInternalServerError))
 	}
 }
@@ -164,7 +163,7 @@ func (s *StickerHandler) GetStickerPackByName(w http.ResponseWriter, r *http.Req
 
 	stickerPack, err := s.stickerUseCase.GetStickerPackByName(ctx, packString)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to get StickerPack with name %s: %v", packString, err))
+		logger.Error(ctx, "Failed to get StickerPack with name %s: %v", packString, err)
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -175,12 +174,12 @@ func (s *StickerHandler) GetStickerPackByName(w http.ResponseWriter, r *http.Req
 	out := forms.PayloadWrapper[forms.StickerPackOut]{Payload: response}
 	js, err := out.MarshalJSON()
 	if err != nil {
-		logger.Error(ctx, "Failed to marshal json payload", err)
+		logger.Error(ctx, "Failed to marshal json payload %v", err)
 		http2.WriteJSONError(w, err)
 		return
 	}
 	if _, err = w.Write(js); err != nil {
-		logger.Error(ctx, "Failed to encode feedback output", err)
+		logger.Error(ctx, "Failed to encode feedback output %v", err)
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode feedback output", http.StatusInternalServerError))
 	}
 }
@@ -211,7 +210,7 @@ func (s *StickerHandler) GetStickerPacks(w http.ResponseWriter, r *http.Request)
 
 	count, err := strconv.Atoi(r.URL.Query().Get("count"))
 	if err != nil {
-		logger.Error(ctx, "Invalid count parameter: ", err)
+		logger.Error(ctx, "Invalid count parameter:  %v", err)
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Invalid count parameter", http.StatusBadRequest))
 		return
 	}
@@ -222,14 +221,14 @@ func (s *StickerHandler) GetStickerPacks(w http.ResponseWriter, r *http.Request)
 	}
 	offset, err := strconv.Atoi(offsetStr)
 	if err != nil {
-		logger.Error(ctx, "Invalid offset parameter: ", err)
+		logger.Error(ctx, "Invalid offset parameter:  %v", err)
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Invalid offset parameter", http.StatusBadRequest))
 		return
 	}
 
 	stickerPacks, err := s.stickerUseCase.GetStickerPacks(ctx, user.Id, count, offset)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to fetch StickerPacks: %v", err))
+		logger.Error(ctx, "Failed to fetch StickerPacks: %v", err)
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -241,12 +240,12 @@ func (s *StickerHandler) GetStickerPacks(w http.ResponseWriter, r *http.Request)
 	out := forms.PayloadWrapper[[]forms.StickerPackOut]{Payload: stickerPacksOut}
 	js, err := out.MarshalJSON()
 	if err != nil {
-		logger.Error(ctx, "Failed to marshal json payload", err)
+		logger.Error(ctx, "Failed to marshal json payload %v", err)
 		http2.WriteJSONError(w, err)
 		return
 	}
 	if _, err = w.Write(js); err != nil {
-		logger.Error(ctx, "Failed to encode feedback output", err)
+		logger.Error(ctx, "Failed to encode feedback output %v", err)
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode feedback output", http.StatusInternalServerError))
 	}
 }
@@ -269,7 +268,7 @@ func (s *StickerHandler) DeleteStickerPack(w http.ResponseWriter, r *http.Reques
 	packIdStr := mux.Vars(r)["pack_id"]
 	packId, err := uuid.Parse(packIdStr)
 	if err != nil {
-		logger.Error(ctx, "Invalid Sticker Pack ID: ", err)
+		logger.Error(ctx, "Invalid Sticker Pack ID:  %v", err)
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Invalid Sticker Pack ID", http.StatusBadRequest))
 		return
 	}
@@ -284,7 +283,7 @@ func (s *StickerHandler) DeleteStickerPack(w http.ResponseWriter, r *http.Reques
 
 	err = s.stickerUseCase.DeleteStickerPack(ctx, user.Id, packId)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to delete StickerPack %s: %v", packId.String(), err))
+		logger.Error(ctx, "Failed to delete StickerPack %s: %v", packId.String(), err)
 		http2.WriteJSONError(w, err)
 		return
 	}

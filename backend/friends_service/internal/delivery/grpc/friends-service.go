@@ -40,7 +40,7 @@ func (f *FriendsServiceServer) GetFriendsInfo(ctx context.Context, in *pb.GetFri
 
 	friendsInfos, friendsCount, err := f.friendsUseCase.GetFriendsInfo(ctx, in.UserId, in.Limit, in.Offset, in.ReqType)
 	if err != nil {
-		logger.Error(ctx, "GetFriendsInfo failed: ", err)
+		logger.Error(ctx, "GetFriendsInfo failed: %v", err)
 		return &pb.GetFriendsInfoResponse{}, err
 	}
 
@@ -53,7 +53,7 @@ func (f *FriendsServiceServer) SendFriendRequest(ctx context.Context, in *pb.Fri
 
 	exists, err := f.friendsUseCase.IsExistsFriendRequest(ctx, in.UserId, in.ReceiverId)
 	if err != nil {
-		logger.Error(ctx, "IsExistsFriendRequest failed: ", err)
+		logger.Error(ctx, "IsExistsFriendRequest failed: %v", err)
 		return &emptypb.Empty{}, err
 	}
 
@@ -63,7 +63,7 @@ func (f *FriendsServiceServer) SendFriendRequest(ctx context.Context, in *pb.Fri
 	}
 
 	if err := f.friendsUseCase.SendFriendRequest(ctx, in.UserId, in.ReceiverId); err != nil {
-		logger.Error(ctx, "SendFriendRequest failed: ", err)
+		logger.Error(ctx, "SendFriendRequest failed: %v", err)
 		return nil, err
 	}
 
@@ -75,7 +75,7 @@ func (f *FriendsServiceServer) AcceptFriendRequest(ctx context.Context, in *pb.F
 	logger.Info(ctx, "Received AcceptFriendRequest request")
 
 	if err := f.friendsUseCase.AcceptFriendRequest(ctx, in.UserId, in.ReceiverId); err != nil {
-		logger.Error(ctx, "AcceptFriendRequest failed: ", err)
+		logger.Error(ctx, "AcceptFriendRequest failed: %v", err)
 		return nil, err
 	}
 
@@ -87,7 +87,7 @@ func (f *FriendsServiceServer) Unfollow(ctx context.Context, in *pb.FriendReques
 	logger.Info(ctx, "Received Unfollow request")
 
 	if err := f.friendsUseCase.Unfollow(ctx, in.UserId, in.ReceiverId); err != nil {
-		logger.Error(ctx, "Unfollow failed: ", err)
+		logger.Error(ctx, "Unfollow failed: %v", err)
 		return nil, err
 	}
 
@@ -99,7 +99,7 @@ func (f *FriendsServiceServer) DeleteFriend(ctx context.Context, in *pb.FriendRe
 	logger.Info(ctx, "Received DeleteFriend request")
 
 	if err := f.friendsUseCase.DeleteFriend(ctx, in.UserId, in.ReceiverId); err != nil {
-		logger.Error(ctx, "DeleteFriend failed: ", err)
+		logger.Error(ctx, "DeleteFriend failed: %v", err)
 		return nil, err
 	}
 
@@ -112,18 +112,18 @@ func (f *FriendsServiceServer) GetUserRelation(ctx context.Context, in *pb.Frien
 
 	user1Id, err := uuid.Parse(in.UserId)
 	if err != nil {
-		logger.Error(ctx, "Invalid UserId: ", err)
+		logger.Error(ctx, "Invalid UserId: %v", err)
 		return &pb.RelationResponse{}, nil
 	}
 	user2Id, err := uuid.Parse(in.ReceiverId)
 	if err != nil {
-		logger.Error(ctx, "Invalid ReceiverId: ", err)
+		logger.Error(ctx, "Invalid ReceiverId: %v", err)
 		return &pb.RelationResponse{}, nil
 	}
 
 	rel, err := f.friendsUseCase.GetUserRelation(ctx, user1Id, user2Id)
 	if err != nil {
-		logger.Error(ctx, "GetUserRelation failed: ", err)
+		logger.Error(ctx, "GetUserRelation failed: %v", err)
 		return &pb.RelationResponse{}, err
 	}
 
@@ -137,7 +137,7 @@ func (f *FriendsServiceServer) MarkReadFriendRequest(ctx context.Context, in *pb
 	logger.Info(ctx, "Received mark read friend request")
 
 	if err := f.friendsUseCase.MarkRead(ctx, in.UserId, in.ReceiverId); err != nil {
-		logger.Error(ctx, "mark read failed: ", err)
+		logger.Error(ctx, "mark read failed: %v", err)
 		return nil, err
 	}
 

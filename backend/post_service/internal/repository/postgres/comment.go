@@ -90,7 +90,7 @@ func (c *PostgresCommentRepository) AddComment(ctx context.Context, comment mode
 		commentPostgres.Id, commentPostgres.PostId, commentPostgres.UserId,
 		commentPostgres.CreatedAt, commentPostgres.Text, commentPostgres.LikeCount)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to save comment %v to database: %s", comment, err.Error()))
+		logger.Error(ctx, "Unable to save comment %v to database: %s", comment, err.Error())
 		return fmt.Errorf("unable to save comment to database: %w", err)
 	}
 
@@ -98,7 +98,7 @@ func (c *PostgresCommentRepository) AddComment(ctx context.Context, comment mode
 	for _, file := range commentPostgres.Files {
 		_, err = c.connPool.ExecContext(ctx, insertCommentFileQuery, commentPostgres.Id, file.URL, file.DisplayType)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Unable to save comment files %v for comment %v: %s", commentPostgres.Files, comment, err.Error()))
+			logger.Error(ctx, "Unable to save comment files %v for comment %v: %s", commentPostgres.Files, comment, err.Error())
 			return fmt.Errorf("unable to save comment files to database: %w", err)
 		}
 	}
@@ -109,7 +109,7 @@ func (c *PostgresCommentRepository) AddComment(ctx context.Context, comment mode
 func (c *PostgresCommentRepository) GetCommentFiles(ctx context.Context, commentId uuid.UUID) ([]string, error) {
 	rows, err := c.connPool.QueryContext(ctx, getCommentFilesQuery, commentId)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to get comment files %v from database: %s", commentId, err.Error()))
+		logger.Error(ctx, "Unable to get comment files %v from database: %s", commentId, err.Error())
 		return nil, fmt.Errorf("unable to get comment files from database: %w", err)
 	}
 	defer func(rows *sql.Rows) {
@@ -125,7 +125,7 @@ func (c *PostgresCommentRepository) GetCommentFiles(ctx context.Context, comment
 		var displayType pgtype.Text // Для получения типа отображаемого файла
 		err = rows.Scan(&file, &displayType, &filename)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Unable to scan comment file %v from database: %s", file, err.Error()))
+			logger.Error(ctx, "Unable to scan comment file %v from database: %s", file, err.Error())
 			return nil, fmt.Errorf("unable to scan comment file from database: %w", err)
 		}
 		// Здесь мы можем использовать displayType, если необходимо
@@ -139,7 +139,7 @@ func (c *PostgresCommentRepository) GetCommentFiles(ctx context.Context, comment
 func (c *PostgresCommentRepository) DeleteComment(ctx context.Context, commentId uuid.UUID) error {
 	_, err := c.connPool.ExecContext(ctx, "delete from comment cascade where id = $1", pgtype.UUID{Bytes: commentId, Valid: true})
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to delete comment %v from database: %s", commentId, err.Error()))
+		logger.Error(ctx, "Unable to delete comment %v from database: %s", commentId, err.Error())
 		return fmt.Errorf("unable to delete comment from database: %w", err)
 	}
 	return nil
@@ -152,7 +152,7 @@ func (c *PostgresCommentRepository) GetCommentsForPost(ctx context.Context, post
 		return nil, post_errors.ErrNotFound
 	}
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to get comments from database for post %v, numComments %v, timestamp %v: %s", postId, numComments, timestamp, err.Error()))
+		logger.Error(ctx, "Unable to get comments from database for post %v, numComments %v, timestamp %v: %s", postId, numComments, timestamp, err.Error())
 		return nil, fmt.Errorf("unable to get comments from database: %w", err)
 	}
 	defer func(rows *sql.Rows) {
@@ -168,20 +168,20 @@ func (c *PostgresCommentRepository) GetCommentsForPost(ctx context.Context, post
 		err = rows.Scan(&commentPostgres.Id, &commentPostgres.PostId, &commentPostgres.UserId, &commentPostgres.Text,
 			&commentPostgres.CreatedAt, &commentPostgres.UpdatedAt, &commentPostgres.LikeCount)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Unable to scan comment %v from database: %s", commentPostgres.Id, err.Error()))
+			logger.Error(ctx, "Unable to scan comment %v from database: %s", commentPostgres.Id, err.Error())
 			return nil, fmt.Errorf("unable to get comments from database: %w", err)
 		}
 
 		// Получаем файлы для комментария, включая display_type
 		files, err := c.connPool.QueryContext(ctx, getCommentFilesQuery, commentPostgres.Id)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Unable to get comment files %v from database: %s", commentPostgres.Id, err.Error()))
+			logger.Error(ctx, "Unable to get comment files %v from database: %s", commentPostgres.Id, err.Error())
 			return nil, fmt.Errorf("unable to get comment files from database: %w", err)
 		}
 
 		isLiked, err := c.CheckIfCommentLiked(ctx, commentPostgres.Id.Bytes, commentPostgres.UserId.Bytes)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Unable to check if comment %v is liked by user %v: %s", commentPostgres.Id, commentPostgres.UserId, err.Error()))
+			logger.Error(ctx, "Unable to check if comment %v is liked by user %v: %s", commentPostgres.Id, commentPostgres.UserId, err.Error())
 			return nil, fmt.Errorf("unable to check if comment is liked by user: %w", err)
 		}
 		commentPostgres.IsLiked = pgtype.Bool{Bool: isLiked, Valid: true}
@@ -190,7 +190,7 @@ func (c *PostgresCommentRepository) GetCommentsForPost(ctx context.Context, post
 			var pic, filename, displayType pgtype.Text
 			err = files.Scan(&pic, &displayType, &filename)
 			if err != nil {
-				logger.Error(ctx, fmt.Sprintf("Unable to scan comment file %v from database: %s", pic, err.Error()))
+				logger.Error(ctx, "Unable to scan comment file %v from database: %s", pic, err.Error())
 				return nil, fmt.Errorf("unable to get comment files from database: %w", err)
 			}
 
@@ -214,13 +214,13 @@ func (c *PostgresCommentRepository) GetComment(ctx context.Context, commentId uu
 	err := row.Scan(&commentPostgres.Id, &commentPostgres.PostId, &commentPostgres.UserId, &commentPostgres.Text,
 		&commentPostgres.CreatedAt, &commentPostgres.UpdatedAt, &commentPostgres.LikeCount)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to get comment %v from database: %s", commentId, err.Error()))
+		logger.Error(ctx, "Unable to get comment %v from database: %s", commentId, err.Error())
 		return models.Comment{}, fmt.Errorf("unable to get comment from database: %w", err)
 	}
 
 	files, err := c.connPool.QueryContext(ctx, getCommentFilesQuery, commentPostgres.Id)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to get comment files %v from database: %s", commentPostgres.Id, err.Error()))
+		logger.Error(ctx, "Unable to get comment files %v from database: %s", commentPostgres.Id, err.Error())
 		return models.Comment{}, fmt.Errorf("unable to get comment files from database: %w", err)
 	}
 
@@ -228,7 +228,7 @@ func (c *PostgresCommentRepository) GetComment(ctx context.Context, commentId uu
 		var pic, displayType, filename pgtype.Text
 		err = files.Scan(&pic, &displayType, &filename)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Unable to scan comment file %v from database: %s", pic, err.Error()))
+			logger.Error(ctx, "Unable to scan comment file %v from database: %s", pic, err.Error())
 			return models.Comment{}, fmt.Errorf("unable to get comment files from database: %w", err)
 		}
 
@@ -241,7 +241,7 @@ func (c *PostgresCommentRepository) GetComment(ctx context.Context, commentId uu
 
 	isLiked, err := c.CheckIfCommentLiked(ctx, commentPostgres.Id.Bytes, commentPostgres.UserId.Bytes)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to check if comment %v is liked by user %v: %s", commentPostgres.Id, commentPostgres.UserId, err.Error()))
+		logger.Error(ctx, "Unable to check if comment %v is liked by user %v: %s", commentPostgres.Id, commentPostgres.UserId, err.Error())
 		return models.Comment{}, fmt.Errorf("unable to check if comment is liked by user: %w", err)
 	}
 	commentPostgres.IsLiked = pgtype.Bool{Bool: isLiked, Valid: true}
@@ -254,13 +254,13 @@ func (c *PostgresCommentRepository) UpdateComment(ctx context.Context, commentUp
 	// Обновление текста комментария
 	_, err := c.connPool.ExecContext(ctx, "update comment set text = $1, updated_at = $2 where id = $3", commentUpdate.Text, pgtype.Timestamptz{Time: time.Now(), Valid: true}, pgtype.UUID{Bytes: commentUpdate.Id, Valid: true})
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to update comment %v in database: %s", commentUpdate.Id, err.Error()))
+		logger.Error(ctx, "Unable to update comment %v in database: %s", commentUpdate.Id, err.Error())
 		return fmt.Errorf("unable to update comment in database: %w", err)
 	}
 
 	_, err = c.connPool.ExecContext(ctx, "delete from comment_file where comment_id = $1", pgtype.UUID{Bytes: commentUpdate.Id, Valid: true})
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to delete old files for comment %v: %s", commentUpdate.Id, err.Error()))
+		logger.Error(ctx, "Unable to delete old files for comment %v: %s", commentUpdate.Id, err.Error())
 		return fmt.Errorf("unable to delete old files for comment: %w", err)
 	}
 
@@ -272,7 +272,7 @@ func (c *PostgresCommentRepository) UpdateComment(ctx context.Context, commentUp
 		filePostgres := postgres_models.FileToPostgres(*file)
 		_, err = c.connPool.ExecContext(ctx, insertCommentFileQuery, commentUpdate.Id, filePostgres.URL, filePostgres.DisplayType)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Unable to add file %v for comment %v: %s", file.URL, commentUpdate.Id, err.Error()))
+			logger.Error(ctx, "Unable to add file %v for comment %v: %s", file.URL, commentUpdate.Id, err.Error())
 			return fmt.Errorf("unable to add file to comment: %w", err)
 		}
 	}
@@ -289,7 +289,7 @@ func (c *PostgresCommentRepository) CheckIfCommentLiked(ctx context.Context, com
 		return false, nil
 	} else if err != nil {
 		// Ошибка при выполнении запроса
-		logger.Error(ctx, fmt.Sprintf("Unable to check if comment %v is liked by user %v: %s", commentId, userId, err.Error()))
+		logger.Error(ctx, "Unable to check if comment %v is liked by user %v: %s", commentId, userId, err.Error())
 		return false, fmt.Errorf("unable to check if comment is liked by user: %w", err)
 	}
 
@@ -312,7 +312,7 @@ func (c *PostgresCommentRepository) LikeComment(ctx context.Context, commentId u
 	// Вставляем лайк в таблицу like_comment
 	_, err = c.connPool.ExecContext(ctx, likeCommentRequest, userId, commentId)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to like comment %v by user %v: %s", commentId, userId, err.Error()))
+		logger.Error(ctx, "Unable to like comment %v by user %v: %s", commentId, userId, err.Error())
 		return fmt.Errorf("unable to like comment: %w", err)
 	}
 	return nil
@@ -334,7 +334,7 @@ func (c *PostgresCommentRepository) UnlikeComment(ctx context.Context, commentId
 	// Удаляем лайк из таблицы like_comment
 	_, err = c.connPool.ExecContext(ctx, unlikeCommentRequest, commentId, userId)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to unlike comment %v by user %v: %s", commentId, userId, err.Error()))
+		logger.Error(ctx, "Unable to unlike comment %v by user %v: %s", commentId, userId, err.Error())
 		return fmt.Errorf("unable to unlike comment: %w", err)
 	}
 	return nil
@@ -350,13 +350,13 @@ func (c *PostgresCommentRepository) GetLastPostComment(ctx context.Context, post
 		return nil, post_errors.ErrNotFound
 	}
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to get comment %v from database: %s", postId, err.Error()))
+		logger.Error(ctx, "Unable to get comment %v from database: %s", postId, err.Error())
 		return nil, fmt.Errorf("unable to get comment from database: %w", err)
 	}
 
 	isLiked, err := c.CheckIfCommentLiked(ctx, commentPostgres.Id.Bytes, commentPostgres.UserId.Bytes)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to check if comment %v is liked by user %v: %s", commentPostgres.Id, commentPostgres.UserId, err.Error()))
+		logger.Error(ctx, "Unable to check if comment %v is liked by user %v: %s", commentPostgres.Id, commentPostgres.UserId, err.Error())
 		return nil, fmt.Errorf("unable to check if comment is liked by user: %w", err)
 	}
 	commentPostgres.IsLiked = pgtype.Bool{Bool: isLiked, Valid: true}

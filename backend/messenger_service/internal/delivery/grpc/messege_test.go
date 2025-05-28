@@ -2,7 +2,7 @@ package grpc
 
 import (
 	"context"
-	"quickflow/messenger_service/internal/delivery/grpc/mocks"
+	"errors"
 	"testing"
 	"time"
 
@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"quickflow/messenger_service/internal/delivery/grpc/mocks"
 	dto "quickflow/shared/client/messenger_service"
 	"quickflow/shared/models"
 	pb "quickflow/shared/proto/messenger_service"
@@ -36,6 +37,8 @@ func TestMessageServiceServer(t *testing.T) {
 		ChatID:    uuid.New(),
 	}
 	testProtoMessage := dto.MapMessageToProto(testMessage)
+	testMessages := []models.Message{testMessage}
+	testProtoMessages := dto.MapMessagesToProto(testMessages)
 
 	tests := []struct {
 		name        string
@@ -45,6 +48,24 @@ func TestMessageServiceServer(t *testing.T) {
 		wantErr     bool
 		expectedErr error
 	}{
+		// GetMessagesForChat tests
+		{
+			name: "GetMessagesForChat - Success",
+			mockSetup: func() {
+				mockUseCase.EXPECT().
+					GetMessagesForChatOlder(ctx, testMessage.ChatID, testMessage.SenderID, 10, gomock.Any()).
+					Return(testMessages, nil)
+			},
+			req: &pb.GetMessagesForChatRequest{
+				ChatId:      testMessage.ChatID.String(),
+				MessagesNum: 10,
+				UpdatedAt:   timestamppb.New(now),
+				UserAuthId:  testMessage.SenderID.String(),
+			},
+			wantResp: &pb.GetMessagesForChatResponse{
+				Messages: testProtoMessages,
+			},
+		},
 		{
 			name: "GetMessagesForChat - Invalid ChatID",
 			req: &pb.GetMessagesForChatRequest{
@@ -66,6 +87,23 @@ func TestMessageServiceServer(t *testing.T) {
 			wantErr:     true,
 			expectedErr: status.Error(codes.Unauthenticated, "user not found in context"),
 		},
+		{
+			name: "GetMessagesForChat - UseCase Error",
+			mockSetup: func() {
+				mockUseCase.EXPECT().
+					GetMessagesForChatOlder(ctx, testMessage.ChatID, testMessage.SenderID, 10, gomock.Any()).
+					Return(nil, errors.New("usecase error"))
+			},
+			req: &pb.GetMessagesForChatRequest{
+				ChatId:      testMessage.ChatID.String(),
+				MessagesNum: 10,
+				UpdatedAt:   timestamppb.New(now),
+				UserAuthId:  testMessage.SenderID.String(),
+			},
+			wantErr: true,
+		},
+
+		// SendMessage tests
 		{
 			name: "SendMessage - Success",
 			mockSetup: func() {
@@ -91,6 +129,32 @@ func TestMessageServiceServer(t *testing.T) {
 			expectedErr: status.Error(codes.Unauthenticated, "user not found in context"),
 		},
 		{
+			name: "SendMessage - Mapping Error",
+			mockSetup: func() {
+				// No mock setup needed as error occurs before usecase call
+			},
+			req: &pb.SendMessageRequest{
+				Message:    &pb.Message{Id: "invalid-id"},
+				UserAuthId: testMessage.SenderID.String(),
+			},
+			wantErr: true,
+		},
+		{
+			name: "SendMessage - UseCase Error",
+			mockSetup: func() {
+				mockUseCase.EXPECT().
+					SaveMessage(ctx, gomock.Any()).
+					Return(nil, errors.New("usecase error"))
+			},
+			req: &pb.SendMessageRequest{
+				Message:    testProtoMessage,
+				UserAuthId: testMessage.SenderID.String(),
+			},
+			wantErr: true,
+		},
+
+		// GetMessageById tests
+		{
 			name: "GetMessageById - Success",
 			mockSetup: func() {
 				mockUseCase.EXPECT().
@@ -111,6 +175,20 @@ func TestMessageServiceServer(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "GetMessageById - UseCase Error",
+			mockSetup: func() {
+				mockUseCase.EXPECT().
+					GetMessageById(ctx, testMessage.ID).
+					Return(models.Message{}, errors.New("usecase error"))
+			},
+			req: &pb.GetMessageByIdRequest{
+				MessageId: testMessage.ID.String(),
+			},
+			wantErr: true,
+		},
+
+		// DeleteMessage tests
 		{
 			name: "DeleteMessage - Success",
 			mockSetup: func() {
@@ -133,15 +211,74 @@ func TestMessageServiceServer(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "UpdateLastReadTs - Invalid ChatID",
-			req: &pb.UpdateLastReadTsRequest{
-				ChatId:            "invalid",
-				UserId:            testMessage.SenderID.String(),
-				LastReadTimestamp: timestamppb.New(now),
-				UserAuthId:        testMessage.SenderID.String(),
+			name: "DeleteMessage - UseCase Error",
+			mockSetup: func() {
+				mockUseCase.EXPECT().
+					DeleteMessage(ctx, testMessage.ID).
+					Return(errors.New("usecase error"))
+			},
+			req: &pb.DeleteMessageRequest{
+				MessageId: testMessage.ID.String(),
 			},
 			wantErr: true,
 		},
+
+		// UpdateLastReadTs tests
+		{
+			name: "UpdateLastReadTs - Success",
+			mockSetup: func() {
+				mockUseCase.EXPECT().
+					UpdateLastReadTs(ctx, gomock.Any(), testMessage.ChatID, testMessage.SenderID).
+					Return(nil)
+			},
+			req: &pb.UpdateLastReadTsRequest{
+				ChatId:            testMessage.ChatID.String(),
+				UserAuthId:        testMessage.SenderID.String(),
+				UserId:            testMessage.SenderID.String(),
+				LastReadTimestamp: timestamppb.New(now),
+			},
+			wantResp: &pb.UpdateLastReadTsResponse{
+				Success: true,
+			},
+		},
+		{
+			name: "UpdateLastReadTs - Invalid ChatID",
+			req: &pb.UpdateLastReadTsRequest{
+				ChatId:            "invalid",
+				UserAuthId:        testMessage.SenderID.String(),
+				UserId:            testMessage.SenderID.String(),
+				LastReadTimestamp: timestamppb.New(now),
+			},
+			wantErr: true,
+		},
+		{
+			name: "UpdateLastReadTs - Invalid UserAuthID",
+			req: &pb.UpdateLastReadTsRequest{
+				ChatId:            testMessage.ChatID.String(),
+				UserAuthId:        "invalid",
+				UserId:            testMessage.SenderID.String(),
+				LastReadTimestamp: timestamppb.New(now),
+			},
+			wantErr:     true,
+			expectedErr: status.Error(codes.Unauthenticated, "user not found in context"),
+		},
+		{
+			name: "UpdateLastReadTs - UseCase Error",
+			mockSetup: func() {
+				mockUseCase.EXPECT().
+					UpdateLastReadTs(ctx, gomock.Any(), testMessage.ChatID, testMessage.SenderID).
+					Return(errors.New("usecase error"))
+			},
+			req: &pb.UpdateLastReadTsRequest{
+				ChatId:            testMessage.ChatID.String(),
+				UserAuthId:        testMessage.SenderID.String(),
+				UserId:            testMessage.SenderID.String(),
+				LastReadTimestamp: timestamppb.New(now),
+			},
+			wantErr: true,
+		},
+
+		// GetLastReadTs tests
 		{
 			name: "GetLastReadTs - Success",
 			mockSetup: func() {
@@ -161,6 +298,88 @@ func TestMessageServiceServer(t *testing.T) {
 			name: "GetLastReadTs - Invalid ChatID",
 			req: &pb.GetLastReadTsRequest{
 				ChatId: "invalid",
+				UserId: testMessage.SenderID.String(),
+			},
+			wantErr: true,
+		},
+		{
+			name: "GetLastReadTs - Invalid UserID",
+			req: &pb.GetLastReadTsRequest{
+				ChatId: testMessage.ChatID.String(),
+				UserId: "invalid",
+			},
+			wantErr:     true,
+			expectedErr: status.Error(codes.Unauthenticated, "user not found in context"),
+		},
+		{
+			name: "GetLastReadTs - UseCase Error",
+			mockSetup: func() {
+				mockUseCase.EXPECT().
+					GetLastReadTs(ctx, testMessage.ChatID, testMessage.SenderID).
+					Return(nil, errors.New("usecase error"))
+			},
+			req: &pb.GetLastReadTsRequest{
+				ChatId: testMessage.ChatID.String(),
+				UserId: testMessage.SenderID.String(),
+			},
+			wantErr: true,
+		},
+		{
+			name: "GetLastReadTs - Nil Timestamp",
+			mockSetup: func() {
+				mockUseCase.EXPECT().
+					GetLastReadTs(ctx, testMessage.ChatID, testMessage.SenderID).
+					Return(nil, nil)
+			},
+			req: &pb.GetLastReadTsRequest{
+				ChatId: testMessage.ChatID.String(),
+				UserId: testMessage.SenderID.String(),
+			},
+			wantErr: true,
+		},
+
+		// GetNumUnreadMessages tests
+		{
+			name: "GetNumUnreadMessages - Success",
+			mockSetup: func() {
+				mockUseCase.EXPECT().
+					GetNumUnreadMessages(ctx, testMessage.ChatID, testMessage.SenderID).
+					Return(5, nil)
+			},
+			req: &pb.GetNumUnreadMessagesRequest{
+				ChatId: testMessage.ChatID.String(),
+				UserId: testMessage.SenderID.String(),
+			},
+			wantResp: &pb.GetNumUnreadMessagesResponse{
+				NumMessages: 5,
+			},
+		},
+		{
+			name: "GetNumUnreadMessages - Invalid ChatID",
+			req: &pb.GetNumUnreadMessagesRequest{
+				ChatId: "invalid",
+				UserId: testMessage.SenderID.String(),
+			},
+			wantErr: true,
+		},
+		{
+			name: "GetNumUnreadMessages - Invalid UserID",
+			req: &pb.GetNumUnreadMessagesRequest{
+				ChatId: testMessage.ChatID.String(),
+				UserId: "invalid",
+			},
+			wantErr:     true,
+			expectedErr: status.Error(codes.Unauthenticated, "user not found in context"),
+		},
+		{
+			name: "GetNumUnreadMessages - UseCase Error",
+			mockSetup: func() {
+				mockUseCase.EXPECT().
+					GetNumUnreadMessages(ctx, testMessage.ChatID, testMessage.SenderID).
+					Return(0, errors.New("usecase error"))
+			},
+			req: &pb.GetNumUnreadMessagesRequest{
+				ChatId: testMessage.ChatID.String(),
 				UserId: testMessage.SenderID.String(),
 			},
 			wantErr: true,
@@ -189,6 +408,8 @@ func TestMessageServiceServer(t *testing.T) {
 				resp, err = server.UpdateLastReadTs(ctx, req)
 			case *pb.GetLastReadTsRequest:
 				resp, err = server.GetLastReadTs(ctx, req)
+			case *pb.GetNumUnreadMessagesRequest:
+				resp, err = server.GetNumUnreadMessages(ctx, req)
 			}
 
 			if tt.wantErr {

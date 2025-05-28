@@ -132,7 +132,7 @@ func (f *FileClient) UploadManyFiles(ctx context.Context, files []*models.File) 
 				break
 			}
 			if err != nil {
-				logger.Error(ctx, fmt.Sprintf("read file: %s", file.Name))
+				logger.Error(ctx, "read file: %s", file.Name)
 				return nil, fmt.Errorf("read file: %w", err)
 			}
 			err = stream.Send(&pb.UploadFileRequest{
@@ -172,6 +172,9 @@ func (f *FileClient) UploadManyFiles(ctx context.Context, files []*models.File) 
 
 // DeleteFile удаляет файл
 func (f *FileClient) DeleteFile(ctx context.Context, filename string) error {
+	if len(filename) == 0 {
+		return fmt.Errorf("filename is empty")
+	}
 	req := &pb.DeleteFileRequest{
 		FileUrl: filename,
 	}

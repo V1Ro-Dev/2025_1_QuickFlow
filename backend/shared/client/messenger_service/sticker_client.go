@@ -2,7 +2,6 @@ package messenger_service
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
@@ -29,13 +28,13 @@ func (c *StickerServiceClient) AddStickerPack(ctx context.Context, stickerPack *
 		StickerPack: protoStickerPack,
 	})
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to add sticker pack: %v", err))
+		logger.Error(ctx, "Failed to add sticker pack: %v", err)
 		return nil, err
 	}
 
 	createdStickerPack, err := MapProtoToStickerPack(resp.StickerPack)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to convert Proto to StickerPack: %v", err))
+		logger.Error(ctx, "Failed to convert Proto to StickerPack: %v", err)
 		return nil, err
 	}
 
@@ -47,13 +46,13 @@ func (c *StickerServiceClient) GetStickerPack(ctx context.Context, packId uuid.U
 		Id: packId.String(),
 	})
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to get sticker pack: %v", err))
+		logger.Error(ctx, "Failed to get sticker pack: %v", err)
 		return nil, err
 	}
 
 	stickerPack, err := MapProtoToStickerPack(resp.StickerPack)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to convert Proto to StickerPack: %v", err))
+		logger.Error(ctx, "Failed to convert Proto to StickerPack: %v", err)
 		return nil, err
 	}
 
@@ -67,7 +66,7 @@ func (c *StickerServiceClient) GetStickerPacks(ctx context.Context, userId uuid.
 		Offset: int32(offset),
 	})
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to get sticker packs: %v", err))
+		logger.Error(ctx, "Failed to get sticker packs: %v", err)
 		return nil, err
 	}
 
@@ -75,7 +74,7 @@ func (c *StickerServiceClient) GetStickerPacks(ctx context.Context, userId uuid.
 	for _, pack := range resp.StickerPacks {
 		stickerPack, err := MapProtoToStickerPack(pack)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Failed to convert Proto to StickerPack: %v", err))
+			logger.Error(ctx, "Failed to convert Proto to StickerPack: %v", err)
 			return nil, err
 		}
 		stickerPacks = append(stickerPacks, stickerPack)
@@ -90,7 +89,7 @@ func (c *StickerServiceClient) DeleteStickerPack(ctx context.Context, userId, pa
 		PackId: packId.String(),
 	})
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to delete sticker pack: %v", err))
+		logger.Error(ctx, "Failed to delete sticker pack: %v", err)
 		return err
 	}
 
@@ -102,13 +101,13 @@ func (c *StickerServiceClient) GetStickerPackByName(ctx context.Context, packNam
 		Name: packName,
 	})
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to get sticker pack by name: %v", err))
+		logger.Error(ctx, "Failed to get sticker pack by name: %v", err)
 		return nil, err
 	}
 
 	stickerPack, err := MapProtoToStickerPack(resp.StickerPack)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to convert Proto to StickerPack: %v", err))
+		logger.Error(ctx, "Failed to convert Proto to StickerPack: %v", err)
 		return nil, err
 	}
 

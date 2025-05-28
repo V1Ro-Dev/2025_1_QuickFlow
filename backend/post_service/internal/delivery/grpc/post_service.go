@@ -45,13 +45,13 @@ func (p *PostServiceServer) AddPost(ctx context.Context, req *pb.AddPostRequest)
 	logger.Info(ctx, "AddPost called")
 	post, err := dto.ProtoPostToModel(req.Post)
 	if err != nil {
-		logger.Error(ctx, "Failed to convert proto to model:", err)
+		logger.Error(ctx, "Failed to convert proto to model:: %v", err)
 		return nil, err
 	}
 
 	result, err := p.postUseCase.AddPost(ctx, *post)
 	if err != nil {
-		logger.Error(ctx, "Failed to add post:", err)
+		logger.Error(ctx, "Failed to add post:: %v", err)
 		return nil, err
 	}
 
@@ -62,16 +62,16 @@ func (p *PostServiceServer) DeletePost(ctx context.Context, req *pb.DeletePostRe
 	logger.Info(ctx, "DeletePost called")
 	postId, err := uuid.Parse(req.PostId)
 	if err != nil {
-		logger.Error(ctx, "Invalid post ID:", err)
+		logger.Error(ctx, "Invalid post ID:: %v", err)
 		return nil, err
 	}
 	userId, err := uuid.Parse(req.UserId)
 	if err != nil {
-		logger.Error(ctx, "Invalid user ID:", err)
+		logger.Error(ctx, "Invalid user ID:: %v", err)
 		return nil, err
 	}
 	if err := p.postUseCase.DeletePost(ctx, userId, postId); err != nil {
-		logger.Error(ctx, "Failed to delete post:", err)
+		logger.Error(ctx, "Failed to delete post:: %v", err)
 		return nil, err
 	}
 	return &pb.DeletePostResponse{Success: true}, nil
@@ -81,17 +81,17 @@ func (p *PostServiceServer) UpdatePost(ctx context.Context, req *pb.UpdatePostRe
 	logger.Info(ctx, "UpdatePost called")
 	update, err := dto.ProtoPostUpdateToModel(req.Post)
 	if err != nil {
-		logger.Error(ctx, "Failed to convert update payload:", err)
+		logger.Error(ctx, "Failed to convert update payload:: %v", err)
 		return nil, err
 	}
 	userId, err := uuid.Parse(req.UserId)
 	if err != nil {
-		logger.Error(ctx, "Invalid user ID:", err)
+		logger.Error(ctx, "Invalid user ID:: %v", err)
 		return nil, err
 	}
 	updatedPost, err := p.postUseCase.UpdatePost(ctx, *update, userId)
 	if err != nil {
-		logger.Error(ctx, "Failed to update post:", err)
+		logger.Error(ctx, "Failed to update post:: %v", err)
 		return nil, err
 	}
 	return &pb.UpdatePostResponse{Post: dto.ModelPostToProto(updatedPost)}, nil
@@ -101,12 +101,12 @@ func (p *PostServiceServer) FetchFeed(ctx context.Context, req *pb.FetchFeedRequ
 	logger.Info(ctx, "FetchFeed called")
 	userId, err := uuid.Parse(req.UserId)
 	if err != nil {
-		logger.Error(ctx, "Invalid user ID:", err)
+		logger.Error(ctx, "Invalid user ID:: %v", err)
 		return nil, err
 	}
 	posts, err := p.postUseCase.FetchFeed(ctx, userId, int(req.NumPosts), req.Timestamp.AsTime())
 	if err != nil {
-		logger.Error(ctx, "Failed to fetch feed:", err)
+		logger.Error(ctx, "Failed to fetch feed:: %v", err)
 		return nil, err
 	}
 	protoPosts := make([]*pb.Post, len(posts))
@@ -120,12 +120,12 @@ func (p *PostServiceServer) FetchRecommendations(ctx context.Context, req *pb.Fe
 	logger.Info(ctx, "FetchRecommendations called")
 	userId, err := uuid.Parse(req.UserId)
 	if err != nil {
-		logger.Error(ctx, "Invalid user ID:", err)
+		logger.Error(ctx, "Invalid user ID:: %v", err)
 		return nil, err
 	}
 	posts, err := p.postUseCase.FetchRecommendations(ctx, userId, int(req.NumPosts), req.Timestamp.AsTime())
 	if err != nil {
-		logger.Error(ctx, "Failed to fetch recommendations:", err)
+		logger.Error(ctx, "Failed to fetch recommendations:: %v", err)
 		return nil, err
 	}
 	protoPosts := make([]*pb.Post, len(posts))
@@ -139,18 +139,18 @@ func (p *PostServiceServer) FetchUserPosts(ctx context.Context, req *pb.FetchUse
 	logger.Info(ctx, "FetchCreatorPosts called")
 	userId, err := uuid.Parse(req.UserId)
 	if err != nil {
-		logger.Error(ctx, "Invalid user ID:", err)
+		logger.Error(ctx, "Invalid user ID:: %v", err)
 		return nil, err
 	}
 	requesterId, err := uuid.Parse(req.RequesterId)
 	if err != nil {
-		logger.Error(ctx, "Invalid requester ID:", err)
+		logger.Error(ctx, "Invalid requester ID:: %v", err)
 		return nil, err
 	}
 
 	posts, err := p.postUseCase.FetchUserPosts(ctx, userId, requesterId, int(req.NumPosts), req.Timestamp.AsTime())
 	if err != nil {
-		logger.Error(ctx, "Failed to fetch user posts:", err)
+		logger.Error(ctx, "Failed to fetch user posts:: %v", err)
 		return nil, err
 	}
 	protoPosts := make([]*pb.Post, len(posts))
@@ -164,16 +164,16 @@ func (p *PostServiceServer) LikePost(ctx context.Context, req *pb.LikePostReques
 	logger.Info(ctx, "LikePost called")
 	postId, err := uuid.Parse(req.PostId)
 	if err != nil {
-		logger.Error(ctx, "Invalid post ID:", err)
+		logger.Error(ctx, "Invalid post ID:: %v", err)
 		return nil, err
 	}
 	userId, err := uuid.Parse(req.UserId)
 	if err != nil {
-		logger.Error(ctx, "Invalid user ID:", err)
+		logger.Error(ctx, "Invalid user ID:: %v", err)
 		return nil, err
 	}
 	if err := p.postUseCase.LikePost(ctx, postId, userId); err != nil {
-		logger.Error(ctx, "Failed to like post:", err)
+		logger.Error(ctx, "Failed to like post:: %v", err)
 		return nil, err
 	}
 	return &pb.LikePostResponse{Success: true}, nil
@@ -183,16 +183,16 @@ func (p *PostServiceServer) UnlikePost(ctx context.Context, req *pb.UnlikePostRe
 	logger.Info(ctx, "UnlikePost called")
 	postId, err := uuid.Parse(req.PostId)
 	if err != nil {
-		logger.Error(ctx, "Invalid post ID:", err)
+		logger.Error(ctx, "Invalid post ID:: %v", err)
 		return nil, err
 	}
 	userId, err := uuid.Parse(req.UserId)
 	if err != nil {
-		logger.Error(ctx, "Invalid user ID:", err)
+		logger.Error(ctx, "Invalid user ID:: %v", err)
 		return nil, err
 	}
 	if err := p.postUseCase.UnlikePost(ctx, postId, userId); err != nil {
-		logger.Error(ctx, "Failed to unlike post:", err)
+		logger.Error(ctx, "Failed to unlike post:: %v", err)
 		return nil, err
 	}
 	return &pb.UnlikePostResponse{Success: true}, nil
@@ -202,18 +202,18 @@ func (p *PostServiceServer) GetPost(ctx context.Context, req *pb.GetPostRequest)
 	logger.Info(ctx, "GetPost called")
 	postId, err := uuid.Parse(req.PostId)
 	if err != nil {
-		logger.Error(ctx, "Invalid post ID:", err)
+		logger.Error(ctx, "Invalid post ID:: %v", err)
 		return nil, err
 	}
 	userId, err := uuid.Parse(req.UserId)
 	if err != nil {
-		logger.Error(ctx, "Invalid user ID:", err)
+		logger.Error(ctx, "Invalid user ID:: %v", err)
 		return nil, err
 	}
 
 	post, err := p.postUseCase.GetPost(ctx, postId, userId)
 	if err != nil {
-		logger.Error(ctx, "Failed to get post:", err)
+		logger.Error(ctx, "Failed to get post:: %v", err)
 		return nil, err
 	}
 	return &pb.GetPostResponse{Post: dto.ModelPostToProto(post)}, nil

@@ -57,7 +57,7 @@ func NewCommunityUseCase(repo CommunityRepository, fileService FileService, vali
 
 func (c *CommunityUseCase) CreateCommunity(ctx context.Context, community models.Community) (*models.Community, error) {
 	if err := c.validator.ValidateCommunity(&community); err != nil {
-		logger.Error(ctx, fmt.Sprintf("community validation error: %v", err))
+		logger.Error(ctx, "community validation error: %v", err)
 		return nil, err
 	}
 
@@ -69,7 +69,7 @@ func (c *CommunityUseCase) CreateCommunity(ctx context.Context, community models
 	// check if community with this name already exists
 	_, err := c.repo.GetCommunityByName(ctx, community.BasicInfo.Name)
 	if err != nil && !errors.Is(err, community_errors.ErrNotFound) {
-		logger.Error(ctx, fmt.Sprintf("failed to check if community exists: %v", err))
+		logger.Error(ctx, "failed to check if community exists: %v", err)
 		return nil, err
 	}
 	if err == nil {
@@ -88,7 +88,7 @@ func (c *CommunityUseCase) CreateCommunity(ctx context.Context, community models
 	if community.Avatar != nil {
 		community.BasicInfo.AvatarUrl, err = c.fileService.UploadFile(ctx, community.Avatar)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("failed to upload community avatar: %v", err))
+			logger.Error(ctx, "failed to upload community avatar: %v", err)
 			return nil, err
 		}
 	}
@@ -96,13 +96,13 @@ func (c *CommunityUseCase) CreateCommunity(ctx context.Context, community models
 	if community.Cover != nil {
 		community.BasicInfo.CoverUrl, err = c.fileService.UploadFile(ctx, community.Cover)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("failed to upload community cover: %v", err))
+			logger.Error(ctx, "failed to upload community cover: %v", err)
 			return nil, err
 		}
 	}
 
 	if err = c.repo.CreateCommunity(ctx, community); err != nil {
-		logger.Error(ctx, fmt.Sprintf("failed to create community: %v", err))
+		logger.Error(ctx, "failed to create community: %v", err)
 		return nil, err
 	}
 	return &community, nil
@@ -116,7 +116,7 @@ func (c *CommunityUseCase) GetCommunityById(ctx context.Context, id uuid.UUID) (
 
 	community, err := c.repo.GetCommunityById(ctx, id)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("failed to get community by ID: %v", err))
+		logger.Error(ctx, "failed to get community by ID: %v", err)
 		return models.Community{}, err
 	}
 	return community, nil
@@ -130,7 +130,7 @@ func (c *CommunityUseCase) GetCommunityByName(ctx context.Context, name string) 
 
 	community, err := c.repo.GetCommunityByName(ctx, name)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("failed to get community by name: %v", err))
+		logger.Error(ctx, "failed to get community by name: %v", err)
 		return models.Community{}, err
 	}
 	return community, nil
@@ -144,7 +144,7 @@ func (c *CommunityUseCase) GetCommunityMembers(ctx context.Context, id uuid.UUID
 
 	members, err := c.repo.GetCommunityMembers(ctx, id, numMembers, ts)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("failed to get community members: %v", err))
+		logger.Error(ctx, "failed to get community members: %v", err)
 		return nil, err
 	}
 	return members, nil
@@ -159,7 +159,7 @@ func (c *CommunityUseCase) IsCommunityMember(ctx context.Context, userId, commun
 	var role *models.CommunityRole
 	isMember, role, err := c.repo.IsCommunityMember(ctx, userId, communityId)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("failed to check if user is a community member: %v", err))
+		logger.Error(ctx, "failed to check if user is a community member: %v", err)
 		return false, nil, err
 	}
 	return isMember, role, nil
@@ -174,12 +174,12 @@ func (c *CommunityUseCase) DeleteCommunity(ctx context.Context, id uuid.UUID) er
 	// get url of photo to delete
 	community, err := c.repo.GetCommunityById(ctx, id)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("failed to get community by ID: %v", err))
+		logger.Error(ctx, "failed to get community by ID: %v", err)
 		return err
 	}
 
 	if err := c.repo.DeleteCommunity(ctx, id); err != nil {
-		logger.Error(ctx, fmt.Sprintf("failed to delete community: %v", err))
+		logger.Error(ctx, "failed to delete community: %v", err)
 		return err
 	}
 
@@ -187,7 +187,7 @@ func (c *CommunityUseCase) DeleteCommunity(ctx context.Context, id uuid.UUID) er
 	if len(community.BasicInfo.AvatarUrl) > 0 {
 		err = c.fileService.DeleteFile(ctx, path.Base(community.BasicInfo.AvatarUrl))
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("failed to delete community avatar: %v", err))
+			logger.Error(ctx, "failed to delete community avatar: %v", err)
 			return err
 		}
 	}
@@ -195,7 +195,7 @@ func (c *CommunityUseCase) DeleteCommunity(ctx context.Context, id uuid.UUID) er
 	if len(community.BasicInfo.CoverUrl) > 0 {
 		err = c.fileService.DeleteFile(ctx, path.Base(community.BasicInfo.CoverUrl))
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("failed to delete community cover: %v", err))
+			logger.Error(ctx, "failed to delete community cover: %v", err)
 			return err
 		}
 	}
@@ -204,7 +204,7 @@ func (c *CommunityUseCase) DeleteCommunity(ctx context.Context, id uuid.UUID) er
 
 func (c *CommunityUseCase) UpdateCommunity(ctx context.Context, community models.Community, userId uuid.UUID) (*models.Community, error) {
 	if err := c.validator.ValidateCommunity(&community); err != nil && !errors.Is(err, community_errors.ErrNilOwnerId) {
-		logger.Error(ctx, fmt.Sprintf("community validation error: %v", err))
+		logger.Error(ctx, "community validation error: %v", err)
 		return nil, err
 	}
 
@@ -216,7 +216,7 @@ func (c *CommunityUseCase) UpdateCommunity(ctx context.Context, community models
 	// check if community with this name already exists
 	existingCommunity, err := c.repo.GetCommunityByName(ctx, community.BasicInfo.Name)
 	if err != nil && !errors.Is(err, community_errors.ErrNotFound) {
-		logger.Error(ctx, fmt.Sprintf("failed to check if community exists: %v", err))
+		logger.Error(ctx, "failed to check if community exists: %v", err)
 		return nil, err
 	}
 	if err == nil && existingCommunity.ID != community.ID {
@@ -227,7 +227,7 @@ func (c *CommunityUseCase) UpdateCommunity(ctx context.Context, community models
 	// get user role
 	isMember, role, err := c.repo.IsCommunityMember(ctx, userId, community.ID)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("failed to check if user is a community member: %v", err))
+		logger.Error(ctx, "failed to check if user is a community member: %v", err)
 		return nil, err
 	}
 
@@ -243,12 +243,12 @@ func (c *CommunityUseCase) UpdateCommunity(ctx context.Context, community models
 	// get and delete old picture
 	oldCommunity, err := c.repo.GetCommunityById(ctx, community.ID)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("failed to get community by ID: %v", err))
+		logger.Error(ctx, "failed to get community by ID: %v", err)
 		return nil, err
 	}
 
 	if err := c.repo.UpdateCommunityTextInfo(ctx, community); err != nil {
-		logger.Error(ctx, fmt.Sprintf("failed to update community: %v", err))
+		logger.Error(ctx, "failed to update community: %v", err)
 		return nil, err
 	}
 
@@ -256,12 +256,12 @@ func (c *CommunityUseCase) UpdateCommunity(ctx context.Context, community models
 	if community.Avatar != nil {
 		community.BasicInfo.AvatarUrl, err = c.fileService.UploadFile(ctx, community.Avatar)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("failed to upload community avatar: %v", err))
+			logger.Error(ctx, "failed to upload community avatar: %v", err)
 			return nil, err
 		}
 
 		if err := c.repo.UpdateCommunityAvatar(ctx, community.ID, community.BasicInfo.AvatarUrl); err != nil {
-			logger.Error(ctx, fmt.Sprintf("failed to update community avatar: %v", err))
+			logger.Error(ctx, "failed to update community avatar: %v", err)
 			return nil, err
 		}
 	}
@@ -269,11 +269,11 @@ func (c *CommunityUseCase) UpdateCommunity(ctx context.Context, community models
 	if community.Cover != nil {
 		community.BasicInfo.CoverUrl, err = c.fileService.UploadFile(ctx, community.Cover)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("failed to upload community cover: %v", err))
+			logger.Error(ctx, "failed to upload community cover: %v", err)
 			return nil, err
 		}
 		if err := c.repo.UpdateCommunityCover(ctx, community.ID, community.BasicInfo.CoverUrl); err != nil {
-			logger.Error(ctx, fmt.Sprintf("failed to update community cover: %v", err))
+			logger.Error(ctx, "failed to update community cover: %v", err)
 			return nil, err
 		}
 	}
@@ -281,7 +281,7 @@ func (c *CommunityUseCase) UpdateCommunity(ctx context.Context, community models
 	// return updated community
 	updatedCommunity, err := c.repo.GetCommunityById(ctx, community.ID)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("failed to get updated community by ID: %v", err))
+		logger.Error(ctx, "failed to get updated community by ID: %v", err)
 		return nil, err
 	}
 
@@ -289,14 +289,14 @@ func (c *CommunityUseCase) UpdateCommunity(ctx context.Context, community models
 		if community.Avatar != nil && len(oldCommunity.BasicInfo.AvatarUrl) > 0 && oldCommunity.BasicInfo.AvatarUrl != community.BasicInfo.AvatarUrl {
 			err = c.fileService.DeleteFile(ctx, path.Base(oldCommunity.BasicInfo.AvatarUrl))
 			if err != nil {
-				logger.Error(ctx, fmt.Sprintf("failed to delete community avatar: %v", err))
+				logger.Error(ctx, "failed to delete community avatar: %v", err)
 				return nil, err
 			}
 		}
 		if community.Cover != nil && len(oldCommunity.BasicInfo.CoverUrl) > 0 && oldCommunity.BasicInfo.CoverUrl != community.BasicInfo.CoverUrl {
 			err = c.fileService.DeleteFile(ctx, path.Base(oldCommunity.BasicInfo.CoverUrl))
 			if err != nil {
-				logger.Error(ctx, fmt.Sprintf("failed to delete community cover: %v", err))
+				logger.Error(ctx, "failed to delete community cover: %v", err)
 				return nil, err
 			}
 		}
@@ -317,7 +317,7 @@ func (c *CommunityUseCase) JoinCommunity(ctx context.Context, member models.Comm
 
 	community, err := c.repo.GetCommunityById(ctx, member.CommunityID)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("failed to get community by ID: %v", err))
+		logger.Error(ctx, "failed to get community by ID: %v", err)
 		return err
 	}
 
@@ -330,7 +330,7 @@ func (c *CommunityUseCase) JoinCommunity(ctx context.Context, member models.Comm
 	}
 
 	if err := c.repo.JoinCommunity(ctx, member); err != nil {
-		logger.Error(ctx, fmt.Sprintf("failed to join community: %v", err))
+		logger.Error(ctx, "failed to join community: %v", err)
 		return err
 	}
 	return nil
@@ -343,7 +343,7 @@ func (c *CommunityUseCase) LeaveCommunity(ctx context.Context, userId, community
 	}
 
 	if err := c.repo.LeaveCommunity(ctx, userId, communityId); err != nil {
-		logger.Error(ctx, fmt.Sprintf("failed to leave community: %v", err))
+		logger.Error(ctx, "failed to leave community: %v", err)
 		return err
 	}
 	return nil
@@ -357,7 +357,7 @@ func (c *CommunityUseCase) GetUserCommunities(ctx context.Context, userId uuid.U
 
 	communities, err := c.repo.GetUserCommunities(ctx, userId, count, ts)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("failed to get user communities: %v", err))
+		logger.Error(ctx, "failed to get user communities: %v", err)
 		return nil, err
 	}
 
@@ -377,7 +377,7 @@ func (c *CommunityUseCase) SearchSimilarCommunities(ctx context.Context, name st
 
 	communities, err := c.repo.SearchSimilarCommunities(ctx, name, count)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("failed to search similar communities: %v", err))
+		logger.Error(ctx, "failed to search similar communities: %v", err)
 		return nil, err
 	}
 
@@ -393,7 +393,7 @@ func (c *CommunityUseCase) ChangeUserRole(ctx context.Context, userId, community
 	// check if requester is admin or owner
 	isMember, requesterRole, err := c.repo.IsCommunityMember(ctx, requester, communityId)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("failed to check if user is a community member: %v", err))
+		logger.Error(ctx, "failed to check if user is a community member: %v", err)
 		return err
 	}
 	if !isMember || requesterRole == nil {
@@ -406,7 +406,7 @@ func (c *CommunityUseCase) ChangeUserRole(ctx context.Context, userId, community
 	}
 
 	if err := c.repo.ChangeUserRole(ctx, userId, communityId, role); err != nil {
-		logger.Error(ctx, fmt.Sprintf("failed to change user role: %v", err))
+		logger.Error(ctx, "failed to change user role: %v", err)
 		return err
 	}
 	return nil
@@ -420,7 +420,7 @@ func (c *CommunityUseCase) GetControlledCommunities(ctx context.Context, userId 
 
 	communities, err := c.repo.GetControlledCommunities(ctx, userId, count, ts)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("failed to get user communities: %v", err))
+		logger.Error(ctx, "failed to get user communities: %v", err)
 		return nil, err
 	}
 

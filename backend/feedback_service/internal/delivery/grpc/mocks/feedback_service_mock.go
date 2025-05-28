@@ -52,51 +52,6 @@ func (mr *MockFeedbackServiceMockRecorder) GetAllFeedbackType(ctx, feedbackType,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllFeedbackType", reflect.TypeOf((*MockFeedbackService)(nil).GetAllFeedbackType), ctx, feedbackType, ts, count)
 }
 
-// GetNumMessagesSent mocks base method.
-func (m *MockFeedbackService) GetNumMessagesSent(ctx context.Context, userId uuid.UUID) (int64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNumMessagesSent", ctx, userId)
-	ret0, _ := ret[0].(int64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetNumMessagesSent indicates an expected call of GetNumMessagesSent.
-func (mr *MockFeedbackServiceMockRecorder) GetNumMessagesSent(ctx, userId interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNumMessagesSent", reflect.TypeOf((*MockFeedbackService)(nil).GetNumMessagesSent), ctx, userId)
-}
-
-// GetNumPostsCreated mocks base method.
-func (m *MockFeedbackService) GetNumPostsCreated(ctx context.Context, userId uuid.UUID) (int64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNumPostsCreated", ctx, userId)
-	ret0, _ := ret[0].(int64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetNumPostsCreated indicates an expected call of GetNumPostsCreated.
-func (mr *MockFeedbackServiceMockRecorder) GetNumPostsCreated(ctx, userId interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNumPostsCreated", reflect.TypeOf((*MockFeedbackService)(nil).GetNumPostsCreated), ctx, userId)
-}
-
-// GetNumProfileChanges mocks base method.
-func (m *MockFeedbackService) GetNumProfileChanges(ctx context.Context, userId uuid.UUID) (int64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNumProfileChanges", ctx, userId)
-	ret0, _ := ret[0].(int64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetNumProfileChanges indicates an expected call of GetNumProfileChanges.
-func (mr *MockFeedbackServiceMockRecorder) GetNumProfileChanges(ctx, userId interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNumProfileChanges", reflect.TypeOf((*MockFeedbackService)(nil).GetNumProfileChanges), ctx, userId)
-}
-
 // SaveFeedback mocks base method.
 func (m *MockFeedbackService) SaveFeedback(ctx context.Context, feedback *models.Feedback) error {
 	m.ctrl.T.Helper()

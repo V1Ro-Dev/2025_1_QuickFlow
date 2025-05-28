@@ -122,18 +122,18 @@ func (p *PostgresPostRepository) AddPost(ctx context.Context, post models.Post) 
 		postPostgres.CreatedAt, postPostgres.UpdatedAt, postPostgres.LikeCount, postPostgres.RepostCount,
 		postPostgres.CommentCount, postPostgres.IsRepost)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to save post %v to database: %s", post, err.Error()))
+		logger.Error(ctx, "Unable to save post %v to database: %s", post, err.Error())
 		return fmt.Errorf("unable to save post to database: %w", err)
 	}
 
-	logger.Info(ctx, fmt.Sprintf("Post %v saved to database", postPostgres.Id))
+	logger.Info(ctx, "Post %v saved to database", postPostgres.Id)
 
 	for _, picture := range postPostgres.Files {
 		_, err = p.connPool.ExecContext(ctx, insertPhotoQuery,
 			postPostgres.Id, picture.URL, picture.DisplayType)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Unable to save post pictures %v for post %v to database: %s",
-				postPostgres.Files, post, err.Error()))
+			logger.Error(ctx, "Unable to save post pictures %v for post %v to database: %s",
+				postPostgres.Files, post, err.Error())
 			return fmt.Errorf("unable to save post pictures to database: %w", err)
 		}
 	}
@@ -145,7 +145,7 @@ func (p *PostgresPostRepository) AddPost(ctx context.Context, post models.Post) 
 func (p *PostgresPostRepository) DeletePost(ctx context.Context, postId uuid.UUID) error {
 	_, err := p.connPool.ExecContext(ctx, "delete from post cascade where id = $1", pgtype.UUID{Bytes: postId, Valid: true})
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to delete post %v from database: %s", postId, err.Error()))
+		logger.Error(ctx, "Unable to delete post %v from database: %s", postId, err.Error())
 		return fmt.Errorf("unable to delete post from database: %w", err)
 	}
 
@@ -156,7 +156,7 @@ func (p *PostgresPostRepository) BelongsTo(ctx context.Context, userId uuid.UUID
 	var id uuid.UUID
 	err := p.connPool.QueryRowContext(ctx, "select creator_id from post where id = $1", pgtype.UUID{Bytes: postId, Valid: true}).Scan(&id)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to get post %v from database: %s", postId, err.Error()))
+		logger.Error(ctx, "Unable to get post %v from database: %s", postId, err.Error())
 		return false, fmt.Errorf("unable to get post from database: %w", err)
 	}
 
@@ -171,13 +171,13 @@ func (p *PostgresPostRepository) GetPost(ctx context.Context, postId uuid.UUID) 
 		&postPostgres.CreatedAt, &postPostgres.UpdatedAt, &postPostgres.LikeCount,
 		&postPostgres.RepostCount, &postPostgres.CommentCount, &postPostgres.IsRepost)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to get post %v from database: %s", postId, err.Error()))
+		logger.Error(ctx, "Unable to get post %v from database: %s", postId, err.Error())
 		return models.Post{}, fmt.Errorf("unable to get post from database: %w", err)
 	}
 
 	pics, err := p.connPool.QueryContext(ctx, getPhotosQuery, postId)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to get post pictures %v from database: %s", postId, err.Error()))
+		logger.Error(ctx, "Unable to get post pictures %v from database: %s", postId, err.Error())
 		return models.Post{}, fmt.Errorf("unable to get post pictures from database: %w", err)
 	}
 
@@ -185,7 +185,7 @@ func (p *PostgresPostRepository) GetPost(ctx context.Context, postId uuid.UUID) 
 		var postgresFile pgmodels.PostgresFile
 		err = pics.Scan(&postgresFile.URL, &postgresFile.DisplayType, &postgresFile.Name)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Unable to scan post picture %v from database: %s", postgresFile.Name, err.Error()))
+			logger.Error(ctx, "Unable to scan post picture %v from database: %s", postgresFile.Name, err.Error())
 			return models.Post{}, fmt.Errorf("unable to get post pictures from database: %w", err)
 		}
 
@@ -205,8 +205,8 @@ func (p *PostgresPostRepository) GetUserPosts(ctx context.Context, id uuid.UUID,
 		return nil, post_errors.ErrNotFound
 	}
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to get posts from database for user %v, numPosts %v, timestamp %v: %s",
-			id, numPosts, timestamp, err.Error()))
+		logger.Error(ctx, "Unable to get posts from database for user %v, numPosts %v, timestamp %v: %s",
+			id, numPosts, timestamp, err.Error())
 		return nil, fmt.Errorf("unable to get posts from database: %w", err)
 	}
 	defer func(rows *sql.Rows) {
@@ -224,13 +224,13 @@ func (p *PostgresPostRepository) GetUserPosts(ctx context.Context, id uuid.UUID,
 			&postPostgres.CreatedAt, &postPostgres.UpdatedAt, &postPostgres.LikeCount,
 			&postPostgres.RepostCount, &postPostgres.CommentCount, &postPostgres.IsRepost)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Unable to scan post %v from database: %s", postPostgres.Id, err.Error()))
+			logger.Error(ctx, "Unable to scan post %v from database: %s", postPostgres.Id, err.Error())
 			return nil, fmt.Errorf("unable to get posts from database: %w", err)
 		}
 
 		pics, err := p.connPool.QueryContext(ctx, getPhotosQuery, postPostgres.Id)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Unable to get post pictures %v from database: %s", postPostgres.Id, err.Error()))
+			logger.Error(ctx, "Unable to get post pictures %v from database: %s", postPostgres.Id, err.Error())
 			return nil, fmt.Errorf("unable to get posts from database: %w", err)
 		}
 
@@ -238,7 +238,7 @@ func (p *PostgresPostRepository) GetUserPosts(ctx context.Context, id uuid.UUID,
 			var postgresFile pgmodels.PostgresFile
 			err = pics.Scan(&postgresFile.URL, &postgresFile.DisplayType, &postgresFile.Name)
 			if err != nil {
-				logger.Error(ctx, fmt.Sprintf("Unable to scan post picture %v from database: %s", postgresFile.Name, err.Error()))
+				logger.Error(ctx, "Unable to scan post picture %v from database: %s", postgresFile.Name, err.Error())
 				return nil, fmt.Errorf("unable to get post pictures from database: %w", err)
 			}
 
@@ -252,7 +252,7 @@ func (p *PostgresPostRepository) GetUserPosts(ctx context.Context, id uuid.UUID,
 		// check if requester liked the post
 		liked, err := p.CheckIfPostLiked(ctx, postPostgres.Id.Bytes, requesterId)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Unable to check if post %v is liked by user %v: %s", postPostgres.Id, requesterId, err.Error()))
+			logger.Error(ctx, "Unable to check if post %v is liked by user %v: %s", postPostgres.Id, requesterId, err.Error())
 			return nil, fmt.Errorf("unable to check if post is liked by user: %w", err)
 		}
 		postPostgres.IsLiked = pgtype.Bool{Bool: liked, Valid: true}
@@ -268,8 +268,8 @@ func (p *PostgresPostRepository) GetRecommendationsForUId(ctx context.Context, u
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, post_errors.ErrNotFound
 	} else if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to get posts from database for user %v, numPosts %v, timestamp %v: %s",
-			uid, numPosts, timestamp, err.Error()))
+		logger.Error(ctx, "Unable to get posts from database for user %v, numPosts %v, timestamp %v: %s",
+			uid, numPosts, timestamp, err.Error())
 		return nil, fmt.Errorf("unable to get posts from database: %w", err)
 	}
 	defer func(rows *sql.Rows) {
@@ -287,13 +287,13 @@ func (p *PostgresPostRepository) GetRecommendationsForUId(ctx context.Context, u
 			&postPostgres.CreatedAt, &postPostgres.UpdatedAt, &postPostgres.LikeCount,
 			&postPostgres.RepostCount, &postPostgres.CommentCount, &postPostgres.IsRepost)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Unable to scan post %v from database: %s", postPostgres.Id, err.Error()))
+			logger.Error(ctx, "Unable to scan post %v from database: %s", postPostgres.Id, err.Error())
 			return nil, fmt.Errorf("unable to get posts from database: %w", err)
 		}
 
 		pics, err := p.connPool.QueryContext(ctx, getPhotosQuery, postPostgres.Id)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Unable to get post pictures %v from database: %s", postPostgres.Id, err.Error()))
+			logger.Error(ctx, "Unable to get post pictures %v from database: %s", postPostgres.Id, err.Error())
 			return nil, fmt.Errorf("unable to get posts from database: %w", err)
 		}
 
@@ -301,7 +301,7 @@ func (p *PostgresPostRepository) GetRecommendationsForUId(ctx context.Context, u
 			var postgresFile pgmodels.PostgresFile
 			err = pics.Scan(&postgresFile.URL, &postgresFile.DisplayType, &postgresFile.Name)
 			if err != nil {
-				logger.Error(ctx, fmt.Sprintf("Unable to scan post picture %v from database: %s", postgresFile.Name, err.Error()))
+				logger.Error(ctx, "Unable to scan post picture %v from database: %s", postgresFile.Name, err.Error())
 				return nil, fmt.Errorf("unable to get post pictures from database: %w", err)
 			}
 
@@ -315,7 +315,7 @@ func (p *PostgresPostRepository) GetRecommendationsForUId(ctx context.Context, u
 		// check if requester liked the post
 		liked, err := p.CheckIfPostLiked(ctx, postPostgres.Id.Bytes, uid)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Unable to check if post %v is liked by user %v: %s", postPostgres.Id, uid, err.Error()))
+			logger.Error(ctx, "Unable to check if post %v is liked by user %v: %s", postPostgres.Id, uid, err.Error())
 			return nil, fmt.Errorf("unable to check if post is liked by user: %w", err)
 		}
 		postPostgres.IsLiked = pgtype.Bool{Bool: liked, Valid: true}
@@ -332,8 +332,8 @@ func (p *PostgresPostRepository) GetPostsForUId(ctx context.Context, uid uuid.UU
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, post_errors.ErrNotFound
 	} else if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to get posts from database for user %v, numPosts %v, timestamp %v: %s",
-			uid, numPosts, timestamp, err.Error()))
+		logger.Error(ctx, "Unable to get posts from database for user %v, numPosts %v, timestamp %v: %s",
+			uid, numPosts, timestamp, err.Error())
 		return nil, fmt.Errorf("unable to get posts from database: %w", err)
 	}
 	defer func(rows *sql.Rows) {
@@ -351,13 +351,13 @@ func (p *PostgresPostRepository) GetPostsForUId(ctx context.Context, uid uuid.UU
 			&postPostgres.CreatedAt, &postPostgres.UpdatedAt, &postPostgres.LikeCount,
 			&postPostgres.RepostCount, &postPostgres.CommentCount, &postPostgres.IsRepost)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Unable to scan post %v from database: %s", postPostgres.Id, err.Error()))
+			logger.Error(ctx, "Unable to scan post %v from database: %s", postPostgres.Id, err.Error())
 			return nil, fmt.Errorf("unable to get posts from database: %w", err)
 		}
 
 		pics, err := p.connPool.QueryContext(ctx, getPhotosQuery, postPostgres.Id)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Unable to get post pictures %v from database: %s", postPostgres.Id, err.Error()))
+			logger.Error(ctx, "Unable to get post pictures %v from database: %s", postPostgres.Id, err.Error())
 			return nil, fmt.Errorf("unable to get posts from database: %w", err)
 		}
 
@@ -365,7 +365,7 @@ func (p *PostgresPostRepository) GetPostsForUId(ctx context.Context, uid uuid.UU
 			var postgresFile pgmodels.PostgresFile
 			err = pics.Scan(&postgresFile.URL, &postgresFile.DisplayType, &postgresFile.Name)
 			if err != nil {
-				logger.Error(ctx, fmt.Sprintf("Unable to scan post picture %v from database: %s", postgresFile.Name, err.Error()))
+				logger.Error(ctx, "Unable to scan post picture %v from database: %s", postgresFile.Name, err.Error())
 				return nil, fmt.Errorf("unable to get post pictures from database: %w", err)
 			}
 
@@ -379,7 +379,7 @@ func (p *PostgresPostRepository) GetPostsForUId(ctx context.Context, uid uuid.UU
 		// check if requester liked the post
 		liked, err := p.CheckIfPostLiked(ctx, postPostgres.Id.Bytes, uid)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Unable to check if post %v is liked by user %v: %s", postPostgres.Id, uid, err.Error()))
+			logger.Error(ctx, "Unable to check if post %v is liked by user %v: %s", postPostgres.Id, uid, err.Error())
 			return nil, fmt.Errorf("unable to check if post is liked by user: %w", err)
 		}
 		postPostgres.IsLiked = pgtype.Bool{Bool: liked, Valid: true}
@@ -393,20 +393,20 @@ func (p *PostgresPostRepository) GetPostsForUId(ctx context.Context, uid uuid.UU
 func (p *PostgresPostRepository) UpdatePost(ctx context.Context, postUpdate models.PostUpdate) error {
 	_, err := p.connPool.ExecContext(ctx, "update post set text = $1, updated_at = $2 where id = $3", postUpdate.Desc, time.Now(), postUpdate.Id)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to update post %v in database: %s", postUpdate.Id, err.Error()))
+		logger.Error(ctx, "Unable to update post %v in database: %s", postUpdate.Id, err.Error())
 		return fmt.Errorf("unable to update post in database: %w", err)
 	}
 
 	_, err = p.connPool.ExecContext(ctx, "delete from post_file where post_id = $1", postUpdate.Id)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to delete post pictures %v from database: %s", postUpdate.Id, err.Error()))
+		logger.Error(ctx, "Unable to delete post pictures %v from database: %s", postUpdate.Id, err.Error())
 		return fmt.Errorf("unable to delete post pictures from database: %w", err)
 	}
 
 	for _, file := range postUpdate.Files {
 		_, err = p.connPool.ExecContext(ctx, insertPhotoQuery, postUpdate.Id, file.URL, file.DisplayType)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Unable to insert post picture %v into database: %s", file.URL, err.Error()))
+			logger.Error(ctx, "Unable to insert post picture %v into database: %s", file.URL, err.Error())
 			return fmt.Errorf("unable to insert post picture into database: %w", err)
 		}
 	}
@@ -417,7 +417,7 @@ func (p *PostgresPostRepository) UpdatePost(ctx context.Context, postUpdate mode
 func (p *PostgresPostRepository) GetPostFiles(ctx context.Context, postId uuid.UUID) ([]string, error) {
 	rows, err := p.connPool.QueryContext(ctx, getPhotosQuery, postId)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to get post pictures %v from database: %s", postId, err.Error()))
+		logger.Error(ctx, "Unable to get post pictures %v from database: %s", postId, err.Error())
 		return nil, fmt.Errorf("unable to get post pictures from database: %w", err)
 	}
 	defer func(rows *sql.Rows) {
@@ -432,7 +432,7 @@ func (p *PostgresPostRepository) GetPostFiles(ctx context.Context, postId uuid.U
 		var pic, tp, name pgtype.Text
 		err = rows.Scan(&pic, &tp, &name)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Unable to scan post picture %v from database: %s", pic, err.Error()))
+			logger.Error(ctx, "Unable to scan post picture %v from database: %s", pic, err.Error())
 			return nil, fmt.Errorf("unable to get post pictures from database: %w", err)
 		}
 
@@ -448,7 +448,7 @@ func (p *PostgresPostRepository) CheckIfPostLiked(ctx context.Context, postId uu
 	if errors.Is(err, sql.ErrNoRows) {
 		return false, nil
 	} else if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to check if post %v is liked by user %v: %s", postId, userId, err.Error()))
+		logger.Error(ctx, "Unable to check if post %v is liked by user %v: %s", postId, userId, err.Error())
 		return false, fmt.Errorf("unable to check if post is liked by user: %w", err)
 	}
 	return true, nil
@@ -457,13 +457,13 @@ func (p *PostgresPostRepository) CheckIfPostLiked(ctx context.Context, postId uu
 func (p *PostgresPostRepository) UnlikePost(ctx context.Context, postId uuid.UUID, userId uuid.UUID) error {
 	res, err := p.connPool.ExecContext(ctx, unlikePostRequest, postId, userId)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to unlike post %v by user %v: %s", postId, userId, err.Error()))
+		logger.Error(ctx, "Unable to unlike post %v by user %v: %s", postId, userId, err.Error())
 		return fmt.Errorf("unable to unlike post: %w", err)
 	}
 
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to check rows affected when unliking post %v by user %v: %s", postId, userId, err.Error()))
+		logger.Error(ctx, "Unable to check rows affected when unliking post %v by user %v: %s", postId, userId, err.Error())
 		return fmt.Errorf("unable to check if unlike was successful: %w", err)
 	}
 
@@ -478,7 +478,7 @@ func (p *PostgresPostRepository) LikePost(ctx context.Context, postId uuid.UUID,
 	// дополнительная проверка на лайк для безопасности
 	liked, err := p.CheckIfPostLiked(ctx, postId, userId)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to check if post %v is already liked by user %v: %s", postId, userId, err.Error()))
+		logger.Error(ctx, "Failed to check if post %v is already liked by user %v: %s", postId, userId, err.Error())
 		return fmt.Errorf("failed to check if already liked: %w", err)
 	}
 	if liked {
@@ -487,7 +487,7 @@ func (p *PostgresPostRepository) LikePost(ctx context.Context, postId uuid.UUID,
 
 	_, err = p.connPool.ExecContext(ctx, likePostRequest, userId, postId)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to like post %v by user %v: %s", postId, userId, err.Error()))
+		logger.Error(ctx, "Unable to like post %v by user %v: %s", postId, userId, err.Error())
 		return fmt.Errorf("unable to like post: %w", err)
 	}
 

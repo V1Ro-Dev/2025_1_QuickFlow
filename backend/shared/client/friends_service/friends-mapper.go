@@ -19,6 +19,9 @@ func fromModelFriendInfoToGrpc(info models.FriendInfo) *pb.GetFriendInfo {
 }
 
 func fromGrpcToModelFriendInfo(info *pb.GetFriendInfo) models.FriendInfo {
+	if info == nil {
+		return models.FriendInfo{}
+	}
 	return models.FriendInfo{
 		Id:         uuid.MustParse(info.Id),
 		Firstname:  info.Firstname,
@@ -30,6 +33,9 @@ func fromGrpcToModelFriendInfo(info *pb.GetFriendInfo) models.FriendInfo {
 }
 
 func FromModelFriendsInfoToGrpc(infos []models.FriendInfo, friendsCount int) *pb.GetFriendsInfoResponse {
+	if len(infos) == 0 {
+		return &pb.GetFriendsInfoResponse{}
+	}
 	var friendsInfos []*pb.GetFriendInfo
 	for _, info := range infos {
 		friendsInfos = append(friendsInfos, fromModelFriendInfoToGrpc(info))
@@ -42,6 +48,9 @@ func FromModelFriendsInfoToGrpc(infos []models.FriendInfo, friendsCount int) *pb
 }
 
 func FromGrpcToModelFriendsInfo(in *pb.GetFriendsInfoResponse) ([]models.FriendInfo, int) {
+	if in == nil || in.Friends == nil {
+		return nil, 0
+	}
 	result := make([]models.FriendInfo, len(in.Friends))
 	for i, info := range in.Friends {
 		result[i] = fromGrpcToModelFriendInfo(info)

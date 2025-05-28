@@ -43,6 +43,9 @@ func MapChatsToProto(chats []models.Chat) []*pb.Chat {
 }
 
 func MapProtoToChat(chat *pb.Chat) *models.Chat {
+	if chat == nil {
+		return nil
+	}
 	id, err := uuid.Parse(chat.Id)
 	if err != nil {
 		return nil
@@ -80,28 +83,20 @@ func MapProtoToChat(chat *pb.Chat) *models.Chat {
 func MapProtoToChats(chats []*pb.Chat) []models.Chat {
 	res := make([]models.Chat, len(chats))
 	for i, chat := range chats {
-		res[i] = *MapProtoToChat(chat)
+		rs := MapProtoToChat(chat)
+		if rs == nil {
+			continue
+		} else {
+			res[i] = *rs
+		}
 	}
 	return res
 }
 
-//func MapProtoToChat(chat *pb.Chat) (*models.Chat, error) {
-//    id, err := uuid.Parse(chat.Id)
-//    if err != nil {
-//        return nil, err
-//    }
-//
-//    return &models.Chat{
-//        ID:        id,
-//        Name:      chat.Name,
-//        Type:      models.ChatType(chat.Type),
-//        AvatarURL: chat.AvatarUrl,
-//        CreatedAt: chat.CreatedAt.AsTime(),
-//        UpdatedAt: chat.UpdatedAt.AsTime(),
-//    }, nil
-//}
-
 func MapProtoCreationInfoToModel(chatInfo *pb.ChatCreationInfo) models.ChatCreationInfo {
+	if chatInfo == nil {
+		return models.ChatCreationInfo{}
+	}
 	return models.ChatCreationInfo{
 		Name:   chatInfo.Name,
 		Type:   models.ChatType(chatInfo.Type),

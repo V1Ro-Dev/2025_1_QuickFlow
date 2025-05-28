@@ -1,7 +1,6 @@
 package http
 
 import (
-	"fmt"
 	"net/http"
 	"unicode/utf8"
 
@@ -62,19 +61,19 @@ func (p *PostHandler) AddPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger.Info(ctx, fmt.Sprintf("User %s requested to add post", user.Username))
+	logger.Info(ctx, "User %s requested to add post", user.Username)
 
 	// parse the post form
 	var postForm forms.PostForm
 	if err := easyjson.UnmarshalFromReader(r.Body, &postForm); err != nil {
-		logger.Error(ctx, "Failed to decode request body for feedback", err)
+		logger.Error(ctx, "Failed to decode request body for feedback %v", err)
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Bad request body", http.StatusBadRequest))
 		return
 	}
 
 	// Validate text length
 	if utf8.RuneCountInString(postForm.Text) > 4096 {
-		logger.Error(ctx, fmt.Sprintf("Text length validation failed: length=%d", utf8.RuneCountInString(postForm.Text)))
+		logger.Error(ctx, "Text length validation failed: length=%d", utf8.RuneCountInString(postForm.Text))
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Text must be between 1 and 4096 characters", http.StatusBadRequest))
 		return
 	}
@@ -83,7 +82,7 @@ func (p *PostHandler) AddPost(w http.ResponseWriter, r *http.Request) {
 	sanitizer.SanitizePost(&postForm, p.policy)
 
 	if len(postForm.Text)+len(postForm.Media)+len(postForm.Audio)+len(postForm.File) == 0 {
-		logger.Error(ctx, fmt.Errorf("empty post content"))
+		logger.Error(ctx, "empty post content")
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "empty post content", http.StatusBadRequest))
 		return
 	}
@@ -91,14 +90,14 @@ func (p *PostHandler) AddPost(w http.ResponseWriter, r *http.Request) {
 	// Convert the post form to a model
 	post, err := postForm.ToPostModel(user.Id)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to parse post form: %s", err.Error()))
+		logger.Error(ctx, "Failed to parse post form: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Failed to parse post form", http.StatusBadRequest))
 		return
 	}
 
 	newPost, err := p.postUseCase.AddPost(ctx, post)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to add post: %s", err.Error()))
+		logger.Error(ctx, "Failed to add post: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -112,7 +111,7 @@ func (p *PostHandler) AddPost(w http.ResponseWriter, r *http.Request) {
 	if newPost.CreatorType == models.PostUser {
 		publicUserInfo, err := p.profileUseCase.GetPublicUserInfo(ctx, user.Id)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Failed to get public user info: %s", err.Error()))
+			logger.Error(ctx, "Failed to get public user info: %s", err.Error())
 			http2.WriteJSONError(w, err)
 			return
 		}
@@ -121,14 +120,14 @@ func (p *PostHandler) AddPost(w http.ResponseWriter, r *http.Request) {
 	} else {
 		community, err := p.communityService.GetCommunityById(ctx, post.CreatorId)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Failed to get community: %s", err.Error()))
+			logger.Error(ctx, "Failed to get community: %s", err.Error())
 			http2.WriteJSONError(w, err)
 			return
 		}
 
 		info, err := p.profileUseCase.GetPublicUserInfo(ctx, community.OwnerID)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Failed to get user info: %s", err.Error()))
+			logger.Error(ctx, "Failed to get user info: %s", err.Error())
 			http2.WriteJSONError(w, err)
 			return
 		}
@@ -140,12 +139,12 @@ func (p *PostHandler) AddPost(w http.ResponseWriter, r *http.Request) {
 	out := forms.PayloadWrapper[forms.PostOut]{Payload: postOut}
 	js, err := out.MarshalJSON()
 	if err != nil {
-		logger.Error(ctx, "Failed to marshal json payload", err)
+		logger.Error(ctx, "Failed to marshal json payload %v", err)
 		http2.WriteJSONError(w, err)
 		return
 	}
 	if _, err = w.Write(js); err != nil {
-		logger.Error(ctx, "Failed to encode feedback output", err)
+		logger.Error(ctx, "Failed to encode feedback output %v", err)
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode feedback output", http.StatusInternalServerError))
 	}
 }
@@ -176,22 +175,22 @@ func (p *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Failed to get post id", http.StatusBadRequest))
 		return
 	}
-	logger.Info(ctx, fmt.Sprintf("User %s requested to delete post with id %s", user.Username, postIdString))
+	logger.Info(ctx, "User %s requested to delete post with id %s", user.Username, postIdString)
 
 	postId, err := uuid.Parse(postIdString)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to parse post id: %s", err.Error()))
+		logger.Error(ctx, "Failed to parse post id: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Failed to parse post id", http.StatusBadRequest))
 		return
 	}
 
 	err = p.postUseCase.DeletePost(ctx, user.Id, postId)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to delete post: %s", err.Error()))
+		logger.Error(ctx, "Failed to delete post: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
-	logger.Info(ctx, fmt.Sprintf("Successfully deleted post %s", postIdString))
+	logger.Info(ctx, "Successfully deleted post %s", postIdString)
 }
 
 // UpdatePost updates a post
@@ -220,26 +219,26 @@ func (p *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 	postIdString := mux.Vars(r)["post_id"]
 	postId, err := uuid.Parse(postIdString)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to parse post id: %s", err.Error()))
+		logger.Error(ctx, "Failed to parse post id: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Failed to parse post id", http.StatusBadRequest))
 		return
 	}
 
 	var updatePostForm forms.UpdatePostForm
 	if err := easyjson.UnmarshalFromReader(r.Body, &updatePostForm); err != nil {
-		logger.Error(ctx, "Failed to decode request body for feedback", err)
+		logger.Error(ctx, "Failed to decode request body for feedback %v", err)
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Bad request body", http.StatusBadRequest))
 		return
 	}
 
 	if utf8.RuneCountInString(updatePostForm.Text) > 4000 {
-		logger.Error(ctx, fmt.Sprintf("Text length validation failed: length=%d", utf8.RuneCountInString(updatePostForm.Text)))
+		logger.Error(ctx, "Text length validation failed: length=%d", utf8.RuneCountInString(updatePostForm.Text))
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Text must be between 1 and 4096 characters", http.StatusBadRequest))
 		return
 	}
 
 	if len(updatePostForm.Text)+len(updatePostForm.Media)+len(updatePostForm.Audio)+len(updatePostForm.File) == 0 {
-		logger.Error(ctx, fmt.Errorf("empty update content"))
+		logger.Error(ctx, "empty update content")
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "empty update content", http.StatusBadRequest))
 		return
 	}
@@ -248,25 +247,25 @@ func (p *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 
 	updatePost, err := updatePostForm.ToPostUpdateModel(postId)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to parse update post: %s", err.Error()))
+		logger.Error(ctx, "Failed to parse update post: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Failed to parse update post", http.StatusBadRequest))
 		return
 	}
 
 	post, err := p.postUseCase.UpdatePost(ctx, updatePost, user.Id)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to update post: %s", err.Error()))
+		logger.Error(ctx, "Failed to update post: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
 
-	logger.Info(ctx, fmt.Sprintf("Successfully updated post %s", postIdString))
+	logger.Info(ctx, "Successfully updated post %s", postIdString)
 	var postOut forms.PostOut
 	postOut.FromPost(*post)
 
 	publicUserInfo, err := p.profileUseCase.GetPublicUserInfo(ctx, user.Id)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to get public user info: %s", err.Error()))
+		logger.Error(ctx, "Failed to get public user info: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -282,7 +281,7 @@ func (p *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 	if lastComment != nil {
 		userInfo, err := p.profileUseCase.GetPublicUserInfo(ctx, lastComment.UserId)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Failed to get user info: %s", err.Error()))
+			logger.Error(ctx, "Failed to get user info: %s", err.Error())
 			http2.WriteJSONError(w, err)
 			return
 		}
@@ -299,12 +298,12 @@ func (p *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 	out := forms.PayloadWrapper[forms.PostOut]{Payload: postOut}
 	js, err := out.MarshalJSON()
 	if err != nil {
-		logger.Error(ctx, "Failed to marshal json payload", err)
+		logger.Error(ctx, "Failed to marshal json payload %v", err)
 		http2.WriteJSONError(w, err)
 		return
 	}
 	if _, err = w.Write(js); err != nil {
-		logger.Error(ctx, "Failed to encode feedback output", err)
+		logger.Error(ctx, "Failed to encode feedback output %v", err)
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode feedback output", http.StatusInternalServerError))
 	}
 }
@@ -321,16 +320,16 @@ func (p *PostHandler) LikePost(w http.ResponseWriter, r *http.Request) {
 	postIdStr := mux.Vars(r)["post_id"]
 	postId, err := uuid.Parse(postIdStr)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to parse post ID: %s", err.Error()))
+		logger.Error(ctx, "Failed to parse post ID: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Failed to parse post ID", http.StatusBadRequest))
 		return
 	}
 
-	logger.Info(ctx, fmt.Sprintf("User %s liked post %s", user.Username, postId.String()))
+	logger.Info(ctx, "User %s liked post %s", user.Username, postId.String())
 
 	err = p.postUseCase.LikePost(ctx, postId, user.Id)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to like post: %s", err.Error()))
+		logger.Error(ctx, "Failed to like post: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -350,16 +349,16 @@ func (p *PostHandler) UnlikePost(w http.ResponseWriter, r *http.Request) {
 	postIdStr := mux.Vars(r)["post_id"]
 	postId, err := uuid.Parse(postIdStr)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to parse post ID: %s", err.Error()))
+		logger.Error(ctx, "Failed to parse post ID: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Failed to parse post ID", http.StatusBadRequest))
 		return
 	}
 
-	logger.Info(ctx, fmt.Sprintf("User %s unliked post %s", user.Username, postId.String()))
+	logger.Info(ctx, "User %s unliked post %s", user.Username, postId.String())
 
 	err = p.postUseCase.UnlikePost(ctx, postId, user.Id)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to unlike post: %s", err.Error()))
+		logger.Error(ctx, "Failed to unlike post: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -372,7 +371,7 @@ func (p *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 	postIdStr := mux.Vars(r)["post_id"]
 	postId, err := uuid.Parse(postIdStr)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to parse post ID: %s", err.Error()))
+		logger.Error(ctx, "Failed to parse post ID: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Failed to parse post ID", http.StatusBadRequest))
 		return
 	}
@@ -384,11 +383,11 @@ func (p *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger.Info(ctx, fmt.Sprintf("User requested post %s", postId.String()))
+	logger.Info(ctx, "User requested post %s", postId.String())
 
 	post, err := p.postUseCase.GetPost(ctx, postId, user.Id)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to get post: %s", err.Error()))
+		logger.Error(ctx, "Failed to get post: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -407,7 +406,7 @@ func (p *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 	if lastComment != nil {
 		userInfo, err := p.profileUseCase.GetPublicUserInfo(ctx, lastComment.UserId)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Failed to get user info: %s", err.Error()))
+			logger.Error(ctx, "Failed to get user info: %s", err.Error())
 			http2.WriteJSONError(w, err)
 			return
 		}
@@ -421,14 +420,14 @@ func (p *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 	case models.PostUser:
 		publicAuthorInfo, err := p.profileUseCase.GetPublicUserInfo(ctx, post.CreatorId)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Failed to get public user info: %s", err.Error()))
+			logger.Error(ctx, "Failed to get public user info: %s", err.Error())
 			http2.WriteJSONError(w, err)
 			return
 		}
 
 		relation, err := p.friendsUseCase.GetUserRelation(ctx, post.CreatorId, post.CreatorId)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Failed to get user relation: %s", err.Error()))
+			logger.Error(ctx, "Failed to get user relation: %s", err.Error())
 			http2.WriteJSONError(w, err)
 			return
 		}
@@ -439,14 +438,14 @@ func (p *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 	case models.PostCommunity:
 		community, err := p.communityService.GetCommunityById(ctx, post.CreatorId)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Failed to get community: %s", err.Error()))
+			logger.Error(ctx, "Failed to get community: %s", err.Error())
 			http2.WriteJSONError(w, err)
 			return
 		}
 
 		publicAuthorInfo, err := p.profileUseCase.GetPublicUserInfo(ctx, community.OwnerID)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Failed to get public user info: %s", err.Error()))
+			logger.Error(ctx, "Failed to get public user info: %s", err.Error())
 			http2.WriteJSONError(w, err)
 			return
 		}
@@ -459,12 +458,12 @@ func (p *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 	out := forms.PayloadWrapper[forms.PostOut]{Payload: postOut}
 	js, err := out.MarshalJSON()
 	if err != nil {
-		logger.Error(ctx, "Failed to marshal json payload", err)
+		logger.Error(ctx, "Failed to marshal json payload %v", err)
 		http2.WriteJSONError(w, err)
 		return
 	}
 	if _, err = w.Write(js); err != nil {
-		logger.Error(ctx, "Failed to encode feedback output", err)
+		logger.Error(ctx, "Failed to encode feedback output %v", err)
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode feedback output", http.StatusInternalServerError))
 	}
 }

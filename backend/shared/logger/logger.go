@@ -28,20 +28,21 @@ func init() {
 	Log.SetLevel(logrus.InfoLevel)
 }
 
-func Info(ctx context.Context, args ...interface{}) {
-	logWithContext(ctx).Info(args...)
+// Переписанные методы логирования с поддержкой передачи аргументов как в fmt.Sprintf
+func Info(ctx context.Context, format string, args ...interface{}) {
+	logWithContext(ctx).Infof(format, args...)
 }
 
-func Warn(ctx context.Context, args ...interface{}) {
-	logWithContext(ctx).Warn(args...)
+func Warn(ctx context.Context, format string, args ...interface{}) {
+	logWithContext(ctx).Warnf(format, args...)
 }
 
-func Error(ctx context.Context, args ...interface{}) {
-	logWithContext(ctx).Error(args...)
+func Error(ctx context.Context, format string, args ...interface{}) {
+	logWithContext(ctx).Errorf(format, args...)
 }
 
-func Debug(ctx context.Context, args ...interface{}) {
-	logWithContext(ctx).Debug(args...)
+func Debug(ctx context.Context, format string, args ...interface{}) {
+	logWithContext(ctx).Debugf(format, args...)
 }
 
 func logWithContext(ctx context.Context) *logrus.Entry {

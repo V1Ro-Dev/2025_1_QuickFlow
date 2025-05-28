@@ -112,22 +112,22 @@ func (m *MessageRepository) GetMessagesForChatOlder(ctx context.Context, chatId 
 		var messagePostgres pgmodels.MessagePostgres
 		if err := rows.Scan(&messagePostgres.ID, &messagePostgres.ChatID, &messagePostgres.SenderID,
 			&messagePostgres.Text, &messagePostgres.CreatedAt, &messagePostgres.UpdatedAt); err != nil {
-			logger.Error(ctx, fmt.Sprintf("Unable to scan message from database for chat %v, numMessages %v, timestamp %v: %v",
-				chatId, numMessages, timestamp, err))
+			logger.Error(ctx, "Unable to scan message from database for chat %v, numMessages %v, timestamp %v: %v",
+				chatId, numMessages, timestamp, err)
 			return nil, err
 		}
 
 		message := messagePostgres.ToMessage()
 		files, err := m.connPool.QueryContext(ctx, getFilesQuery, messagePostgres.ID)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
-			logger.Error(ctx, fmt.Sprintf("Unable to get files for message %v: %v", messagePostgres.ID, err))
+			logger.Error(ctx, "Unable to get files for message %v: %v", messagePostgres.ID, err)
 			return nil, err
 		}
 		for files.Next() {
 			var pgfile pgmodels.PostgresFile
 			err = files.Scan(&pgfile.URL, &pgfile.DisplayType, &pgfile.Name)
 			if err != nil {
-				logger.Error(ctx, fmt.Sprintf("Unable to scan file URL for message %v: %v", messagePostgres.ID, err))
+				logger.Error(ctx, "Unable to scan file URL for message %v: %v", messagePostgres.ID, err)
 				return nil, err
 			}
 
@@ -140,7 +140,7 @@ func (m *MessageRepository) GetMessagesForChatOlder(ctx context.Context, chatId 
 
 		messages = slices.Insert(messages, 0, message)
 	}
-	logger.Info(ctx, fmt.Sprintf("Fetched %d messages for chat %s", len(messages), chatId))
+	logger.Info(ctx, "Fetched %d messages for chat %s", len(messages), chatId)
 
 	return messages, nil
 }
@@ -151,14 +151,14 @@ func (m *MessageRepository) SaveMessage(ctx context.Context, message models.Mess
 		messagePostgres.ID, messagePostgres.ChatID, messagePostgres.SenderID,
 		messagePostgres.Text, messagePostgres.CreatedAt, messagePostgres.UpdatedAt)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to save message %v to database: %s", messagePostgres.ID, err.Error()))
+		logger.Error(ctx, "Unable to save message %v to database: %s", messagePostgres.ID, err.Error())
 		return fmt.Errorf("unable to save message to database: %w", err)
 	}
 	for _, file := range messagePostgres.Attachments {
 		_, err = m.connPool.ExecContext(ctx, saveFilesQuery,
 			messagePostgres.ID, file.URL, file.DisplayType)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Unable to save file URL %v for message %v to database: %s", file.URL, messagePostgres.ID, err.Error()))
+			logger.Error(ctx, "Unable to save file URL %v for message %v to database: %s", file.URL, messagePostgres.ID, err.Error())
 			return fmt.Errorf("unable to save file URL to database: %w", err)
 		}
 	}
@@ -166,7 +166,7 @@ func (m *MessageRepository) SaveMessage(ctx context.Context, message models.Mess
 	_, err = m.connPool.ExecContext(ctx, `update chat set updated_at = $1 where id = $2`,
 		messagePostgres.UpdatedAt, messagePostgres.ChatID)
 	if err != nil {
-		logger.Error(ctx, "Unable to update chat updated_at: ", err)
+		logger.Error(ctx, "Unable to update chat updated_at: %v", err)
 		return fmt.Errorf("unable to update chat updated_at: %w", err)
 	}
 	return nil
@@ -175,7 +175,7 @@ func (m *MessageRepository) SaveMessage(ctx context.Context, message models.Mess
 func (m *MessageRepository) DeleteMessage(ctx context.Context, messageId uuid.UUID) error {
 	_, err := m.connPool.ExecContext(ctx, "DELETE FROM message WHERE id = $1", messageId)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to delete message %v from database: %s", messageId, err.Error()))
+		logger.Error(ctx, "Unable to delete message %v from database: %s", messageId, err.Error())
 		return fmt.Errorf("unable to delete message from database: %w", err)
 	}
 	return nil
@@ -183,10 +183,10 @@ func (m *MessageRepository) DeleteMessage(ctx context.Context, messageId uuid.UU
 func (m *MessageRepository) UpdateLastReadTs(ctx context.Context, timestamp time.Time, chatId uuid.UUID, userId uuid.UUID) error {
 	_, err := m.connPool.ExecContext(ctx, markReadQuery, chatId, userId, pgtype.Timestamptz{Time: timestamp, Valid: true})
 	if errors.Is(err, sql.ErrNoRows) {
-		logger.Error(ctx, fmt.Sprintf("Unable to find chat %v with user %v: %s", chatId, userId, err.Error()))
+		logger.Error(ctx, "Unable to find chat %v with user %v: %s", chatId, userId, err.Error())
 		return messenger_service.ErrNotFound
 	} else if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to update last read %v for chat %v with user %v: %s", timestamp, chatId, userId, err.Error()))
+		logger.Error(ctx, "Unable to update last read %v for chat %v with user %v: %s", timestamp, chatId, userId, err.Error())
 		return fmt.Errorf("unable to update last read message in database: %w", err)
 	}
 	return nil
@@ -199,7 +199,7 @@ func (m *MessageRepository) GetLastReadTs(ctx context.Context, chatId uuid.UUID,
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
-		logger.Error(ctx, "Unable to get last read message from database: ", err)
+		logger.Error(ctx, "Unable to get last read message from database: %v", err)
 		return nil, fmt.Errorf("unable to get last read message from database: %w", err)
 	}
 
@@ -217,13 +217,13 @@ func (m *MessageRepository) GetLastChatMessage(ctx context.Context, chatId uuid.
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
-		logger.Error(ctx, "Unable to get last message from database: ", err)
+		logger.Error(ctx, "Unable to get last message from database: %v", err)
 		return nil, fmt.Errorf("unable to get last message from database: %w", err)
 	}
 
 	files, err := m.connPool.QueryContext(ctx, getFilesQuery, messagePostgres.ID)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		logger.Error(ctx, fmt.Sprintf("Unable to get files for message %v: %v", messagePostgres.ID, err))
+		logger.Error(ctx, "Unable to get files for message %v: %v", messagePostgres.ID, err)
 		return nil, err
 	}
 
@@ -231,7 +231,7 @@ func (m *MessageRepository) GetLastChatMessage(ctx context.Context, chatId uuid.
 		var pgfile pgmodels.PostgresFile
 		err = files.Scan(&pgfile.URL, &pgfile.DisplayType, &pgfile.Name)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Unable to scan file URL for message %v: %v", messagePostgres.ID, err))
+			logger.Error(ctx, "Unable to scan file URL for message %v: %v", messagePostgres.ID, err)
 			return nil, err
 		}
 
@@ -250,13 +250,13 @@ func (m *MessageRepository) GetMessageById(ctx context.Context, messageId uuid.U
 	if errors.Is(err, sql.ErrNoRows) {
 		return models.Message{}, messenger_service.ErrNotFound
 	} else if err != nil {
-		logger.Error(ctx, "Unable to get message from database: ", err)
+		logger.Error(ctx, "Unable to get message from database: %v", err)
 		return models.Message{}, fmt.Errorf("unable to get message from database: %w", err)
 	}
 
 	files, err := m.connPool.QueryContext(ctx, getFilesQuery, messagePostgres.ID)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		logger.Error(ctx, fmt.Sprintf("Unable to get files for message %v: %v", messagePostgres.ID, err))
+		logger.Error(ctx, "Unable to get files for message %v: %v", messagePostgres.ID, err)
 		return models.Message{}, err
 	}
 
@@ -264,7 +264,7 @@ func (m *MessageRepository) GetMessageById(ctx context.Context, messageId uuid.U
 		var pgfile pgmodels.PostgresFile
 		err = files.Scan(&pgfile.URL, &pgfile.DisplayType, &pgfile.Name)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Unable to scan file URL for message %v: %v", messagePostgres.ID, err))
+			logger.Error(ctx, "Unable to scan file URL for message %v: %v", messagePostgres.ID, err)
 			return models.Message{}, err
 		}
 
@@ -281,7 +281,7 @@ func (m *MessageRepository) GetNumUnreadMessages(ctx context.Context, chatId, us
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, nil
 	} else if err != nil {
-		logger.Error(ctx, "Unable to get number of unread messages from database: ", err)
+		logger.Error(ctx, "Unable to get number of unread messages from database: %v", err)
 		return 0, fmt.Errorf("unable to get number of unread messages from database: %w", err)
 	}
 	return numUnread, nil

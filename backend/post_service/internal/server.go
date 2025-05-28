@@ -93,7 +93,7 @@ func main() {
 	go func() {
 		http.Handle("/metrics", promhttp.Handler())
 		metricsPort := addr.DefaultPostServicePort + 1000
-		logger.Info(context.Background(), fmt.Sprintf("Metrics server is running on :%d/metrics", metricsPort))
+		logger.Info(context.Background(), "Metrics server is running on :%d/metrics", metricsPort)
 		if err = http.ListenAndServe(fmt.Sprintf(":%d", metricsPort), nil); err != nil {
 			log.Fatalf("failed to start metrics HTTP server: %v", err)
 		}

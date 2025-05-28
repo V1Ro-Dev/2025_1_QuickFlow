@@ -79,7 +79,7 @@ func (f *CreateCommunityForm) CreateFormToModel() models.Community {
 }
 
 func ToCommunityForm(community models.Community, ownerInfo models.PublicUserInfo) CommunityForm {
-	return CommunityForm{
+	comm := CommunityForm{
 		Id:      community.ID.String(),
 		OwnerId: community.OwnerID.String(),
 		Owner: &PublicUserInfoOut{
@@ -89,10 +89,13 @@ func ToCommunityForm(community models.Community, ownerInfo models.PublicUserInfo
 			LastName:  ownerInfo.Lastname,
 			AvatarURL: ownerInfo.AvatarURL,
 		},
-		CreatedAt:     community.CreatedAt.Format(time_config.TimeStampLayout),
-		CommunityInfo: CommunityInfoFromModel(*community.BasicInfo, community.NickName),
-		ContactInfo:   ContactInfoToForm(community.ContactInfo),
+		CreatedAt:   community.CreatedAt.Format(time_config.TimeStampLayout),
+		ContactInfo: ContactInfoToForm(community.ContactInfo),
 	}
+	if community.BasicInfo != nil {
+		comm.CommunityInfo = CommunityInfoFromModel(*community.BasicInfo, community.NickName)
+	}
+	return comm
 }
 
 // GetParams gets parameters from the map
