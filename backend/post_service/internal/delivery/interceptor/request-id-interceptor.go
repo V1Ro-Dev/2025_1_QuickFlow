@@ -6,8 +6,6 @@ import (
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
-
-	"quickflow/shared/logger"
 )
 
 func RequestIDUnaryInterceptor(
@@ -17,13 +15,13 @@ func RequestIDUnaryInterceptor(
 	handler grpc.UnaryHandler,
 ) (interface{}, error) {
 	md, _ := metadata.FromIncomingContext(ctx)
-	requestID := md.Get(string(logger.RequestID))
+	requestID := md.Get("request_id")
 
 	if len(requestID) == 0 {
 		// fallback: создаём новый
 		requestID = []string{uuid.New().String()}
 	}
 
-	ctx = context.WithValue(ctx, logger.RequestID, requestID[0])
+	ctx = context.WithValue(ctx, "request_id", requestID[0])
 	return handler(ctx, req)
 }

@@ -3,7 +3,6 @@ package http
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/microcosm-cc/bluemonday"
@@ -35,69 +34,69 @@ func NewFileHandler(fileService FileService, policy *bluemonday.Policy) *FileHan
 func (p *FileHandler) AddFiles(w http.ResponseWriter, r *http.Request) {
 	// extracting user from context
 	ctx := r.Context()
-	user, ok := ctx.Value(logger.Username).(models.User)
+	user, ok := ctx.Value("user").(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while adding files")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
 		return
 	}
 
-	logger.Info(ctx, fmt.Sprintf("User %s requested to add files", user.Username))
+	logger.Info(ctx, "User %s requested to add files", user.Username)
 
 	// Parse the form data
 	err := r.ParseMultipartForm(200 << 20) // 200 MB TODO
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to parse form: %s", err.Error()))
+		logger.Error(ctx, "Failed to parse form: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
 
 	// SendMessage video files
 	media, err := http2.GetFiles(r, "media")
-	if errors.Is(err, http2.ErrTooManyFilesErr) {
-		logger.Error(ctx, fmt.Sprintf("Too many media files requested: %s", err.Error()))
+	if errors.Is(err, http2.TooManyFilesErr) {
+		logger.Error(ctx, "Too many media files requested: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Too many media files requested", http.StatusBadRequest))
 		return
 	}
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to get video files: %s", err.Error()))
+		logger.Error(ctx, "Failed to get video files: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get video files", http.StatusBadRequest))
 		return
 	}
 
 	// SendMessage audio files
 	audios, err := http2.GetFiles(r, "audio")
-	if errors.Is(err, http2.ErrTooManyFilesErr) {
-		logger.Error(ctx, fmt.Sprintf("Too many audio files requested: %s", err.Error()))
+	if errors.Is(err, http2.TooManyFilesErr) {
+		logger.Error(ctx, "Too many audio files requested: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Too many audio files requested", http.StatusBadRequest))
 		return
 	}
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to get audio files: %s", err.Error()))
+		logger.Error(ctx, "Failed to get audio files: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get audio files", http.StatusBadRequest))
 		return
 	}
 
 	stickers, err := http2.GetFiles(r, "stickers")
-	if errors.Is(err, http2.ErrTooManyFilesErr) {
-		logger.Error(ctx, fmt.Sprintf("Too many sticker files requested: %s", err.Error()))
+	if errors.Is(err, http2.TooManyFilesErr) {
+		logger.Error(ctx, "Too many sticker files requested: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Too many sticker files requested", http.StatusBadRequest))
 		return
 	} else if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to get sticker files: %s", err.Error()))
+		logger.Error(ctx, "Failed to get sticker files: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get sticker files", http.StatusBadRequest))
 		return
 	}
 
 	// SendMessage other files
 	otherFiles, err := http2.GetFiles(r, "files")
-	if errors.Is(err, http2.ErrTooManyFilesErr) {
-		logger.Error(ctx, fmt.Sprintf("Too many files requested: %s", err.Error()))
+	if errors.Is(err, http2.TooManyFilesErr) {
+		logger.Error(ctx, "Too many files requested: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Too many files requested", http.StatusBadRequest))
 		return
 	}
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to get files: %s", err.Error()))
+		logger.Error(ctx, "Failed to get files: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get files", http.StatusBadRequest))
 		return
 	}
@@ -132,12 +131,12 @@ func (p *FileHandler) AddFiles(w http.ResponseWriter, r *http.Request) {
 	out := forms.PayloadWrapper[forms.MessageAttachmentForm]{Payload: res}
 	js, err := out.MarshalJSON()
 	if err != nil {
-		logger.Error(ctx, "Failed to marshal json payload", err)
+		logger.Error(ctx, "Failed to marshal json payload%v", err)
 		http2.WriteJSONError(w, err)
 		return
 	}
 	if _, err = w.Write(js); err != nil {
-		logger.Error(ctx, "Failed to encode feedback output", err)
+		logger.Error(ctx, "Failed to encode feedback output%v", err)
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode feedback output", http.StatusInternalServerError))
 	}
 }

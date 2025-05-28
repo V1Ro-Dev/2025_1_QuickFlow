@@ -114,10 +114,7 @@ func (m *MessageService) SaveMessage(ctx context.Context, message models.Message
 			}
 			err = m.chatRepo.JoinChat(ctx, newChat.ID, message.ReceiverID)
 			if err != nil {
-				err = m.chatRepo.LeaveChat(ctx, newChat.ID, message.SenderID)
-				if err != nil {
-					return nil, err
-				}
+				m.chatRepo.LeaveChat(ctx, newChat.ID, message.SenderID)
 				return nil, fmt.Errorf("m.chatRepo.JoinChat: %w", err)
 			}
 			message.ChatID = newChat.ID

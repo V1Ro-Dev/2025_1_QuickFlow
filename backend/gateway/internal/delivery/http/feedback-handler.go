@@ -38,7 +38,7 @@ func NewFeedbackHandler(feedbackUseCase FeedbackUseCase, profileService ProfileU
 
 func (f *FeedbackHandler) SaveFeedback(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	user, ok := ctx.Value(logger.Username).(models.User)
+	user, ok := ctx.Value("user").(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while saving feedback")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -62,7 +62,7 @@ func (f *FeedbackHandler) SaveFeedback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = f.feedbackUseCase.SaveFeedback(ctx, feedback); err != nil {
+	if err := f.feedbackUseCase.SaveFeedback(ctx, feedback); err != nil {
 		appErr := errors2.FromGRPCError(err)
 		logger.Error(ctx, "Failed to save feedback %v", err)
 		http2.WriteJSONError(w, appErr)

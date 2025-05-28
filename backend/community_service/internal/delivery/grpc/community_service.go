@@ -11,6 +11,7 @@ import (
 	dto "quickflow/shared/client/community_service"
 	"quickflow/shared/client/file_service"
 	"quickflow/shared/models"
+	shared_models "quickflow/shared/models"
 	pb "quickflow/shared/proto/community_service"
 )
 
@@ -31,7 +32,7 @@ type CommunityUseCase interface {
 }
 
 type UserUseCase interface {
-	GetUserById(ctx context.Context, userId uuid.UUID) (*models.User, error)
+	GetUserById(ctx context.Context, userId uuid.UUID) (*shared_models.User, error)
 }
 
 type CommunityServiceServer struct {

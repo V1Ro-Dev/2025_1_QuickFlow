@@ -9,6 +9,7 @@ import (
 	dto "quickflow/shared/client/post_service"
 	"quickflow/shared/logger"
 	"quickflow/shared/models"
+	shared_models "quickflow/shared/models"
 	pb "quickflow/shared/proto/post_service"
 )
 
@@ -25,7 +26,7 @@ type PostUseCase interface {
 }
 
 type UserUseCase interface {
-	GetUserById(ctx context.Context, userId uuid.UUID) (models.User, error)
+	GetUserById(ctx context.Context, userId uuid.UUID) (shared_models.User, error)
 }
 
 type PostServiceServer struct {

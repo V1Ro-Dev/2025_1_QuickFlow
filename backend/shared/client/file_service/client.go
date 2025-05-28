@@ -104,13 +104,13 @@ func (f *FileClient) UploadManyFiles(ctx context.Context, files []*models.File) 
 			mu.Lock()
 			fileURLs = append(fileURLs, resp.FileUrl)
 			mu.Unlock()
-			logger.Info(ctx, fmt.Sprintf("Uploaded file: %s", resp.FileUrl))
+			logger.Info(ctx, "Uploaded file: %s", resp.FileUrl)
 		}
 	}()
 
 	// Отправляем файлы
 	for _, file := range files {
-		err = stream.Send(&pb.UploadFileRequest{
+		err := stream.Send(&pb.UploadFileRequest{
 			Data: &pb.UploadFileRequest_Info{
 				Info: &pb.File{
 					FileName:    file.Name,
@@ -146,8 +146,8 @@ func (f *FileClient) UploadManyFiles(ctx context.Context, files []*models.File) 
 		}
 
 		if closer, ok := file.Reader.(io.Closer); ok {
-			if err = closer.Close(); err != nil {
-				logger.Warn(ctx, fmt.Sprintf("failed to close file %s: %v", file.Name, err))
+			if err := closer.Close(); err != nil {
+				logger.Warn(ctx, "failed to close file %s: %v", file.Name, err)
 			}
 		}
 	}
@@ -179,10 +179,10 @@ func (f *FileClient) DeleteFile(ctx context.Context, filename string) error {
 		FileUrl: filename,
 	}
 
-	logger.Info(ctx, fmt.Sprintf("Sending request to file_service to delete file: %s", filename))
+	logger.Info(ctx, "Sending request to file_service to delete file: %s", filename)
 	_, err := f.client.DeleteFile(ctx, req)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to delete file from file_service: %s", filename))
+		logger.Error(ctx, "Failed to delete file from file_service: %s", filename)
 		return fmt.Errorf("fileClient.DeleteFile: %w", err)
 	}
 

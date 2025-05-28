@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-var ErrIndexOutOfRangeError = errors.New("index out of range")
+var IndexOutOfRangeError = errors.New("index out of range")
 
 type ThreadSafeSlice[T any] struct {
 	mu    sync.RWMutex
@@ -30,7 +30,7 @@ func (s *ThreadSafeSlice[T]) SetByIdx(idx int, item T) error {
 	defer s.mu.Unlock()
 
 	if idx < 0 || idx >= len(s.items) {
-		return ErrIndexOutOfRangeError
+		return IndexOutOfRangeError
 	}
 	s.items[idx] = item
 
@@ -80,6 +80,8 @@ func (s *ThreadSafeSlice[T]) GetSliceCopy() []T {
 	defer s.mu.RUnlock()
 
 	copySlice := make([]T, len(s.items))
-	copy(copySlice, s.items)
+	for i, v := range s.items {
+		copySlice[i] = v
+	}
 	return copySlice
 }

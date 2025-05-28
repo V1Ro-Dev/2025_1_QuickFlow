@@ -77,21 +77,14 @@ func (a *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	var form forms.SignUpForm
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Error reading request body: %s", err.Error()))
+		logger.Error(ctx, "Error reading request body: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New("BAD_REQUEST", fmt.Sprintf("Unable to read request body: %v", err), http.StatusBadRequest))
 		return
 	}
-	defer func(Body io.ReadCloser) {
-		err = Body.Close()
-		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Error closing body: %v", err))
-			http2.WriteJSONError(w, errors2.New("BAD_REQUEST", fmt.Sprintf("Unable to close body: %v", err), http.StatusInternalServerError))
-			return
-		}
-	}(r.Body)
+	defer r.Body.Close()
 
 	if err = form.UnmarshalJSON(body); err != nil {
-		logger.Error(ctx, fmt.Sprintf("Decode error: %s", err.Error()))
+		logger.Error(ctx, "Decode error: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New("BAD_REQUEST", fmt.Sprintf("Unable to decode request body: %v", err), http.StatusBadRequest))
 		return
 	}
@@ -106,7 +99,7 @@ func (a *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 
 	date, err := time.Parse(time2.DateLayout, form.DateOfBirth)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Decode error: %s", err.Error()))
+		logger.Error(ctx, "Decode error: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New("BAD_REQUEST", fmt.Sprintf("Unable to parse date: %v", err), http.StatusBadRequest))
 		return
 	}
@@ -124,19 +117,19 @@ func (a *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	// validation
 	if err := validation.ValidateUser(user.Username, user.Password); err != nil {
 		http2.WriteJSONError(w, errors2.New("BAD_REQUEST", fmt.Sprintf("Invalid username or password: %v", err), http.StatusBadRequest))
-		logger.Error(ctx, fmt.Sprintf("Validation error: %s", err.Error()))
+		logger.Error(ctx, "Validation error: %s", err.Error())
 		return
 	}
 	if err = validation.ValidateProfile(profile.BasicInfo.Name, profile.BasicInfo.Surname); err != nil {
 		http2.WriteJSONError(w, errors2.New("BAD_REQUEST", fmt.Sprintf("Invalid profile data: %v", err), http.StatusBadRequest))
-		logger.Error(ctx, fmt.Sprintf("Validation error: %s", err.Error()))
+		logger.Error(ctx, "Validation error: %s", err.Error())
 		return
 	}
 
 	// process data
 	_, session, err := a.authUseCase.CreateUser(r.Context(), user, profile)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Create user error: %s", err.Error()))
+		logger.Error(ctx, "Create user error: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -173,21 +166,14 @@ func (a *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Error reading request body: %s", err.Error()))
+		logger.Error(ctx, "Error reading request body: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New("BAD_REQUEST", fmt.Sprintf("Unable to read request body: %v", err), http.StatusBadRequest))
 		return
 	}
-	defer func(Body io.ReadCloser) {
-		err = Body.Close()
-		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Error closing body: %v", err))
-			http2.WriteJSONError(w, errors2.New("BAD_REQUEST", fmt.Sprintf("Unable to close body: %v", err), http.StatusInternalServerError))
-			return
-		}
-	}(r.Body)
+	defer r.Body.Close()
 
-	if err = form.UnmarshalJSON(body); err != nil {
-		logger.Error(ctx, fmt.Sprintf("Decode error: %s", err.Error()))
+	if err := form.UnmarshalJSON(body); err != nil {
+		logger.Error(ctx, "Decode error: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New("BAD_REQUEST", fmt.Sprintf("Unable to decode request body: %v", err), http.StatusBadRequest))
 		return
 	}
@@ -203,12 +189,12 @@ func (a *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	// process data
 	session, err := a.authUseCase.AuthUser(r.Context(), loginData)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Get User error: %s", err.Error()))
+		logger.Error(ctx, "Get User error: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
 
-	logger.Info(ctx, fmt.Sprintf("Successfully got User with SessionID: %s", session.SessionId.String()))
+	logger.Info(ctx, "Successfully got User with SessionID: %s", session.SessionId.String())
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session",
@@ -237,26 +223,26 @@ func (a *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 
 	cookie, err := r.Cookie("session")
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Get cookie error: %s", err.Error()))
+		logger.Error(ctx, "Get cookie error: %s", err.Error())
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
 	cookieUUID, err := uuid.Parse(cookie.Value)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Parse cookie error: %s", err.Error()))
+		logger.Error(ctx, "Parse cookie error: %s", err.Error())
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
 	if _, err = a.authUseCase.LookupUserSession(r.Context(), models.Session{SessionId: cookieUUID}); err != nil {
-		logger.Error(ctx, fmt.Sprintf("Couldn't find user session: %s", err.Error()))
+		logger.Error(ctx, "Couldn't find user session: %s", err.Error())
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
 	if err = a.authUseCase.DeleteUserSession(r.Context(), cookie.Value); err != nil {
-		logger.Error(ctx, fmt.Sprintf("Delete session error: %s", err.Error()))
+		logger.Error(ctx, "Delete session error: %s", err.Error())
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}

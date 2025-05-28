@@ -60,7 +60,7 @@ func NewCommentHandler(commentUseCase CommentService, profileService ProfileUseC
 func (c *CommentHandler) AddComment(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	user, ok := ctx.Value(logger.Username).(models.User)
+	user, ok := ctx.Value("user").(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -70,7 +70,7 @@ func (c *CommentHandler) AddComment(w http.ResponseWriter, r *http.Request) {
 	postIdStr := mux.Vars(r)["post_id"]
 	postId, err := uuid.Parse(postIdStr)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to parse comment ID: %s", err.Error()))
+		logger.Error(ctx, "Failed to parse comment ID: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Invalid comment ID", http.StatusBadRequest))
 		return
 	}
@@ -79,28 +79,21 @@ func (c *CommentHandler) AddComment(w http.ResponseWriter, r *http.Request) {
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Error reading request body: %s", err.Error()))
+		logger.Error(ctx, "Error reading request body: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New("BAD_REQUEST", fmt.Sprintf("Unable to read request body: %v", err), http.StatusBadRequest))
 		return
 	}
-	defer func(Body io.ReadCloser) {
-		err = Body.Close()
-		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Error closing body: %v", err))
-			http2.WriteJSONError(w, errors2.New("BAD_REQUEST", fmt.Sprintf("Unable to close body: %v", err), http.StatusInternalServerError))
-			return
-		}
-	}(r.Body)
+	defer r.Body.Close()
 
 	if err = commentForm.UnmarshalJSON(body); err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to parse comment form: %s", err.Error()))
+		logger.Error(ctx, "Failed to parse comment form: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Invalid data", http.StatusBadRequest))
 		return
 	}
 
 	// Проверка длины текста комментария
 	if len(commentForm.Text) > 4096 {
-		logger.Error(ctx, fmt.Sprintf("Text length validation failed: %d", len(commentForm.Text)))
+		logger.Error(ctx, "Text length validation failed: %d", len(commentForm.Text))
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Text length validation failed", http.StatusBadRequest))
 		return
 	}
@@ -114,7 +107,7 @@ func (c *CommentHandler) AddComment(w http.ResponseWriter, r *http.Request) {
 	commentModel.PostId = postId
 	newComment, err := c.commentUseCase.AddComment(ctx, commentModel)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to add comment: %s", err.Error()))
+		logger.Error(ctx, "Failed to add comment: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -123,7 +116,7 @@ func (c *CommentHandler) AddComment(w http.ResponseWriter, r *http.Request) {
 	// get public user info
 	publicUserInfo, err := c.profileService.GetPublicUserInfo(ctx, newComment.UserId)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to get public user info: %s", err.Error()))
+		logger.Error(ctx, "Failed to get public user info: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -133,7 +126,7 @@ func (c *CommentHandler) AddComment(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	if _, err := easyjson.MarshalToWriter(commentOut, w); err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to encode comment: %s", err.Error()))
+		logger.Error(ctx, "Failed to encode comment: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode comment", http.StatusInternalServerError))
 	}
 }
@@ -152,7 +145,7 @@ func (c *CommentHandler) AddComment(w http.ResponseWriter, r *http.Request) {
 func (c *CommentHandler) DeleteComment(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	user, ok := ctx.Value(logger.Username).(models.User)
+	user, ok := ctx.Value("user").(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -163,7 +156,7 @@ func (c *CommentHandler) DeleteComment(w http.ResponseWriter, r *http.Request) {
 	commentIdStr := mux.Vars(r)["comment_id"]
 	commentId, err := uuid.Parse(commentIdStr)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to parse comment ID: %s", err.Error()))
+		logger.Error(ctx, "Failed to parse comment ID: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Invalid comment ID", http.StatusBadRequest))
 		return
 	}
@@ -171,7 +164,7 @@ func (c *CommentHandler) DeleteComment(w http.ResponseWriter, r *http.Request) {
 	// Удаление комментария
 	err = c.commentUseCase.DeleteComment(ctx, user.Id, commentId)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to delete comment: %s", err.Error()))
+		logger.Error(ctx, "Failed to delete comment: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -195,7 +188,7 @@ func (c *CommentHandler) DeleteComment(w http.ResponseWriter, r *http.Request) {
 func (c *CommentHandler) UpdateComment(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	user, ok := ctx.Value(logger.Username).(models.User)
+	user, ok := ctx.Value("user").(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -206,28 +199,25 @@ func (c *CommentHandler) UpdateComment(w http.ResponseWriter, r *http.Request) {
 	commentIdStr := mux.Vars(r)["comment_id"]
 	commentId, err := uuid.Parse(commentIdStr)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to parse comment ID: %s", err.Error()))
+		logger.Error(ctx, "Failed to parse comment ID: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Invalid comment ID", http.StatusBadRequest))
 		return
 	}
 
+	// sanitize the text
+	commentIdStr = c.policy.Sanitize(commentIdStr)
+
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Error reading request body: %s", err.Error()))
+		logger.Error(ctx, "Error reading request body: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New("BAD_REQUEST", fmt.Sprintf("Unable to read request body: %v", err), http.StatusBadRequest))
 		return
 	}
-	defer func(Body io.ReadCloser) {
-		err = Body.Close()
-		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("Error closing body: %v", err))
-			http2.WriteJSONError(w, err)
-		}
-	}(r.Body)
+	defer r.Body.Close()
 
 	var commentForm forms.CommentUpdateForm
 	if err = commentForm.UnmarshalJSON(body); err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to parse comment form: %s", err.Error()))
+		logger.Error(ctx, "Failed to parse comment form: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Invalid data", http.StatusBadRequest))
 		return
 	}
@@ -237,7 +227,7 @@ func (c *CommentHandler) UpdateComment(w http.ResponseWriter, r *http.Request) {
 	commentUpdate.Id = commentId
 	updatedComment, err := c.commentUseCase.UpdateComment(ctx, commentUpdate, user.Id)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to update comment: %s", err.Error()))
+		logger.Error(ctx, "Failed to update comment: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -246,7 +236,7 @@ func (c *CommentHandler) UpdateComment(w http.ResponseWriter, r *http.Request) {
 	// get public user info
 	publicUserInfo, err := c.profileService.GetPublicUserInfo(ctx, updatedComment.UserId)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to get public user info: %s", err.Error()))
+		logger.Error(ctx, "Failed to get public user info: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -257,7 +247,7 @@ func (c *CommentHandler) UpdateComment(w http.ResponseWriter, r *http.Request) {
 	// Отправка ответа
 	w.Header().Set("Content-Type", "application/json")
 	if _, err := easyjson.MarshalToWriter(commentOut, w); err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to encode comment: %s", err.Error()))
+		logger.Error(ctx, "Failed to encode comment: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode comment", http.StatusInternalServerError))
 	}
 }
@@ -281,7 +271,7 @@ func (c *CommentHandler) FetchCommentsForPost(w http.ResponseWriter, r *http.Req
 	postIdStr := mux.Vars(r)["post_id"]
 	postId, err := uuid.Parse(postIdStr)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to parse post ID: %s", err.Error()))
+		logger.Error(ctx, "Failed to parse post ID: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Invalid post ID", http.StatusBadRequest))
 		return
 	}
@@ -290,7 +280,7 @@ func (c *CommentHandler) FetchCommentsForPost(w http.ResponseWriter, r *http.Req
 	var feedForm forms.CommentFetchForm
 	err = feedForm.GetParams(r.URL.Query())
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to parse query params: %s", err.Error()))
+		logger.Error(ctx, "Failed to parse query params: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Invalid query parameters", http.StatusBadRequest))
 		return
 	}
@@ -303,7 +293,7 @@ func (c *CommentHandler) FetchCommentsForPost(w http.ResponseWriter, r *http.Req
 	// Получаем комментарии для поста
 	comments, err := c.commentUseCase.FetchCommentsForPost(ctx, postId, feedForm.Count, ts)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to fetch comments for post %s: %s", postId.String(), err.Error()))
+		logger.Error(ctx, "Failed to fetch comments for post %s: %s", postId.String(), err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -314,7 +304,7 @@ func (c *CommentHandler) FetchCommentsForPost(w http.ResponseWriter, r *http.Req
 		if _, exists := publicUserInfos[comment.UserId]; !exists {
 			publicUserInfo, err := c.profileService.GetPublicUserInfo(ctx, comment.UserId)
 			if err != nil {
-				logger.Error(ctx, fmt.Sprintf("Failed to get public user info for comment %s: %s", comment.Id.String(), err.Error()))
+				logger.Error(ctx, "Failed to get public user info for comment %s: %s", comment.Id.String(), err.Error())
 				http2.WriteJSONError(w, err)
 				return
 			}
@@ -331,7 +321,7 @@ func (c *CommentHandler) FetchCommentsForPost(w http.ResponseWriter, r *http.Req
 
 	w.Header().Set("Content-Type", "application/json")
 	if _, err = easyjson.MarshalToWriter(commentsOut, w); err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to encode comments: %s", err.Error()))
+		logger.Error(ctx, "Failed to encode comments: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to encode comments", http.StatusInternalServerError))
 	}
 }
@@ -348,7 +338,7 @@ func (c *CommentHandler) FetchCommentsForPost(w http.ResponseWriter, r *http.Req
 func (c *CommentHandler) LikeComment(w http.ResponseWriter, r *http.Request) {
 	// Извлекаем пользователя из контекста
 	ctx := r.Context()
-	user, ok := ctx.Value(logger.Username).(models.User)
+	user, ok := ctx.Value("user").(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while liking comment")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -359,7 +349,7 @@ func (c *CommentHandler) LikeComment(w http.ResponseWriter, r *http.Request) {
 	commentIdStr := mux.Vars(r)["comment_id"]
 	commentId, err := uuid.Parse(commentIdStr)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to parse comment ID: %s", err.Error()))
+		logger.Error(ctx, "Failed to parse comment ID: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Invalid comment ID", http.StatusBadRequest))
 		return
 	}
@@ -367,7 +357,7 @@ func (c *CommentHandler) LikeComment(w http.ResponseWriter, r *http.Request) {
 	// Пытаемся поставить лайк
 	err = c.commentUseCase.LikeComment(ctx, commentId, user.Id)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to like comment: %s", err.Error()))
+		logger.Error(ctx, "Failed to like comment: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}
@@ -388,7 +378,7 @@ func (c *CommentHandler) LikeComment(w http.ResponseWriter, r *http.Request) {
 func (c *CommentHandler) UnlikeComment(w http.ResponseWriter, r *http.Request) {
 	// Извлекаем пользователя из контекста
 	ctx := r.Context()
-	user, ok := ctx.Value(logger.Username).(models.User)
+	user, ok := ctx.Value("user").(models.User)
 	if !ok {
 		logger.Error(ctx, "Failed to get user from context while unliking comment")
 		http2.WriteJSONError(w, errors2.New(errors2.InternalErrorCode, "Failed to get user from context", http.StatusInternalServerError))
@@ -399,7 +389,7 @@ func (c *CommentHandler) UnlikeComment(w http.ResponseWriter, r *http.Request) {
 	commentIdStr := mux.Vars(r)["comment_id"]
 	commentId, err := uuid.Parse(commentIdStr)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to parse comment ID: %s", err.Error()))
+		logger.Error(ctx, "Failed to parse comment ID: %s", err.Error())
 		http2.WriteJSONError(w, errors2.New(errors2.BadRequestErrorCode, "Invalid comment ID", http.StatusBadRequest))
 		return
 	}
@@ -407,7 +397,7 @@ func (c *CommentHandler) UnlikeComment(w http.ResponseWriter, r *http.Request) {
 	// Пытаемся убрать лайк
 	err = c.commentUseCase.UnlikeComment(ctx, commentId, user.Id)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Failed to unlike comment: %s", err.Error()))
+		logger.Error(ctx, "Failed to unlike comment: %s", err.Error())
 		http2.WriteJSONError(w, err)
 		return
 	}

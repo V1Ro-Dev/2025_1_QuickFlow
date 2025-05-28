@@ -61,10 +61,7 @@ func NewPostgresUserRepository(db *sql.DB) *PostgresUserRepository {
 
 // Close закрывает пул соединений
 func (u *PostgresUserRepository) Close() {
-	err := u.connPool.Close()
-	if err != nil {
-		return
-	}
+	u.connPool.Close()
 }
 
 // IsExists checks if user with login exists.
@@ -144,12 +141,7 @@ func (u *PostgresUserRepository) SearchSimilar(ctx context.Context, toSearch str
 	if err != nil {
 		return nil, fmt.Errorf("u.connPool.Query: %w", err)
 	}
-	defer func(rows *sql.Rows) {
-		err = rows.Close()
-		if err != nil {
-			return
-		}
-	}(rows)
+	defer rows.Close()
 
 	var users []models.PublicUserInfo
 	for rows.Next() {

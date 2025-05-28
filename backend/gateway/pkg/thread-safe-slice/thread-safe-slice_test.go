@@ -1,7 +1,6 @@
 package thread_safe_slice
 
 import (
-	"log"
 	"sync"
 	"testing"
 )
@@ -33,10 +32,7 @@ func TestThreadSafeSlice(t *testing.T) {
 				s := NewThreadSafeSlice[int]()
 				s.Add(1)
 				s.Add(2)
-				err := s.DeleteIf(func(x int) bool { return x == 1 })
-				if err != nil {
-					log.Fatal(err)
-				}
+				s.DeleteIf(func(x int) bool { return x == 1 })
 				return s
 			},
 			predicate: nil,

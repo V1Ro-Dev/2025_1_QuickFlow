@@ -20,12 +20,7 @@ func TestLoadMinioConfig_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp file: %v", err)
 	}
-	defer func(name string) {
-		err = os.Remove(name)
-		if err != nil {
-			t.Fatalf("failed to remove temp file: %v", err)
-		}
-	}(file.Name())
+	defer os.Remove(file.Name())
 
 	// Сохраняем конфигурацию в файл
 	encoder := toml.NewEncoder(file)

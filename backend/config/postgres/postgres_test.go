@@ -1,23 +1,14 @@
 package postgres_config
 
 import (
-	"log"
 	"os"
 	"testing"
 )
 
 func TestNewPostgresConfig_WithEnvVar(t *testing.T) {
 	// Устанавливаем переменную окружения
-	err := os.Setenv("DATABASE_URL", "postgresql://custom-user:password@localhost:5432/custom_db")
-	if err != nil {
-		log.Fatalf("failed to set DATABASE_URL: %v", err)
-	}
-	defer func() {
-		err = os.Unsetenv("DATABASE_URL")
-		if err != nil {
-			log.Fatalf("failed to unset DATABASE_URL: %v", err)
-		}
-	}() // Очищаем после теста
+	os.Setenv("DATABASE_URL", "postgresql://custom-user:password@localhost:5432/custom_db")
+	defer os.Unsetenv("DATABASE_URL") // Очищаем после теста
 
 	// Создаем новый объект конфигурации
 	postgresConfig := NewPostgresConfig()
@@ -31,10 +22,7 @@ func TestNewPostgresConfig_WithEnvVar(t *testing.T) {
 
 func TestNewPostgresConfig_WithoutEnvVar(t *testing.T) {
 	// Убираем переменную окружения, если она установлена
-	err := os.Unsetenv("DATABASE_URL")
-	if err != nil {
-		log.Fatalf("failed to unset DATABASE_URL: %v", err)
-	}
+	os.Unsetenv("DATABASE_URL")
 
 	// Создаем новый объект конфигурации
 	postgresConfig := NewPostgresConfig()

@@ -177,14 +177,13 @@ func (p *PostOut) FromPost(post models.Post) {
 	stickerUrls := make([]FileOut, 0)
 
 	for _, file := range post.Files {
-		switch file.DisplayType {
-		case models.DisplayTypeMedia:
+		if file.DisplayType == models.DisplayTypeMedia {
 			mediaURLs = append(mediaURLs, ToFileOut(*file))
-		case models.DisplayTypeAudio:
+		} else if file.DisplayType == models.DisplayTypeAudio {
 			audioURLs = append(audioURLs, ToFileOut(*file))
-		case models.DisplayTypeSticker:
+		} else if file.DisplayType == models.DisplayTypeSticker {
 			stickerUrls = append(stickerUrls, ToFileOut(*file))
-		default:
+		} else {
 			fileURLs = append(fileURLs, ToFileOut(*file))
 		}
 	}

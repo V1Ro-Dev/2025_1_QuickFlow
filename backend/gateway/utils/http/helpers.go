@@ -18,7 +18,7 @@ import (
 	"quickflow/shared/models"
 )
 
-var ErrTooManyFilesErr = errors.New("too many files")
+var TooManyFilesErr = errors.New("too many files")
 
 // WriteJSONError sends JSON error response.
 func WriteJSONError(w http.ResponseWriter, err error) {
@@ -44,7 +44,7 @@ func GetFiles(r *http.Request, key string) ([]*models.File, error) {
 	var files []*models.File
 	// TODO clean code
 	if len(r.MultipartForm.File[key]) > 10 {
-		return nil, ErrTooManyFilesErr
+		return nil, TooManyFilesErr
 	}
 	for _, fileHeaders := range r.MultipartForm.File[key] {
 		mimeType, err := detectMimeType(fileHeaders)
@@ -96,10 +96,7 @@ func GetFile(r *http.Request, key string) (*models.File, error) {
 		MimeType: mimeType,
 	}
 
-	err = file.Close()
-	if err != nil {
-		return nil, err
-	}
+	file.Close()
 
 	return fileModel, nil
 }
@@ -117,12 +114,7 @@ func detectMimeType(fileHeader *multipart.FileHeader) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer func(file multipart.File) {
-		err = file.Close()
-		if err != nil {
-			return
-		}
-	}(file)
+	defer file.Close()
 
 	// Читаем первые 512 байтов (это стандартный размер для определения типа)
 	buf := make([]byte, 512)

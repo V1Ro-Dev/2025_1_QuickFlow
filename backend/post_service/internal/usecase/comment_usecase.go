@@ -142,9 +142,6 @@ func (c *CommentUseCase) UpdateComment(ctx context.Context, commentUpdate models
 
 	// update Comment
 	err = c.commentRepo.UpdateComment(ctx, commentUpdate)
-	if err != nil {
-		return nil, fmt.Errorf("p.fileService.UpdateComment: %w", err)
-	}
 
 	// delete old photos if they are not in the new photos
 	var fileURLs []string

@@ -87,10 +87,7 @@ func NewPostgresMessageRepository(connPool *sql.DB) *MessageRepository {
 
 // Close закрывает пул соединений
 func (m *MessageRepository) Close() {
-	err := m.connPool.Close()
-	if err != nil {
-		return
-	}
+	m.connPool.Close()
 }
 
 func (m *MessageRepository) GetMessagesForChatOlder(ctx context.Context, chatId uuid.UUID,
@@ -100,12 +97,7 @@ func (m *MessageRepository) GetMessagesForChatOlder(ctx context.Context, chatId 
 	if err != nil {
 		return nil, err
 	}
-	defer func(rows *sql.Rows) {
-		err = rows.Close()
-		if err != nil {
-			return
-		}
-	}(rows)
+	defer rows.Close()
 
 	var messages []models.Message
 	for rows.Next() {
@@ -133,10 +125,7 @@ func (m *MessageRepository) GetMessagesForChatOlder(ctx context.Context, chatId 
 
 			message.Attachments = append(message.Attachments, pgfile.ToFile())
 		}
-		err = files.Close()
-		if err != nil {
-			return nil, err
-		}
+		files.Close()
 
 		messages = slices.Insert(messages, 0, message)
 	}

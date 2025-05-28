@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"quickflow/shared/logger"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -41,7 +40,7 @@ func SessionMiddleware(authUseCase http2.AuthUseCase) mux.MiddlewareFunc {
 
 			// add user to context
 			ctx := r.Context()
-			ctx = context.WithValue(ctx, logger.Username, user)
+			ctx = context.WithValue(ctx, "user", user)
 			r = r.WithContext(ctx)
 
 			next.ServeHTTP(w, r)

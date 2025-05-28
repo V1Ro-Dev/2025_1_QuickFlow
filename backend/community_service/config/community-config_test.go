@@ -1,11 +1,21 @@
 package config
 
 import (
+	"errors"
+	"io/ioutil"
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+// Мокаем функцию ParseSize
+func mockParseSize(size string) (int64, error) {
+	if size == "1MB" {
+		return 1024 * 1024, nil // 1MB in bytes
+	}
+	return 0, errors.New("invalid size")
+}
 
 func TestNewCommunityConfig_Success(t *testing.T) {
 	// Создадим временный конфигурационный файл для теста
@@ -17,20 +27,12 @@ community_avatar_max_size = "1MB"
 `
 
 	// Создаем временный файл
-	tempFile, err := os.CreateTemp("", "config_test_*.toml")
+	tempFile, err := ioutil.TempFile("", "config_test_*.toml")
 	assert.NoError(t, err)
-	defer func(name string) {
-		err = os.Remove(name)
-		if err != nil {
-			return
-		}
-	}(tempFile.Name())
+	defer os.Remove(tempFile.Name())
 
 	_, err = tempFile.WriteString(configContent)
 	assert.NoError(t, err)
-
-	// Закрываем файл, чтобы можно было его снова открыть при чтении
-	assert.NoError(t, tempFile.Close())
 
 	// Тестируем успешную загрузку конфигурации
 	cfg, err := NewCommunityConfig(tempFile.Name())

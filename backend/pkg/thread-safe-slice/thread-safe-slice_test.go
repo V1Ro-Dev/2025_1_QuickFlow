@@ -32,11 +32,7 @@ func TestThreadSafeSlice(t *testing.T) {
 				s := NewThreadSafeSlice[int]()
 				s.Add(1)
 				s.Add(2)
-				err := s.DeleteIf(func(x int) bool { return x == 1 })
-				if err != nil {
-					t.Fatalf("unexpected error: %v", err)
-				}
-
+				s.DeleteIf(func(x int) bool { return x == 1 })
 				return s
 			},
 			predicate: nil,

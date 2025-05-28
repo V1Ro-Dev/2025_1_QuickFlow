@@ -52,14 +52,8 @@ func TestGetServiceAddr(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := os.Setenv("RUNNING_IN_CONTAINER", tt.runningInContainer)
-			if err != nil {
-				return
-			}
-			err = os.Setenv(tt.serviceVar, tt.serviceEnvValue)
-			if err != nil {
-				return
-			}
+			os.Setenv("RUNNING_IN_CONTAINER", tt.runningInContainer)
+			os.Setenv(tt.serviceVar, tt.serviceEnvValue)
 
 			actualAddr := GetServiceAddr(tt.serviceVar, tt.defaultPort)
 			assert.Equal(t, tt.expectedAddr, actualAddr)
