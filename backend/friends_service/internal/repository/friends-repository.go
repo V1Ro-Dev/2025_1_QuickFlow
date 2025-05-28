@@ -127,7 +127,7 @@ func (p *PostgresFriendsRepository) GetFriendsPublicInfo(ctx context.Context, us
 		isRead = false
 	}
 
-	logger.Info(ctx, fmt.Sprintf("Trying to get friends info for user %s", userID))
+	logger.Info(ctx, "Trying to get friends info for user %s", userID)
 
 	rows, err := p.connPool.QueryContext(ctx, GetFriendsInfoQuery, userID, rel1, rel2, limit, offset, isRead, false)
 	friendsInfo := make([]models.FriendInfo, 0)
@@ -136,7 +136,7 @@ func (p *PostgresFriendsRepository) GetFriendsPublicInfo(ctx context.Context, us
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
 			newErr := fmt.Errorf("SQL Error: %s, Detail: %s, Where: %s", pgErr.Message, pgErr.Detail, pgErr.Where)
-			logger.Error(ctx, newErr.Error())
+			logger.Error(ctx, "%v", newErr.Error())
 		}
 
 		return friendsInfo, 0, fmt.Errorf("unable to get friends info: %v", err)
@@ -153,7 +153,7 @@ func (p *PostgresFriendsRepository) GetFriendsPublicInfo(ctx context.Context, us
 			&friendInfoPostgres.University,
 		)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("rows scanning error: %s", err.Error()))
+			logger.Error(ctx, "rows scanning error: %s", err.Error())
 			return []models.FriendInfo{}, 0, errors.New("unable to get friends info")
 		}
 
@@ -161,25 +161,25 @@ func (p *PostgresFriendsRepository) GetFriendsPublicInfo(ctx context.Context, us
 		friendsInfo = append(friendsInfo, friendInfo)
 	}
 
-	logger.Info(ctx, fmt.Sprintf("Trying to get total amount of %s friends for user: %s", reqType, userID))
+	logger.Info(ctx, "Trying to get total amount of %s friends for user: %s", reqType, userID)
 
 	var friendsCount int
 	err = p.connPool.QueryRowContext(ctx, GetFriendsCountQuery, userID, rel1, rel2, isRead, false).Scan(&friendsCount)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			logger.Info(ctx, fmt.Sprintf("user: %s has no %s friends", reqType, userID))
+			logger.Info(ctx, "user: %s has no %s friends", reqType, userID)
 			return []models.FriendInfo{}, 0, nil
 		}
-		logger.Error(ctx, fmt.Sprintf("unable to get %s friends count: %v", reqType, err))
+		logger.Error(ctx, "unable to get %s friends count: %v", reqType, err)
 		return []models.FriendInfo{}, 0, errors.New("unable to get friends info")
 	}
 
-	logger.Info(ctx, fmt.Sprintf("Amount of %s friends for user: %s is %d", reqType, userID, friendsCount))
+	logger.Info(ctx, "Amount of %s friends for user: %s is %d", reqType, userID, friendsCount)
 	return friendsInfo, friendsCount, nil
 }
 
 func (p *PostgresFriendsRepository) SendFriendRequest(ctx context.Context, senderID string, receiverID string) error {
-	logger.Info(ctx, fmt.Sprintf("Trying to insert friend request to DB for sender: %s and receiver %s", senderID, receiverID))
+	logger.Info(ctx, "Trying to insert friend request to DB for sender: %s and receiver %s", senderID, receiverID)
 	var sender, receiver string
 	var status models.UserRelation
 	if senderID > receiverID {
@@ -197,7 +197,7 @@ func (p *PostgresFriendsRepository) SendFriendRequest(ctx context.Context, sende
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
 			newErr := fmt.Errorf("SQL Error: %s, Detail: %s, Where: %s", pgErr.Message, pgErr.Detail, pgErr.Where)
-			logger.Error(ctx, newErr.Error())
+			logger.Error(ctx, "%v", newErr.Error())
 		}
 
 		return fmt.Errorf("unable to get friends info: %v", err)
@@ -211,19 +211,19 @@ func (p *PostgresFriendsRepository) IsExistsFriendRequest(ctx context.Context, s
 	err := p.connPool.QueryRowContext(ctx, CheckFriendRequestQuery, senderID, receiverID).Scan(&status)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			logger.Info(ctx, fmt.Sprintf("relation between sender: %s and receiver: %s doesn't exist or Incorrect IDs were given", senderID, receiverID))
+			logger.Info(ctx, "relation between sender: %s and receiver: %s doesn't exist or Incorrect IDs were given", senderID, receiverID)
 			return false, nil
 		}
-		logger.Error(ctx, fmt.Sprintf("unable to get friends info: %v", err))
+		logger.Error(ctx, "unable to get friends info: %v", err)
 		return false, errors.New("unable to get friends info")
 	}
 
-	logger.Error(ctx, fmt.Sprintf("Relation between sender: %s and receiver: %s already exists", senderID, receiverID))
+	logger.Error(ctx, "Relation between sender: %s and receiver: %s already exists", senderID, receiverID)
 	return true, nil
 }
 
 func (p *PostgresFriendsRepository) AcceptFriendRequest(ctx context.Context, senderID string, receiverID string) error {
-	logger.Info(ctx, fmt.Sprintf("Trying to update friend request for sender: %s and receiver: %s", senderID, receiverID))
+	logger.Info(ctx, "Trying to update friend request for sender: %s and receiver: %s", senderID, receiverID)
 	var sender, receiver string
 	if senderID > receiverID {
 		receiver = senderID
@@ -239,7 +239,7 @@ func (p *PostgresFriendsRepository) AcceptFriendRequest(ctx context.Context, sen
 	}
 
 	if rows, err := commandTag.RowsAffected(); rows == 0 || err != nil {
-		logger.Error(ctx, fmt.Sprintf("friend relation between sender: %s and receiver: %s doesn't exist or incorrect ID's were given", senderID, receiverID))
+		logger.Error(ctx, "friend relation between sender: %s and receiver: %s doesn't exist or incorrect ID's were given", senderID, receiverID)
 		return errors.New("failed to accept friend request")
 	}
 
@@ -247,7 +247,7 @@ func (p *PostgresFriendsRepository) AcceptFriendRequest(ctx context.Context, sen
 }
 
 func (p *PostgresFriendsRepository) DeleteFriend(ctx context.Context, userID string, friendID string) error {
-	logger.Info(ctx, fmt.Sprintf("Trying to delete friend: %s for user: %s ", friendID, userID))
+	logger.Info(ctx, "Trying to delete friend: %s for user: %s ", friendID, userID)
 	var user1, user2 string
 	var status models.UserRelation
 	if userID < friendID {
@@ -266,7 +266,7 @@ func (p *PostgresFriendsRepository) DeleteFriend(ctx context.Context, userID str
 	}
 
 	if rows, err := commandTag.RowsAffected(); rows == 0 || err != nil {
-		logger.Error(ctx, fmt.Sprintf("friend relation between sender: %s and receiver: %s doesn't exist or incorrect ID's were given", userID, friendID))
+		logger.Error(ctx, "friend relation between sender: %s and receiver: %s doesn't exist or incorrect ID's were given", userID, friendID)
 		return errors.New("failed to delete friend")
 	}
 
@@ -274,7 +274,7 @@ func (p *PostgresFriendsRepository) DeleteFriend(ctx context.Context, userID str
 }
 
 func (p *PostgresFriendsRepository) Unfollow(ctx context.Context, userID string, friendID string) error {
-	logger.Info(ctx, fmt.Sprintf("Trying to unfollow user: %s for user: %s ", friendID, userID))
+	logger.Info(ctx, "Trying to unfollow user: %s for user: %s ", friendID, userID)
 
 	commandTag, err := p.connPool.ExecContext(ctx, DeleteFollowerRelationQuery, userID, friendID, models.RelationFollowedBy, models.RelationFollowing)
 	if err != nil {
@@ -282,7 +282,7 @@ func (p *PostgresFriendsRepository) Unfollow(ctx context.Context, userID string,
 	}
 
 	if rows, err := commandTag.RowsAffected(); rows == 0 || err != nil {
-		logger.Error(ctx, fmt.Sprintf("follower relation between user: %s and user: %s doesn't exist or incorrect ID's were given", userID, friendID))
+		logger.Error(ctx, "follower relation between user: %s and user: %s doesn't exist or incorrect ID's were given", userID, friendID)
 		return errors.New("failed to delete friend")
 	}
 
@@ -296,11 +296,11 @@ func (p *PostgresFriendsRepository) GetUserRelation(ctx context.Context, user1 u
 		if errors.Is(err, sql.ErrNoRows) {
 			return models.RelationStranger, nil
 		}
-		logger.Error(ctx, fmt.Sprintf("unable to get friends info: %v", err))
+		logger.Error(ctx, "unable to get friends info: %v", err)
 		return models.RelationStranger, errors.New("unable to get friends info")
 	}
 
-	logger.Info(ctx, fmt.Sprintf("Relation between sender: %s and receiver: %s already exists", user1, user2))
+	logger.Info(ctx, "Relation between sender: %s and receiver: %s already exists", user1, user2)
 
 	if user1.String() > user2.String() {
 		if status == models.RelationFollowedBy {
@@ -313,7 +313,7 @@ func (p *PostgresFriendsRepository) GetUserRelation(ctx context.Context, user1 u
 }
 
 func (p *PostgresFriendsRepository) MarkRead(ctx context.Context, userID string, friendID string) error {
-	logger.Info(ctx, fmt.Sprintf("Trying to mark read friend: %s for user: %s ", friendID, userID))
+	logger.Info(ctx, "Trying to mark read friend: %s for user: %s ", friendID, userID)
 
 	commandTag, err := p.connPool.ExecContext(ctx, MarkRead, true, userID, friendID, models.RelationFollowing, models.RelationFollowedBy)
 	if err != nil {
@@ -321,7 +321,7 @@ func (p *PostgresFriendsRepository) MarkRead(ctx context.Context, userID string,
 	}
 
 	if rows, err := commandTag.RowsAffected(); rows == 0 || err != nil {
-		logger.Error(ctx, fmt.Sprintf("friend request from potential friend: %s has alreadby been read or incorrect ID's were given", friendID))
+		logger.Error(ctx, "friend request from potential friend: %s has alreadby been read or incorrect ID's were given", friendID)
 		return errors.New("failed to mark read friend request")
 	}
 

@@ -31,6 +31,9 @@ func MapMessagesToProto(messages []models.Message) []*pb.Message {
 }
 
 func MapProtoToMessage(message *pb.Message) (*models.Message, error) {
+	if message == nil {
+		return nil, nil
+	}
 	id, err := uuid.Parse(message.Id)
 	if err != nil {
 		return nil, err

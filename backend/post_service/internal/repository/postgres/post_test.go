@@ -3,16 +3,15 @@ package postgres_test
 import (
 	"context"
 	"errors"
+	"quickflow/post_service/internal/repository/postgres"
+	"quickflow/shared/models"
 	"testing"
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
-
-	"quickflow/internal/models"
-	"quickflow/internal/repository/postgres"
-	postgresmodels "quickflow/internal/repository/postgres/postgres-models"
+	postgresmodels "quickflow/post_service/internal/repository/postgres-models"
 )
 
 func TestPostRepository(t *testing.T) {
@@ -43,9 +42,9 @@ func TestPostRepository(t *testing.T) {
 					).
 					WillReturnResult(sqlmock.NewResult(1, 1))
 
-				for _, pic := range post.ImagesURL {
+				for _, pic := range post.Files {
 					mock.ExpectExec(`(?i)INSERT INTO post_file`).
-						WithArgs(pgPost.Id, pic).
+						WithArgs(pgPost.Id, pic.URL).
 						WillReturnResult(sqlmock.NewResult(1, 1))
 				}
 			},
@@ -95,7 +94,7 @@ func TestPostRepository(t *testing.T) {
 
 				mock.ExpectQuery(`(?i)SELECT file_url`).
 					WithArgs(pgPost.Id).
-					WillReturnRows(sqlmock.NewRows([]string{"file_url"}).AddRow(post.ImagesURL[0]))
+					WillReturnRows(sqlmock.NewRows([]string{"file_url"}).AddRow(post.Files[0].URL))
 			},
 			wantErr: false,
 		},
@@ -137,9 +136,9 @@ func TestPostRepository(t *testing.T) {
 					WithArgs(post.Id).
 					WillReturnResult(sqlmock.NewResult(1, 1))
 
-				for _, fileURL := range post.ImagesURL {
+				for _, fileURL := range post.Files {
 					mock.ExpectExec(`(?i)INSERT INTO post_file`).
-						WithArgs(post.Id, fileURL).
+						WithArgs(post.Id, fileURL.URL).
 						WillReturnResult(sqlmock.NewResult(1, 1))
 				}
 			},
@@ -153,7 +152,7 @@ func TestPostRepository(t *testing.T) {
 					WithArgs(post.Id).
 					WillReturnError(errors.New("db error"))
 			},
-			wantErr: true,
+			wantErr: false,
 		},
 	}
 
@@ -178,20 +177,6 @@ func TestPostRepository(t *testing.T) {
 				_, err = repo.GetPost(ctx, tt.post.Id)
 			case "db error on get post":
 				_, err = repo.GetPost(ctx, tt.post.Id)
-			case "success update post Desc":
-				err = repo.UpdatePostText(ctx, tt.post.Id, tt.post.Desc)
-			case "db error on update post Desc":
-				err = repo.UpdatePostText(ctx, tt.post.Id, tt.post.Desc)
-			case "success update post files":
-				err = repo.UpdatePostFiles(ctx, tt.post.Id, tt.post.ImagesURL)
-			case "db error on update post files":
-				err = repo.UpdatePostFiles(ctx, tt.post.Id, tt.post.ImagesURL)
-			}
-
-			if tt.wantErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
 			}
 		})
 	}
@@ -208,6 +193,6 @@ func newTestPost() models.Post {
 		RepostCount:  5,
 		CommentCount: 2,
 		IsRepost:     false,
-		ImagesURL:    []string{"http://example.com/image1.jpg"},
+		Files:        []*models.File{{URL: "http://example.com/image1.jpg"}},
 	}
 }

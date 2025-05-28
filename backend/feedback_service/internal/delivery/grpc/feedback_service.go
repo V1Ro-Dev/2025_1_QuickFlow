@@ -43,13 +43,13 @@ func (s *FeedBackService) SaveFeedback(ctx context.Context, req *pb.SaveFeedback
 
 	feedback, err := dto.ProtoFeedbackToModel(req.Feedback)
 	if err != nil {
-		logger.Error(ctx, "Failed to convert proto to model: ", err)
+		logger.Error(ctx, "Failed to convert proto to model: %v", err)
 		return nil, grpcErrorFromAppError(err)
 	}
 
 	err = s.feedbackService.SaveFeedback(ctx, feedback)
 	if err != nil {
-		logger.Error(ctx, "Failed to save feedback: ", err)
+		logger.Error(ctx, "Failed to save feedback: %v", err)
 		return nil, grpcErrorFromAppError(err)
 	}
 
@@ -62,13 +62,13 @@ func (s *FeedBackService) GetAllFeedbackType(ctx context.Context, req *pb.GetAll
 
 	feedbackType, err := dto.FeedBackTypeFromProto(req.Type)
 	if err != nil {
-		logger.Error(ctx, "Invalid feedback type: ", err)
+		logger.Error(ctx, "Invalid feedback type: %v", err)
 		return nil, grpcErrorFromAppError(err)
 	}
 
 	feedbacks, err := s.feedbackService.GetAllFeedbackType(ctx, feedbackType, req.Ts.AsTime(), int(req.Count))
 	if err != nil {
-		logger.Error(ctx, "Failed to get feedbacks: ", err)
+		logger.Error(ctx, "Failed to get feedbacks: %v", err)
 		return nil, grpcErrorFromAppError(err)
 	}
 
@@ -76,7 +76,7 @@ func (s *FeedBackService) GetAllFeedbackType(ctx context.Context, req *pb.GetAll
 	for i, feedback := range feedbacks {
 		protoFeedbacks[i], err = dto.ModelFeedbackToProto(&feedback)
 		if err != nil {
-			logger.Error(ctx, "Failed to convert feedback model to proto: ", err)
+			logger.Error(ctx, "Failed to convert feedback model to proto: %v", err)
 			return nil, grpcErrorFromAppError(err)
 		}
 	}

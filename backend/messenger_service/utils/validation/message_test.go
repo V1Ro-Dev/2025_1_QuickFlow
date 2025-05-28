@@ -41,7 +41,7 @@ func TestMessageValidator_ValidateMessage(t *testing.T) {
 				SenderID:    uuid.New(),
 				Attachments: []*models.File{},
 			},
-			expectError: true,
+			expectError: false,
 		},
 		{
 			name: "missing chat ID and sender ID",

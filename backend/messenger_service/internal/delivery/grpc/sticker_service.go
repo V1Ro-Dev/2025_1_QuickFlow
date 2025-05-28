@@ -34,13 +34,13 @@ func (s *StickerServiceServer) AddStickerPack(ctx context.Context, req *pb.AddSt
 
 	stickerPack, err := dto.MapProtoToStickerPack(req.StickerPack)
 	if err != nil {
-		logger.Error(ctx, "Failed to map Proto to StickerPack: ", err)
+		logger.Error(ctx, "Failed to map Proto to StickerPack: %v", err)
 		return nil, fmt.Errorf("failed to map Proto to StickerPack: %v", err)
 	}
 
 	createdStickerPack, err := s.stickerUseCase.AddStickerPack(ctx, stickerPack)
 	if err != nil {
-		logger.Error(ctx, "Failed to add sticker pack: ", err)
+		logger.Error(ctx, "Failed to add sticker pack: %v", err)
 		return nil, fmt.Errorf("failed to add sticker pack: %w", err)
 	}
 
@@ -54,13 +54,13 @@ func (s *StickerServiceServer) GetStickerPack(ctx context.Context, req *pb.GetSt
 
 	packId, err := uuid.Parse(req.Id)
 	if err != nil {
-		logger.Error(ctx, "Invalid sticker pack ID: ", err)
+		logger.Error(ctx, "Invalid sticker pack ID: %v", err)
 		return nil, fmt.Errorf("invalid sticker pack ID: %w", err)
 	}
 
 	stickerPack, err := s.stickerUseCase.GetStickerPack(ctx, packId)
 	if err != nil {
-		logger.Error(ctx, "Failed to get sticker pack: ", err)
+		logger.Error(ctx, "Failed to get sticker pack: %v", err)
 		return nil, fmt.Errorf("failed to get sticker pack: %w", err)
 	}
 
@@ -74,13 +74,13 @@ func (s *StickerServiceServer) GetStickerPacks(ctx context.Context, req *pb.GetS
 
 	userId, err := uuid.Parse(req.UserId)
 	if err != nil {
-		logger.Error(ctx, "Invalid UserId: ", err)
+		logger.Error(ctx, "Invalid UserId: %v", err)
 		return nil, fmt.Errorf("invalid UserId: %w", err)
 	}
 
 	stickerPacks, err := s.stickerUseCase.GetStickerPacks(ctx, userId, int(req.Count), int(req.Offset))
 	if err != nil {
-		logger.Error(ctx, "Failed to get sticker packs: ", err)
+		logger.Error(ctx, "Failed to get sticker packs: %v", err)
 		return nil, fmt.Errorf("failed to get sticker packs: %w", err)
 	}
 
@@ -99,19 +99,19 @@ func (s *StickerServiceServer) DeleteStickerPack(ctx context.Context, req *pb.De
 
 	packId, err := uuid.Parse(req.PackId)
 	if err != nil {
-		logger.Error(ctx, "Invalid sticker pack ID: ", err)
+		logger.Error(ctx, "Invalid sticker pack ID: %v", err)
 		return nil, fmt.Errorf("invalid sticker pack ID: %w", err)
 	}
 
 	userId, err := uuid.Parse(req.UserId)
 	if err != nil {
-		logger.Error(ctx, "Invalid UserId: ", err)
+		logger.Error(ctx, "Invalid UserId: %v", err)
 		return nil, fmt.Errorf("invalid UserId: %w", err)
 	}
 
 	err = s.stickerUseCase.DeleteStickerPack(ctx, userId, packId)
 	if err != nil {
-		logger.Error(ctx, "Failed to delete sticker pack: ", err)
+		logger.Error(ctx, "Failed to delete sticker pack: %v", err)
 		return nil, fmt.Errorf("failed to delete sticker pack: %w", err)
 	}
 
@@ -130,7 +130,7 @@ func (s *StickerServiceServer) GetStickerPackByName(ctx context.Context, req *pb
 
 	stickerPack, err := s.stickerUseCase.GetStickerPackByName(ctx, req.Name)
 	if err != nil {
-		logger.Error(ctx, "Failed to get sticker pack by name: ", err)
+		logger.Error(ctx, "Failed to get sticker pack by name: %v", err)
 		return nil, fmt.Errorf("failed to get sticker pack by name: %w", err)
 	}
 

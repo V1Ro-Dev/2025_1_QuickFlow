@@ -8,6 +8,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	shared_models "quickflow/shared/models"
 	user_errors "quickflow/user_service/internal/errors"
@@ -18,87 +19,87 @@ func TestUserUseCase_CreateUser(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockUserRepo := mocks.NewMockUserRepository(ctrl)
-	mockSessionRepo := mocks.NewMockSessionRepository(ctrl)
-	mockProfileRepo := mocks.NewMockProfileRepository(ctrl)
-
-	userUseCase := NewUserUseCase(mockUserRepo, mockSessionRepo, mockProfileRepo)
-
-	tests := []struct {
-		name            string
-		user            shared_models.User
-		profile         shared_models.Profile
-		mockUserError   error
-		mockSaveError   error
-		mockSessionErr  error
-		expectedErr     bool
-		expectedUserId  uuid.UUID
-		expectedSession shared_models.Session
-	}{
-		{
-			name: "Error - Username already exists",
-			user: shared_models.User{
-				Username: "existingUser",
-				Password: "password123",
-			},
-			profile: shared_models.Profile{
-				Username: "existingUser",
-			},
-			mockUserError:   nil,
-			mockSaveError:   user_errors.ErrAlreadyExists,
-			mockSessionErr:  nil,
-			expectedErr:     true,
-			expectedUserId:  uuid.Nil,
-			expectedSession: shared_models.Session{},
-		},
-		{
-			name: "Error - Profile validation fails",
-			user: shared_models.User{
-				Username: "newUser",
-				Password: "password123",
-			},
-			profile: shared_models.Profile{
-				Username: "",
-			},
-			mockUserError:   nil,
-			mockSaveError:   nil,
-			mockSessionErr:  nil,
-			expectedErr:     true,
-			expectedUserId:  uuid.Nil,
-			expectedSession: shared_models.Session{},
-		},
-		{
-			name: "Error - SaveProfile fails",
-			user: shared_models.User{
-				Username: "newUser",
-				Password: "password123",
-			},
-			profile: shared_models.Profile{
-				Username: "newUser",
-			},
-			mockUserError:   nil,
-			mockSaveError:   nil,
-			mockSessionErr:  nil,
-			expectedErr:     true,
-			expectedUserId:  uuid.Nil,
-			expectedSession: shared_models.Session{},
+	ctx := context.Background()
+	userID := uuid.New()
+	username := "testuser"
+	password := "validPass123"
+	user := shared_models.User{
+		Username: username,
+		Password: password,
+	}
+	profile := shared_models.Profile{
+		BasicInfo: &shared_models.BasicInfo{
+			Name:    "Test",
+			Surname: "User",
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		mockUserRepo := mocks.NewMockUserRepository(ctrl)
+		mockSessionRepo := mocks.NewMockSessionRepository(ctrl)
+		mockProfileRepo := mocks.NewMockProfileRepository(ctrl)
 
-			userId, session, err := userUseCase.CreateUser(context.Background(), tt.user, tt.profile)
+		uc := NewUserUseCase(mockUserRepo, mockSessionRepo, mockProfileRepo)
 
-			if tt.expectedErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expectedUserId, userId)
-				assert.Equal(t, tt.expectedSession.SessionId, session.SessionId)
-			}
-		})
-	}
+		mockUserRepo.EXPECT().IsExists(ctx, gomock.Any()).Return(false, nil).AnyTimes()
+		mockUserRepo.EXPECT().SaveUser(ctx, gomock.Any()).Return(userID, nil).AnyTimes()
+		mockSessionRepo.EXPECT().IsExists(ctx, gomock.Any()).Return(false, nil).AnyTimes()
+		mockSessionRepo.EXPECT().SaveSession(ctx, userID, gomock.Any()).Return(nil).AnyTimes()
+		mockProfileRepo.EXPECT().SaveProfile(ctx, gomock.Any()).Return(nil).AnyTimes()
+
+		id, session, err := uc.CreateUser(ctx, user, profile)
+		require.NoError(t, err)
+		assert.Equal(t, userID, id)
+		assert.NotEqual(t, uuid.Nil, session.SessionId)
+	})
+
+	t.Run("validation error - profile", func(t *testing.T) {
+		mockUserRepo := mocks.NewMockUserRepository(ctrl)
+		mockSessionRepo := mocks.NewMockSessionRepository(ctrl)
+		mockProfileRepo := mocks.NewMockProfileRepository(ctrl)
+
+		uc := NewUserUseCase(mockUserRepo, mockSessionRepo, mockProfileRepo)
+
+		invalidProfile := shared_models.Profile{
+			BasicInfo: &shared_models.BasicInfo{
+				Name:    "", // empty name
+				Surname: "User",
+			},
+		}
+
+		_, _, err := uc.CreateUser(ctx, user, invalidProfile)
+		assert.Error(t, err)
+		assert.ErrorIs(t, err, user_errors.ErrProfileValidation)
+	})
+
+	t.Run("error saving user", func(t *testing.T) {
+		mockUserRepo := mocks.NewMockUserRepository(ctrl)
+		mockSessionRepo := mocks.NewMockSessionRepository(ctrl)
+		mockProfileRepo := mocks.NewMockProfileRepository(ctrl)
+
+		uc := NewUserUseCase(mockUserRepo, mockSessionRepo, mockProfileRepo)
+
+		expectedErr := errors.New("save error")
+		mockUserRepo.EXPECT().IsExists(ctx, username).Return(false, nil).AnyTimes()
+		mockUserRepo.EXPECT().SaveUser(ctx, gomock.Any()).Return(uuid.Nil, expectedErr).AnyTimes()
+
+		_, _, _ = uc.CreateUser(ctx, user, profile)
+	})
+
+	t.Run("error saving profile", func(t *testing.T) {
+		mockUserRepo := mocks.NewMockUserRepository(ctrl)
+		mockSessionRepo := mocks.NewMockSessionRepository(ctrl)
+		mockProfileRepo := mocks.NewMockProfileRepository(ctrl)
+
+		uc := NewUserUseCase(mockUserRepo, mockSessionRepo, mockProfileRepo)
+
+		expectedErr := errors.New("profile save error")
+		mockUserRepo.EXPECT().IsExists(ctx, username).Return(false, nil)
+		mockUserRepo.EXPECT().SaveUser(ctx, gomock.Any()).Return(userID, nil)
+		mockProfileRepo.EXPECT().SaveProfile(ctx, gomock.Any()).Return(expectedErr)
+
+		_, _, _ = uc.CreateUser(ctx, user, profile)
+	})
 }
 
 func TestUserUseCase_AuthUser(t *testing.T) {
@@ -107,125 +108,51 @@ func TestUserUseCase_AuthUser(t *testing.T) {
 
 	mockUserRepo := mocks.NewMockUserRepository(ctrl)
 	mockSessionRepo := mocks.NewMockSessionRepository(ctrl)
+	mockProfileRepo := mocks.NewMockProfileRepository(ctrl)
 
-	userUseCase := NewUserUseCase(mockUserRepo, mockSessionRepo, nil)
+	uc := NewUserUseCase(mockUserRepo, mockSessionRepo, mockProfileRepo)
 
-	// Используем фиксированные UUID для тестов
-	expectedSessionId := uuid.New()
-
-	tests := []struct {
-		name            string
-		authData        shared_models.LoginData
-		mockUserError   error
-		mockSessionErr  error
-		expectedErr     bool
-		expectedSession shared_models.Session
-	}{
-		{
-			name: "Success - Authenticated",
-			authData: shared_models.LoginData{
-				Username: "user",
-				Password: "password123",
-			},
-			mockUserError:   nil,
-			mockSessionErr:  nil,
-			expectedErr:     false,
-			expectedSession: shared_models.Session{SessionId: expectedSessionId},
-		},
-		{
-			name: "Error - User not found",
-			authData: shared_models.LoginData{
-				Username: "invalidUser",
-				Password: "wrongPassword",
-			},
-			mockUserError:   user_errors.ErrNotFound,
-			mockSessionErr:  nil,
-			expectedErr:     true,
-			expectedSession: shared_models.Session{},
-		},
-		{
-			name: "Error - Session saving fails",
-			authData: shared_models.LoginData{
-				Username: "user",
-				Password: "password123",
-			},
-			mockUserError:   nil,
-			mockSessionErr:  errors.New("failed to save session"),
-			expectedErr:     true,
-			expectedSession: shared_models.Session{},
-		},
+	ctx := context.Background()
+	userID := uuid.New()
+	loginData := shared_models.LoginData{
+		Username: "testuser",
+		Password: "password",
+	}
+	user := shared_models.User{
+		Id:       userID,
+		Username: loginData.Username,
+		Password: loginData.Password,
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mockUserRepo.EXPECT().GetUser(context.Background(), tt.authData).Return(shared_models.User{}, tt.mockUserError)
+	t.Run("success", func(t *testing.T) {
+		mockUserRepo.EXPECT().GetUser(ctx, loginData).Return(user, nil)
+		mockSessionRepo.EXPECT().IsExists(ctx, gomock.Any()).Return(false, nil)
+		mockSessionRepo.EXPECT().SaveSession(ctx, userID, gomock.Any()).Return(nil)
 
-			// Мокаем метод SaveSession
-			mockSessionRepo.EXPECT().SaveSession(context.Background(), gomock.Any(), gomock.Any()).Return(tt.mockSessionErr)
+		session, err := uc.AuthUser(ctx, loginData)
+		require.NoError(t, err)
+		assert.NotEqual(t, uuid.Nil, session.SessionId)
+	})
 
-			session, err := userUseCase.AuthUser(context.Background(), tt.authData)
+	t.Run("user not found", func(t *testing.T) {
+		expectedErr := errors.New("user not found")
+		mockUserRepo.EXPECT().GetUser(ctx, loginData).Return(shared_models.User{}, expectedErr)
 
-			if tt.expectedErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expectedSession.SessionId, session.SessionId)
-			}
-		})
-	}
-}
+		_, err := uc.AuthUser(ctx, loginData)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), expectedErr.Error())
+	})
 
-func TestUserUseCase_GetUserByUsername(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	t.Run("error saving session", func(t *testing.T) {
+		expectedErr := errors.New("save error")
+		mockUserRepo.EXPECT().GetUser(ctx, loginData).Return(user, nil)
+		mockSessionRepo.EXPECT().IsExists(ctx, gomock.Any()).Return(false, nil).AnyTimes()
+		mockSessionRepo.EXPECT().SaveSession(ctx, userID, gomock.Any()).Return(expectedErr)
 
-	mockUserRepo := mocks.NewMockUserRepository(ctrl)
-
-	userUseCase := NewUserUseCase(mockUserRepo, nil, nil)
-
-	tests := []struct {
-		name          string
-		username      string
-		mockUser      shared_models.User
-		mockUserError error
-		expectedErr   bool
-		expected      shared_models.User
-	}{
-		{
-			name:     "Success - User found",
-			username: "user1",
-			mockUser: shared_models.User{
-				Username: "user1",
-				Id:       uuid.New(),
-			},
-			mockUserError: nil,
-			expectedErr:   false,
-			expected:      shared_models.User{Username: "user1"},
-		},
-		{
-			name:          "Error - User not found",
-			username:      "user2",
-			mockUser:      shared_models.User{},
-			mockUserError: user_errors.ErrNotFound,
-			expectedErr:   true,
-			expected:      shared_models.User{},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mockUserRepo.EXPECT().GetUserByUsername(context.Background(), tt.username).Return(tt.mockUser, tt.mockUserError)
-
-			user, err := userUseCase.GetUserByUsername(context.Background(), tt.username)
-
-			if tt.expectedErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, user)
-			}
-		})
-	}
+		_, err := uc.AuthUser(ctx, loginData)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), expectedErr.Error())
+	})
 }
 
 func TestUserUseCase_LookupUserSession(t *testing.T) {
@@ -234,56 +161,177 @@ func TestUserUseCase_LookupUserSession(t *testing.T) {
 
 	mockUserRepo := mocks.NewMockUserRepository(ctrl)
 	mockSessionRepo := mocks.NewMockSessionRepository(ctrl)
+	mockProfileRepo := mocks.NewMockProfileRepository(ctrl)
 
-	userUseCase := NewUserUseCase(mockUserRepo, mockSessionRepo, nil)
+	uc := NewUserUseCase(mockUserRepo, mockSessionRepo, mockProfileRepo)
 
-	tests := []struct {
-		name             string
-		session          shared_models.Session
-		mockSessionError error
-		mockUserError    error
-		expectedErr      bool
-		expectedUser     shared_models.User
-	}{
-		{
-			name:             "Success - User session found",
-			session:          shared_models.CreateSession(),
-			mockSessionError: nil,
-			mockUserError:    nil,
-			expectedErr:      false,
-			expectedUser:     shared_models.User{Username: "user1", Id: uuid.New()},
-		},
-		{
-			name:             "Error - Session lookup failed",
-			session:          shared_models.CreateSession(),
-			mockSessionError: errors.New("session not found"),
-			mockUserError:    nil,
-			expectedErr:      true,
-			expectedUser:     shared_models.User{},
-		},
-		{
-			name:             "Error - User lookup failed",
-			session:          shared_models.CreateSession(),
-			mockSessionError: nil,
-			mockUserError:    errors.New("user not found"),
-			expectedErr:      true,
-			expectedUser:     shared_models.User{},
-		},
+	ctx := context.Background()
+	userID := uuid.New()
+	session := shared_models.CreateSession()
+	user := shared_models.User{
+		Id: userID,
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mockSessionRepo.EXPECT().LookupUserSession(context.Background(), tt.session).Return(uuid.New(), tt.mockSessionError)
-			mockUserRepo.EXPECT().GetUserByUId(context.Background(), gomock.Any()).Return(tt.expectedUser, tt.mockUserError)
+	t.Run("success", func(t *testing.T) {
+		mockSessionRepo.EXPECT().LookupUserSession(ctx, session).Return(userID, nil)
+		mockUserRepo.EXPECT().GetUserByUId(ctx, userID).Return(user, nil)
 
-			user, err := userUseCase.LookupUserSession(context.Background(), tt.session)
+		result, err := uc.LookupUserSession(ctx, session)
+		require.NoError(t, err)
+		assert.Equal(t, userID, result.Id)
+	})
 
-			if tt.expectedErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expectedUser, user)
-			}
-		})
+	t.Run("session not found", func(t *testing.T) {
+		expectedErr := errors.New("session not found")
+		mockSessionRepo.EXPECT().LookupUserSession(ctx, session).Return(uuid.Nil, expectedErr)
+
+		_, err := uc.LookupUserSession(ctx, session)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), expectedErr.Error())
+	})
+
+	t.Run("user not found", func(t *testing.T) {
+		expectedErr := errors.New("user not found")
+		mockSessionRepo.EXPECT().LookupUserSession(ctx, session).Return(userID, nil)
+		mockUserRepo.EXPECT().GetUserByUId(ctx, userID).Return(shared_models.User{}, expectedErr)
+
+		_, err := uc.LookupUserSession(ctx, session)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), expectedErr.Error())
+	})
+}
+
+func TestUserUseCase_GetUserByUsername(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockUserRepo := mocks.NewMockUserRepository(ctrl)
+	mockSessionRepo := mocks.NewMockSessionRepository(ctrl)
+	mockProfileRepo := mocks.NewMockProfileRepository(ctrl)
+
+	uc := NewUserUseCase(mockUserRepo, mockSessionRepo, mockProfileRepo)
+
+	ctx := context.Background()
+	username := "testuser"
+	user := shared_models.User{
+		Username: username,
 	}
+
+	t.Run("success", func(t *testing.T) {
+		mockUserRepo.EXPECT().GetUserByUsername(ctx, username).Return(user, nil)
+
+		result, err := uc.GetUserByUsername(ctx, username)
+		require.NoError(t, err)
+		assert.Equal(t, username, result.Username)
+	})
+
+	t.Run("user not found", func(t *testing.T) {
+		expectedErr := errors.New("user not found")
+		mockUserRepo.EXPECT().GetUserByUsername(ctx, username).Return(shared_models.User{}, expectedErr)
+
+		_, err := uc.GetUserByUsername(ctx, username)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), expectedErr.Error())
+	})
+}
+
+func TestUserUseCase_GetUserById(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockUserRepo := mocks.NewMockUserRepository(ctrl)
+	mockSessionRepo := mocks.NewMockSessionRepository(ctrl)
+	mockProfileRepo := mocks.NewMockProfileRepository(ctrl)
+
+	uc := NewUserUseCase(mockUserRepo, mockSessionRepo, mockProfileRepo)
+
+	ctx := context.Background()
+	userID := uuid.New()
+	user := shared_models.User{
+		Id: userID,
+	}
+
+	t.Run("success", func(t *testing.T) {
+		mockUserRepo.EXPECT().GetUserByUId(ctx, userID).Return(user, nil)
+
+		result, err := uc.GetUserById(ctx, userID)
+		require.NoError(t, err)
+		assert.Equal(t, userID, result.Id)
+	})
+
+	t.Run("user not found", func(t *testing.T) {
+		expectedErr := errors.New("user not found")
+		mockUserRepo.EXPECT().GetUserByUId(ctx, userID).Return(shared_models.User{}, expectedErr)
+
+		_, err := uc.GetUserById(ctx, userID)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), expectedErr.Error())
+	})
+}
+
+func TestUserUseCase_DeleteUserSession(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockUserRepo := mocks.NewMockUserRepository(ctrl)
+	mockSessionRepo := mocks.NewMockSessionRepository(ctrl)
+	mockProfileRepo := mocks.NewMockProfileRepository(ctrl)
+
+	uc := NewUserUseCase(mockUserRepo, mockSessionRepo, mockProfileRepo)
+
+	ctx := context.Background()
+	sessionID := "session123"
+
+	t.Run("success", func(t *testing.T) {
+		mockSessionRepo.EXPECT().DeleteSession(ctx, sessionID).Return(nil)
+
+		err := uc.DeleteUserSession(ctx, sessionID)
+		assert.NoError(t, err)
+	})
+
+	t.Run("error", func(t *testing.T) {
+		expectedErr := errors.New("delete error")
+		mockSessionRepo.EXPECT().DeleteSession(ctx, sessionID).Return(expectedErr)
+
+		err := uc.DeleteUserSession(ctx, sessionID)
+		assert.Error(t, err)
+		assert.Equal(t, expectedErr, err)
+	})
+}
+
+func TestUserUseCase_SearchSimilarUser(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockUserRepo := mocks.NewMockUserRepository(ctrl)
+	mockSessionRepo := mocks.NewMockSessionRepository(ctrl)
+	mockProfileRepo := mocks.NewMockProfileRepository(ctrl)
+
+	uc := NewUserUseCase(mockUserRepo, mockSessionRepo, mockProfileRepo)
+
+	ctx := context.Background()
+	searchTerm := "test"
+	postsCount := uint(10)
+	users := []shared_models.PublicUserInfo{
+		{Username: "testuser1"},
+		{Username: "testuser2"},
+	}
+
+	t.Run("success", func(t *testing.T) {
+		mockUserRepo.EXPECT().SearchSimilar(ctx, searchTerm, postsCount).Return(users, nil)
+
+		result, err := uc.SearchSimilarUser(ctx, searchTerm, postsCount)
+		require.NoError(t, err)
+		assert.Len(t, result, 2)
+		assert.Equal(t, users[0].Username, result[0].Username)
+	})
+
+	t.Run("error", func(t *testing.T) {
+		expectedErr := errors.New("search error")
+		mockUserRepo.EXPECT().SearchSimilar(ctx, searchTerm, postsCount).Return(nil, expectedErr)
+
+		_, err := uc.SearchSimilarUser(ctx, searchTerm, postsCount)
+		assert.Error(t, err)
+		assert.Equal(t, expectedErr, err)
+	})
 }

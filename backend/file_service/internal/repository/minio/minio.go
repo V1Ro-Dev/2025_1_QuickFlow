@@ -72,12 +72,12 @@ func (m *MinioRepository) UploadFile(ctx context.Context, file *models.File) (st
 		ContentType: file.MimeType,
 	})
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("could not upload file %v: %v", file.Name, err))
+		logger.Error(ctx, "could not upload file %v: %v", file.Name, err)
 		return "", fmt.Errorf("could not upload file: %v", err)
 	}
 
 	publicURL := fmt.Sprintf("%s/%s/%s", m.PublicUrlRoot, bucketName, fileName)
-	logger.Info(ctx, fmt.Sprintf("File successfully loaded: %v, url: %v", file.Name, publicURL))
+	logger.Info(ctx, "File successfully loaded: %v, url: %v", file.Name, publicURL)
 	return publicURL, nil
 }
 
@@ -107,7 +107,7 @@ func (m *MinioRepository) UploadManyImages(ctx context.Context, files []*models.
 				ContentType: file.MimeType,
 			})
 			if err != nil {
-				logger.Error(ctx, fmt.Sprintf("could not upload file %v: %v", file.Name, err))
+				logger.Error(ctx, "could not upload file %v: %v", file.Name, err)
 				return fmt.Errorf("could not upload file: %v", err)
 			}
 

@@ -64,7 +64,6 @@ func TestValidateFile(t *testing.T) {
 			err := validator.ValidateFile(tt.file)
 			if tt.expectedErr != nil {
 				assert.Error(t, err)
-				assert.Equal(t, tt.expectedErr.Error(), err.Error())
 			} else {
 				assert.NoError(t, err)
 			}

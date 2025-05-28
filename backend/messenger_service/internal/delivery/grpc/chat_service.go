@@ -37,13 +37,13 @@ func (c *ChatServiceServer) GetUserChats(ctx context.Context, req *pb.GetUserCha
 
 	userId, err := uuid.Parse(req.UserId)
 	if err != nil {
-		logger.Error(ctx, "Invalid UserId: ", err)
+		logger.Error(ctx, "Invalid UserId: %v", err)
 		return nil, err
 	}
 
 	chats, err := c.chatUseCase.GetUserChats(ctx, userId)
 	if err != nil {
-		logger.Error(ctx, "GetUserChats failed: ", err)
+		logger.Error(ctx, "GetUserChats failed: %v", err)
 		return nil, err
 	}
 
@@ -58,7 +58,7 @@ func (c *ChatServiceServer) CreateChat(ctx context.Context, req *pb.CreateChatRe
 
 	chat, err := c.chatUseCase.CreateChat(ctx, chatInfo)
 	if err != nil {
-		logger.Error(ctx, "CreateChat failed: ", err)
+		logger.Error(ctx, "CreateChat failed: %v", err)
 		return nil, err
 	}
 
@@ -71,13 +71,13 @@ func (c *ChatServiceServer) GetChatParticipants(ctx context.Context, req *pb.Get
 
 	chatId, err := uuid.Parse(req.ChatId)
 	if err != nil {
-		logger.Error(ctx, "Invalid ChatId: ", err)
+		logger.Error(ctx, "Invalid ChatId: %v", err)
 		return nil, err
 	}
 
 	participants, err := c.chatUseCase.GetChatParticipants(ctx, chatId)
 	if err != nil {
-		logger.Error(ctx, "GetChatParticipants failed: ", err)
+		logger.Error(ctx, "GetChatParticipants failed: %v", err)
 		return nil, err
 	}
 
@@ -95,19 +95,19 @@ func (c *ChatServiceServer) GetPrivateChat(ctx context.Context, req *pb.GetPriva
 
 	userId1, err := uuid.Parse(req.User1Id)
 	if err != nil {
-		logger.Error(ctx, "Invalid User1Id: ", err)
+		logger.Error(ctx, "Invalid User1Id: %v", err)
 		return nil, err
 	}
 
 	userId2, err := uuid.Parse(req.User2Id)
 	if err != nil {
-		logger.Error(ctx, "Invalid User2Id: ", err)
+		logger.Error(ctx, "Invalid User2Id: %v", err)
 		return nil, err
 	}
 
 	chat, err := c.chatUseCase.GetPrivateChat(ctx, userId1, userId2)
 	if err != nil {
-		logger.Error(ctx, "GetPrivateChat failed: ", err)
+		logger.Error(ctx, "GetPrivateChat failed: %v", err)
 		return nil, err
 	}
 
@@ -120,13 +120,13 @@ func (c *ChatServiceServer) DeleteChat(ctx context.Context, req *pb.DeleteChatRe
 
 	chatId, err := uuid.Parse(req.ChatId)
 	if err != nil {
-		logger.Error(ctx, "Invalid ChatId: ", err)
+		logger.Error(ctx, "Invalid ChatId: %v", err)
 		return nil, err
 	}
 
 	err = c.chatUseCase.DeleteChat(ctx, chatId)
 	if err != nil {
-		logger.Error(ctx, "DeleteChat failed: ", err)
+		logger.Error(ctx, "DeleteChat failed: %v", err)
 		return nil, err
 	}
 
@@ -139,13 +139,13 @@ func (c *ChatServiceServer) GetChat(ctx context.Context, req *pb.GetChatRequest)
 
 	chatId, err := uuid.Parse(req.ChatId)
 	if err != nil {
-		logger.Error(ctx, "Invalid ChatId: ", err)
+		logger.Error(ctx, "Invalid ChatId: %v", err)
 		return nil, err
 	}
 
 	chat, err := c.chatUseCase.GetChat(ctx, chatId)
 	if err != nil {
-		logger.Error(ctx, "GetChat failed: ", err)
+		logger.Error(ctx, "GetChat failed: %v", err)
 		return nil, err
 	}
 
@@ -158,19 +158,19 @@ func (c *ChatServiceServer) JoinChat(ctx context.Context, req *pb.JoinChatReques
 
 	chatId, err := uuid.Parse(req.ChatId)
 	if err != nil {
-		logger.Error(ctx, "Invalid ChatId: ", err)
+		logger.Error(ctx, "Invalid ChatId: %v", err)
 		return nil, err
 	}
 
 	userId, err := uuid.Parse(req.UserId)
 	if err != nil {
-		logger.Error(ctx, "Invalid UserId: ", err)
+		logger.Error(ctx, "Invalid UserId: %v", err)
 		return nil, err
 	}
 
 	err = c.chatUseCase.JoinChat(ctx, chatId, userId)
 	if err != nil {
-		logger.Error(ctx, "JoinChat failed: ", err)
+		logger.Error(ctx, "JoinChat failed: %v", err)
 		return nil, err
 	}
 
@@ -183,19 +183,19 @@ func (c *ChatServiceServer) LeaveChat(ctx context.Context, req *pb.LeaveChatRequ
 
 	chatId, err := uuid.Parse(req.ChatId)
 	if err != nil {
-		logger.Error(ctx, "Invalid ChatId: ", err)
+		logger.Error(ctx, "Invalid ChatId: %v", err)
 		return nil, err
 	}
 
 	userId, err := uuid.Parse(req.UserId)
 	if err != nil {
-		logger.Error(ctx, "Invalid UserId: ", err)
+		logger.Error(ctx, "Invalid UserId: %v", err)
 		return nil, err
 	}
 
 	err = c.chatUseCase.LeaveChat(ctx, chatId, userId)
 	if err != nil {
-		logger.Error(ctx, "LeaveChat failed: ", err)
+		logger.Error(ctx, "LeaveChat failed: %v", err)
 		return nil, err
 	}
 
@@ -208,13 +208,13 @@ func (c *ChatServiceServer) GetNumUnreadChats(ctx context.Context, req *pb.GetNu
 
 	userId, err := uuid.Parse(req.UserId)
 	if err != nil {
-		logger.Error(ctx, "Invalid UserId: ", err)
+		logger.Error(ctx, "Invalid UserId: %v", err)
 		return nil, err
 	}
 
 	numUnread, err := c.chatUseCase.GetNumUnreadChats(ctx, userId)
 	if err != nil {
-		logger.Error(ctx, "GetNumUnreadChats failed: ", err)
+		logger.Error(ctx, "GetNumUnreadChats failed: %v", err)
 		return nil, err
 	}
 

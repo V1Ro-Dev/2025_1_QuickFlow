@@ -36,13 +36,13 @@ func NewFriendsService(friendsRepo FriendsRepository) *FriendsService {
 func (f *FriendsService) GetFriendsInfo(ctx context.Context, userID string, limit string, offset string, reqType string) ([]models.FriendInfo, int, error) {
 	amount, err := strconv.Atoi(limit)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to parse count. Given value %s: %s", limit, err.Error()))
+		logger.Error(ctx, "Unable to parse count. Given value %s: %s", limit, err.Error())
 		return nil, 0, err
 	}
 
 	startPos, err := strconv.Atoi(offset)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("Unable to parse offset. Given value %s: %s", offset, err.Error()))
+		logger.Error(ctx, "Unable to parse offset. Given value %s: %s", offset, err.Error())
 		return nil, 0, err
 	}
 

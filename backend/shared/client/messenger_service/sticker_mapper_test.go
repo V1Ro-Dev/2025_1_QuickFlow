@@ -1,88 +1,72 @@
 package messenger_service
 
 import (
-	"errors"
+	proto "quickflow/shared/proto/file_service"
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"quickflow/shared/client/file_service"
 	"quickflow/shared/models"
-	"quickflow/shared/proto/file_service/mocks"
 	pb "quickflow/shared/proto/messenger_service"
 )
 
 func TestMapStickerPackToProto(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	// Мокируем вызов file_service
-	file_service.ModelFilesToProto = func(files []models.File) []*pb.File {
-		return []*pb.File{
-			{Id: "sticker1-id"},
-			{Id: "sticker2-id"},
-		}
-	}
-	defer func() {
-		file_service.ModelFilesToProto = file_service.ModelFilesToProtoOriginal
-	}()
-
 	now := time.Now()
+	stickerPackID := uuid.New()
+	creatorID := uuid.New()
+
 	tests := []struct {
 		name     string
 		input    *models.StickerPack
 		expected *pb.StickerPack
 	}{
 		{
-			name: "Full StickerPack",
+			name: "full sticker pack with all fields",
 			input: &models.StickerPack{
-				Id:        uuid.MustParse("123e4567-e89b-12d3-a456-426614174000"),
-				Name:      "test-pack",
-				CreatorId: uuid.MustParse("123e4567-e89b-12d3-a456-426614174001"),
+				Id:        stickerPackID,
+				Name:      "Test Pack",
+				CreatorId: creatorID,
 				CreatedAt: now,
 				UpdatedAt: now,
-				Stickers: []models.File{
-					{Name: "sticker1"},
-					{Name: "sticker2"},
+				Stickers: []*models.File{
+					{Name: "sticker1.png"},
+					{Name: "sticker2.png"},
 				},
 			},
 			expected: &pb.StickerPack{
-				Id:        "123e4567-e89b-12d3-a456-426614174000",
-				Name:      "test-pack",
-				CreatorId: "123e4567-e89b-12d3-a456-426614174001",
+				Id:        stickerPackID.String(),
+				Name:      "Test Pack",
+				CreatorId: creatorID.String(),
 				CreatedAt: timestamppb.New(now),
 				UpdatedAt: timestamppb.New(now),
-				Stickers: []*pb.File{
-					{Id: "sticker1-id"},
-					{Id: "sticker2-id"},
+				Stickers: []*proto.File{
+					{FileName: "sticker1.png"},
+					{FileName: "sticker2.png"},
 				},
 			},
 		},
 		{
-			name: "Empty Stickers",
+			name: "minimal sticker pack with required fields only",
 			input: &models.StickerPack{
-				Id:        uuid.MustParse("123e4567-e89b-12d3-a456-426614174000"),
-				Name:      "empty-pack",
-				CreatorId: uuid.MustParse("123e4567-e89b-12d3-a456-426614174001"),
+				Id:        stickerPackID,
+				Name:      "Minimal Pack",
+				CreatorId: creatorID,
 				CreatedAt: now,
 				UpdatedAt: now,
-				Stickers:  []models.File{},
 			},
 			expected: &pb.StickerPack{
-				Id:        "123e4567-e89b-12d3-a456-426614174000",
-				Name:      "empty-pack",
-				CreatorId: "123e4567-e89b-12d3-a456-426614174001",
+				Id:        stickerPackID.String(),
+				Name:      "Minimal Pack",
+				CreatorId: creatorID.String(),
 				CreatedAt: timestamppb.New(now),
 				UpdatedAt: timestamppb.New(now),
-				Stickers:  []*pb.File{},
 			},
 		},
 		{
-			name:     "Nil Input",
+			name:     "nil input",
 			input:    nil,
 			expected: nil,
 		},
@@ -91,53 +75,87 @@ func TestMapStickerPackToProto(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := MapStickerPackToProto(tt.input)
-			assert.Equal(t, tt.expected, result)
+			if tt.expected == nil {
+				assert.Nil(t, result)
+				return
+			}
+
+			assert.Equal(t, tt.expected.Id, result.Id)
+			assert.Equal(t, tt.expected.Name, result.Name)
+			assert.Equal(t, tt.expected.CreatorId, result.CreatorId)
+			assert.Equal(t, tt.expected.CreatedAt.AsTime(), result.CreatedAt.AsTime())
+			assert.Equal(t, tt.expected.UpdatedAt.AsTime(), result.UpdatedAt.AsTime())
+
+			if tt.input.Stickers != nil {
+				assert.Len(t, result.Stickers, len(tt.input.Stickers))
+				for i, sticker := range tt.input.Stickers {
+					if result.Stickers[i] != nil {
+						assert.Equal(t, sticker.Name, result.Stickers[i].FileName)
+					}
+
+				}
+			} else {
+				assert.Nil(t, result.Stickers)
+			}
 		})
 	}
 }
 
 func TestMapStickerPacksToProto(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
 	now := time.Now()
+	stickerPackID1 := uuid.New()
+	stickerPackID2 := uuid.New()
+	creatorID := uuid.New()
+
 	tests := []struct {
 		name     string
 		input    []*models.StickerPack
 		expected []*pb.StickerPack
 	}{
 		{
-			name: "Multiple Packs",
+			name: "multiple sticker packs",
 			input: []*models.StickerPack{
 				{
-					Id:   uuid.MustParse("123e4567-e89b-12d3-a456-426614174000"),
-					Name: "pack1",
+					Id:        stickerPackID1,
+					Name:      "Pack 1",
+					CreatorId: creatorID,
+					CreatedAt: now,
+					UpdatedAt: now,
 				},
 				{
-					Id:   uuid.MustParse("123e4567-e89b-12d3-a456-426614174001"),
-					Name: "pack2",
+					Id:        stickerPackID2,
+					Name:      "Pack 2",
+					CreatorId: creatorID,
+					CreatedAt: now,
+					UpdatedAt: now,
 				},
 			},
 			expected: []*pb.StickerPack{
 				{
-					Id:   "123e4567-e89b-12d3-a456-426614174000",
-					Name: "pack1",
+					Id:        stickerPackID1.String(),
+					Name:      "Pack 1",
+					CreatorId: creatorID.String(),
+					CreatedAt: timestamppb.New(now),
+					UpdatedAt: timestamppb.New(now),
 				},
 				{
-					Id:   "123e4567-e89b-12d3-a456-426614174001",
-					Name: "pack2",
+					Id:        stickerPackID2.String(),
+					Name:      "Pack 2",
+					CreatorId: creatorID.String(),
+					CreatedAt: timestamppb.New(now),
+					UpdatedAt: timestamppb.New(now),
 				},
 			},
 		},
 		{
-			name:     "Nil Input",
-			input:    nil,
-			expected: nil,
-		},
-		{
-			name:     "Empty Slice",
+			name:     "empty slice",
 			input:    []*models.StickerPack{},
 			expected: []*pb.StickerPack{},
+		},
+		{
+			name:     "nil input",
+			input:    nil,
+			expected: nil,
 		},
 	}
 
@@ -150,117 +168,118 @@ func TestMapStickerPacksToProto(t *testing.T) {
 }
 
 func TestMapProtoToStickerPack(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	// Мокируем вызов file_service
-	mockFileService := file_service.NewMockFileService(ctrl)
-	file_service.ProtoFilesToModels = func(files []*pb.File) []models.File {
-		return []models.File{
-			{Name: "sticker1"},
-			{Name: "sticker2"},
-		}
-	}
-	defer func() {
-		file_service.ProtoFilesToModels = file_service.ProtoFilesToModelsOriginal
-	}()
-
 	now := time.Now()
+	stickerPackID := uuid.New()
+	creatorID := uuid.New()
+
 	tests := []struct {
-		name        string
-		input       *pb.StickerPack
-		expected    *models.StickerPack
-		expectError bool
+		name     string
+		input    *pb.StickerPack
+		expected *models.StickerPack
+		wantErr  bool
 	}{
 		{
-			name: "Valid StickerPack",
+			name: "full proto sticker pack",
 			input: &pb.StickerPack{
-				Id:        "123e4567-e89b-12d3-a456-426614174000",
-				Name:      "test-pack",
-				CreatorId: "123e4567-e89b-12d3-a456-426614174001",
+				Id:        stickerPackID.String(),
+				Name:      "Test Pack",
+				CreatorId: creatorID.String(),
 				CreatedAt: timestamppb.New(now),
 				UpdatedAt: timestamppb.New(now),
-				Stickers: []*pb.File{
-					{Id: "sticker1-id"},
-					{Id: "sticker2-id"},
+				Stickers: []*proto.File{
+					{FileName: "sticker1.png"},
+					{FileName: "sticker2.png"},
 				},
 			},
 			expected: &models.StickerPack{
-				Id:        uuid.MustParse("123e4567-e89b-12d3-a456-426614174000"),
-				Name:      "test-pack",
-				CreatorId: uuid.MustParse("123e4567-e89b-12d3-a456-426614174001"),
+				Id:        stickerPackID,
+				Name:      "Test Pack",
+				CreatorId: creatorID,
 				CreatedAt: now,
 				UpdatedAt: now,
-				Stickers: []models.File{
-					{Name: "sticker1"},
-					{Name: "sticker2"},
+				Stickers: []*models.File{
+					{Name: "sticker1.png"},
+					{Name: "sticker2.png"},
 				},
 			},
+			wantErr: false,
 		},
 		{
-			name: "Invalid UUID in Id",
+			name: "minimal proto sticker pack",
 			input: &pb.StickerPack{
-				Id: "invalid-uuid",
+				Id:        stickerPackID.String(),
+				Name:      "Minimal Pack",
+				CreatorId: creatorID.String(),
+				CreatedAt: timestamppb.New(now),
+				UpdatedAt: timestamppb.New(now),
 			},
-			expectError: true,
+			expected: &models.StickerPack{
+				Id:        stickerPackID,
+				Name:      "Minimal Pack",
+				CreatorId: creatorID,
+				CreatedAt: now,
+				UpdatedAt: now,
+			},
+			wantErr: false,
 		},
 		{
-			name: "Invalid UUID in CreatorId",
+			name: "invalid pack UUID",
 			input: &pb.StickerPack{
-				Id:        "123e4567-e89b-12d3-a456-426614174000",
+				Id:        "invalid-uuid",
+				Name:      "Invalid Pack",
+				CreatorId: creatorID.String(),
+				CreatedAt: timestamppb.New(now),
+				UpdatedAt: timestamppb.New(now),
+			},
+			expected: nil,
+			wantErr:  true,
+		},
+		{
+			name: "invalid creator UUID",
+			input: &pb.StickerPack{
+				Id:        stickerPackID.String(),
+				Name:      "Invalid Creator",
 				CreatorId: "invalid-uuid",
+				CreatedAt: timestamppb.New(now),
+				UpdatedAt: timestamppb.New(now),
 			},
-			expectError: true,
+			expected: nil,
+			wantErr:  true,
 		},
 		{
-			name:     "Nil Input",
+			name:     "nil input",
 			input:    nil,
 			expected: nil,
+			wantErr:  false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := MapProtoToStickerPack(tt.input)
-
-			if tt.expectError {
+			if tt.wantErr {
 				assert.Error(t, err)
+				assert.Nil(t, result)
 			} else {
 				assert.NoError(t, err)
-				if tt.input == nil {
+				if tt.expected == nil {
 					assert.Nil(t, result)
+					return
+				}
+
+				assert.Equal(t, tt.expected.Id, result.Id)
+				assert.Equal(t, tt.expected.Name, result.Name)
+				assert.Equal(t, tt.expected.CreatorId, result.CreatorId)
+
+				if tt.input.Stickers != nil {
+					assert.Len(t, result.Stickers, len(tt.input.Stickers))
+					for i, sticker := range tt.input.Stickers {
+						assert.Equal(t, sticker.FileName, result.Stickers[i].Name)
+					}
 				} else {
-					assert.Equal(t, tt.expected.Id, result.Id)
-					assert.Equal(t, tt.expected.Name, result.Name)
-					assert.Equal(t, tt.expected.CreatorId, result.CreatorId)
-					assert.Equal(t, tt.expected.CreatedAt.Unix(), result.CreatedAt.Unix())
-					assert.Equal(t, tt.expected.UpdatedAt.Unix(), result.UpdatedAt.Unix())
-					assert.Equal(t, len(tt.expected.Stickers), len(result.Stickers))
+					assert.Nil(t, result.Stickers)
 				}
 			}
 		})
 	}
-}
-
-func TestMapProtoToStickerPack_FileConversionError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	// Мокируем вызов file_service чтобы вернуть ошибку
-	mockFileService := file_service.NewMockFileService(ctrl)
-	file_service.ProtoFilesToModels = func(files []*pb.File) []models.File {
-		return nil
-	}
-	defer func() {
-		file_service.ProtoFilesToModels = file_service.ProtoFilesToModelsOriginal
-	}()
-
-	input := &pb.StickerPack{
-		Id:        "123e4567-e89b-12d3-a456-426614174000",
-		CreatorId: "123e4567-e89b-12d3-a456-426614174001",
-		Stickers:  []*pb.File{{Id: "sticker1-id"}},
-	}
-
-	_, err := MapProtoToStickerPack(input)
-	assert.NoError(t, err) // Ожидаем что даже с nil стикерами маппинг продолжится
 }

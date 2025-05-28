@@ -136,7 +136,7 @@ func (c *SqlCommunityRepository) CreateCommunity(ctx context.Context, community 
 		communityDTO.Id, communityDTO.OwnerId, communityDTO.Name,
 		communityDTO.Description, communityDTO.CreatedAt, communityDTO.AvatarUrl, communityDTO.CoverUrl, communityDTO.NickName)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("unable to create community: %v", err))
+		logger.Error(ctx, "unable to create community: %v", err)
 		return err
 	}
 
@@ -145,7 +145,7 @@ func (c *SqlCommunityRepository) CreateCommunity(ctx context.Context, community 
 		communityDTO.OwnerId, communityDTO.Id,
 		string(models.CommunityRoleOwner), communityDTO.CreatedAt)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("unable to add owner as admin: %v", err))
+		logger.Error(ctx, "unable to add owner as admin: %v", err)
 		return err
 	}
 
@@ -164,7 +164,7 @@ func (c *SqlCommunityRepository) GetCommunityById(ctx context.Context, id uuid.U
 		if errors.Is(err, sql.ErrNoRows) {
 			return models.Community{}, community_errors.ErrNotFound
 		}
-		logger.Error(ctx, fmt.Sprintf("unable to get community by id: %v", err))
+		logger.Error(ctx, "unable to get community by id: %v", err)
 		return models.Community{}, err
 	}
 
@@ -173,7 +173,7 @@ func (c *SqlCommunityRepository) GetCommunityById(ctx context.Context, id uuid.U
 		err = c.connPool.QueryRowContext(ctx, GetContactInfoQuery, contactInfoId).Scan(
 			&contactInfo.City, &contactInfo.Email, &contactInfo.Phone)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("unable to get contact info: %v", err))
+			logger.Error(ctx, "unable to get contact info: %v", err)
 			return models.Community{}, err
 		}
 		communityDTO.ContactInfo = &contactInfo
@@ -194,7 +194,7 @@ func (c *SqlCommunityRepository) GetCommunityByName(ctx context.Context, name st
 		if errors.Is(err, sql.ErrNoRows) {
 			return models.Community{}, community_errors.ErrNotFound
 		}
-		logger.Error(ctx, fmt.Sprintf("unable to get community by id: %v", err))
+		logger.Error(ctx, "unable to get community by id: %v", err)
 		return models.Community{}, err
 	}
 
@@ -203,7 +203,7 @@ func (c *SqlCommunityRepository) GetCommunityByName(ctx context.Context, name st
 		err = c.connPool.QueryRowContext(ctx, GetContactInfoQuery, contactInfoId).Scan(
 			&contactInfo.City, &contactInfo.Email, &contactInfo.Phone)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("unable to get contact info: %v", err))
+			logger.Error(ctx, "unable to get contact info: %v", err)
 			return models.Community{}, err
 		}
 		communityDTO.ContactInfo = &contactInfo
@@ -218,7 +218,7 @@ func (c *SqlCommunityRepository) GetCommunityMembers(ctx context.Context, id uui
 		logger.Info(ctx, "no community members found")
 		return nil, community_errors.ErrNotFound
 	} else if err != nil {
-		logger.Error(ctx, fmt.Sprintf("unable to get community members: %v", err))
+		logger.Error(ctx, "unable to get community members: %v", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -227,14 +227,14 @@ func (c *SqlCommunityRepository) GetCommunityMembers(ctx context.Context, id uui
 	for rows.Next() {
 		var member postgres_models.CommunityMemberPostgres
 		if err := rows.Scan(&member.UserId, &member.CommunityId, &member.Role, &member.JoinedAt); err != nil {
-			logger.Error(ctx, fmt.Sprintf("unable to scan community member: %v", err))
+			logger.Error(ctx, "unable to scan community member: %v", err)
 			return nil, err
 		}
 		members = append(members, member.PostgresToCommunityMemberModel())
 	}
 
 	if err := rows.Err(); err != nil {
-		logger.Error(ctx, fmt.Sprintf("error iterating over community members: %v", err))
+		logger.Error(ctx, "error iterating over community members: %v", err)
 		return nil, err
 	}
 
@@ -254,7 +254,7 @@ func (c *SqlCommunityRepository) IsCommunityMember(ctx context.Context, userId, 
 		if errors.Is(err, sql.ErrNoRows) {
 			return false, nil, nil
 		}
-		logger.Error(ctx, fmt.Sprintf("unable to check if user is a community member: %v", err))
+		logger.Error(ctx, "unable to check if user is a community member: %v", err)
 		return false, nil, err
 	}
 
@@ -269,7 +269,7 @@ func (c *SqlCommunityRepository) DeleteCommunity(ctx context.Context, id uuid.UU
 
 	_, err := c.connPool.ExecContext(ctx, deleteCommunityQuery, id)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("unable to delete community: %v", err))
+		logger.Error(ctx, "unable to delete community: %v", err)
 		return err
 	}
 
@@ -281,13 +281,13 @@ func (c *SqlCommunityRepository) UpdateCommunityTextInfo(ctx context.Context, co
 		res, err := c.connPool.ExecContext(ctx, updateCommunityQuery, community.NickName,
 			community.BasicInfo.Name, community.BasicInfo.Description, community.ID)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("unable to update community text info: %v", err))
+			logger.Error(ctx, "unable to update community text info: %v", err)
 			return err
 		}
 
 		rows, err := res.RowsAffected()
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("unable to get rows affected: %v", err))
+			logger.Error(ctx, "unable to get rows affected: %v", err)
 			return err
 		}
 
@@ -302,7 +302,7 @@ func (c *SqlCommunityRepository) UpdateCommunityTextInfo(ctx context.Context, co
 	if community.ContactInfo != nil {
 		contactInfoId, err = c.updateContactInfo(ctx, *community.ContactInfo)
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("unable to update contact info: %v", err))
+			logger.Error(ctx, "unable to update contact info: %v", err)
 			return err
 		}
 	}
@@ -312,7 +312,7 @@ func (c *SqlCommunityRepository) UpdateCommunityTextInfo(ctx context.Context, co
 		update community set contact_info=$1 where id=$2;
 `, contactInfoId, pgtype.UUID{Bytes: community.ID, Valid: true})
 		if err != nil {
-			logger.Error(ctx, fmt.Sprintf("unable to update community contact info: %v", err))
+			logger.Error(ctx, "unable to update community contact info: %v", err)
 			return err
 		}
 	}
@@ -330,7 +330,7 @@ func (c *SqlCommunityRepository) UpdateCommunityAvatar(ctx context.Context, comm
 	update community set avatar_url=$1 where id=$2;
 `, avatarUrl, communityId)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("unable to update community avatar: %v", err))
+		logger.Error(ctx, "unable to update community avatar: %v", err)
 		return err
 	}
 
@@ -347,7 +347,7 @@ func (c *SqlCommunityRepository) UpdateCommunityCover(ctx context.Context, commu
 	update community set cover_url=$1 where id=$2;
 `, coverUrl, communityId)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("unable to update community cover: %v", err))
+		logger.Error(ctx, "unable to update community cover: %v", err)
 		return err
 	}
 
@@ -360,7 +360,7 @@ func (c *SqlCommunityRepository) JoinCommunity(ctx context.Context, member model
 		memberPostgres.UserId, memberPostgres.CommunityId,
 		memberPostgres.Role, memberPostgres.JoinedAt)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("unable to join community: %v", err))
+		logger.Error(ctx, "unable to join community: %v", err)
 		return err
 	}
 
@@ -371,7 +371,7 @@ func (c *SqlCommunityRepository) LeaveCommunity(ctx context.Context, userId, com
 	_, err := c.connPool.ExecContext(ctx, leaveCommunity,
 		pgtype.UUID{Bytes: userId, Valid: true}, pgtype.UUID{Bytes: communityId, Valid: true})
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("unable to leave community: %v", err))
+		logger.Error(ctx, "unable to leave community: %v", err)
 		return err
 	}
 
@@ -384,7 +384,7 @@ func (c *SqlCommunityRepository) GetUserCommunities(ctx context.Context, userId 
 		logger.Info(ctx, "no user communities found")
 		return nil, community_errors.ErrNotFound
 	} else if err != nil {
-		logger.Error(ctx, fmt.Sprintf("unable to get user communities by id: %v", err))
+		logger.Error(ctx, "unable to get user communities by id: %v", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -394,7 +394,7 @@ func (c *SqlCommunityRepository) GetUserCommunities(ctx context.Context, userId 
 		var communityDTO postgres_models.CommunityPostgres
 		if err := rows.Scan(&communityDTO.Id, &communityDTO.OwnerId, &communityDTO.Name,
 			&communityDTO.Description, &communityDTO.CreatedAt, &communityDTO.AvatarUrl, &communityDTO.CoverUrl, &communityDTO.NickName); err != nil {
-			logger.Error(ctx, fmt.Sprintf("unable to scan user community: %v", err))
+			logger.Error(ctx, "unable to scan user community: %v", err)
 			return nil, err
 		}
 		communities = append(communities, communityDTO.PostgresToCommunityModel())
@@ -406,7 +406,7 @@ func (c *SqlCommunityRepository) GetUserCommunities(ctx context.Context, userId 
 func (c *SqlCommunityRepository) SearchSimilarCommunities(ctx context.Context, name string, count int) ([]models.Community, error) {
 	rows, err := c.connPool.QueryContext(ctx, searchSimilarCommunities, name, count)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("unable to search similar communities: %v", err))
+		logger.Error(ctx, "unable to search similar communities: %v", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -417,13 +417,13 @@ func (c *SqlCommunityRepository) SearchSimilarCommunities(ctx context.Context, n
 		if err := rows.Scan(&communityDTO.Id, &communityDTO.OwnerId, &communityDTO.Name,
 			&communityDTO.Description, &communityDTO.CreatedAt, &communityDTO.AvatarUrl, &communityDTO.CoverUrl,
 			&communityDTO.NickName); err != nil {
-			logger.Error(ctx, fmt.Sprintf("unable to scan similar community: %v", err))
+			logger.Error(ctx, "unable to scan similar community: %v", err)
 			return nil, err
 		}
 		communities = append(communities, communityDTO.PostgresToCommunityModel())
 	}
 	if err := rows.Err(); err != nil {
-		logger.Error(ctx, fmt.Sprintf("error iterating over similar communities: %v", err))
+		logger.Error(ctx, "error iterating over similar communities: %v", err)
 		return nil, err
 	}
 
@@ -436,7 +436,7 @@ func (c *SqlCommunityRepository) updateContactInfo(ctx context.Context, contactI
 	err := c.connPool.QueryRowContext(ctx, InsertOrUpdateContactInfoQuery,
 		contactInfo.City, contactInfo.Email, contactInfo.Phone).Scan(&contactInfoId)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("unable to insert or update contact info: %v", err))
+		logger.Error(ctx, "unable to insert or update contact info: %v", err)
 		return pgtype.Int4{}, nil
 	}
 
@@ -453,13 +453,13 @@ func (c *SqlCommunityRepository) ChangeUserRole(ctx context.Context, userId, com
 	update community_user set role=$1 where user_id=$2 and community_id=$3;
 `, string(role), userId, communityId)
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("unable to change user role: %v", err))
+		logger.Error(ctx, "unable to change user role: %v", err)
 		return err
 	}
 
 	rows, err := res.RowsAffected()
 	if err != nil {
-		logger.Error(ctx, fmt.Sprintf("unable to get rows affected: %v", err))
+		logger.Error(ctx, "unable to get rows affected: %v", err)
 		return err
 	}
 	if rows == 0 {
@@ -476,7 +476,7 @@ func (c *SqlCommunityRepository) GetControlledCommunities(ctx context.Context, u
 		logger.Info(ctx, "no user communities found")
 		return nil, community_errors.ErrNotFound
 	} else if err != nil {
-		logger.Error(ctx, fmt.Sprintf("unable to get user communities by id: %v", err))
+		logger.Error(ctx, "unable to get user communities by id: %v", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -486,7 +486,7 @@ func (c *SqlCommunityRepository) GetControlledCommunities(ctx context.Context, u
 		var communityDTO postgres_models.CommunityPostgres
 		if err := rows.Scan(&communityDTO.Id, &communityDTO.OwnerId, &communityDTO.Name,
 			&communityDTO.Description, &communityDTO.CreatedAt, &communityDTO.AvatarUrl, &communityDTO.CoverUrl, &communityDTO.NickName); err != nil {
-			logger.Error(ctx, fmt.Sprintf("unable to scan user community: %v", err))
+			logger.Error(ctx, "unable to scan user community: %v", err)
 			return nil, err
 		}
 		communities = append(communities, communityDTO.PostgresToCommunityModel())
