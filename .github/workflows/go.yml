@@ -5,7 +5,7 @@ name: Test
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "RK4" ]
 
 jobs:
   linter:
@@ -19,17 +19,3 @@ jobs:
       - name: run golangci-lint
         run: 	golangci-lint run
 
-  deploy:
-    runs-on: ubuntu-latest
-    needs: linter
-    steps:
-      - name: rebuild docker-compose
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          script: |
-            cd quickflow_backend/
-            git pull
-            make up
