@@ -78,7 +78,7 @@ create table if not exists comment(
                                       created_at timestamptz not null default now(),
                                       like_count int default 0 check (like_count >= 0),
                                       updated_at timestamptz not null default now(),
-                                      text text not null
+                                      text text
 );
 
 create table if not exists comment_file(
@@ -165,7 +165,7 @@ create table if not exists community(
                                         id uuid primary key,
                                         owner_id uuid references "user"(id) on delete cascade,
                                         nickname text not null unique,
-                                        name text not null unique,
+                                        name text not null,
                                         description text,
                                         created_at timestamptz not null default now(),
                                         avatar_url text,

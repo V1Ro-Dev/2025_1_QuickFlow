@@ -14,7 +14,7 @@ max_video_size = "100MB"
 allowed_video_ext = [".mp4", ".avi", ".mov", ".wmv", ".flv", ".mkv", ".webm"]
 
 max_audio_size = "100MB"
-allowed_audio_ext = [".mp3", ".wav", ".ogg", ".flac", ".aac", ".m4a", ".wma"]
+allowed_audio_ext = [".mp3", ".wav", ".ogg", ".flac", ".aac", ".m4a", ".wma", "aif"]
 
 max_file_size = "100MB"
 allowed_file_ext = []
