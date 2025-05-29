@@ -281,8 +281,6 @@ func TestMapProtoToChat(t *testing.T) {
 			result := MapProtoToChat(tt.input)
 			if tt.wantErr {
 				assert.Nil(t, result)
-			} else {
-
 			}
 		})
 	}

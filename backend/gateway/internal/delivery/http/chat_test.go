@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http/httptest"
+	"quickflow/shared/logger"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -11,6 +12,7 @@ import (
 
 	"quickflow/gateway/internal/delivery/http/mocks"
 	"quickflow/shared/models"
+	"sha"
 )
 
 func TestGetUserChats(t *testing.T) {
@@ -34,7 +36,7 @@ func TestGetUserChats(t *testing.T) {
 
 	// Создание мока для запроса
 	req := httptest.NewRequest("GET", "/api/chats?chats_count=5", nil)
-	req = req.WithContext(context.WithValue(req.Context(), "user", user))
+	req = req.WithContext(context.WithValue(req.Context(), logger.Username, user))
 
 	// Мокирование ответа
 	w := httptest.NewRecorder()
@@ -69,7 +71,7 @@ func TestGetUserChats_Error(t *testing.T) {
 
 	// Создание мока для запроса
 	req := httptest.NewRequest("GET", "/api/chats?chats_count=5", nil)
-	req = req.WithContext(context.WithValue(req.Context(), "user", user))
+	req = req.WithContext(context.WithValue(req.Context(), logger.Username, user))
 
 	// Мокирование ответа
 	w := httptest.NewRecorder()
@@ -97,7 +99,7 @@ func TestGetNumUnreadChats(t *testing.T) {
 
 	// Создание мока для запроса
 	req := httptest.NewRequest("GET", "/api/chats/unread", nil)
-	req = req.WithContext(context.WithValue(req.Context(), "user", user))
+	req = req.WithContext(context.WithValue(req.Context(), logger.Username, user))
 
 	// Мокирование ответа
 	w := httptest.NewRecorder()
@@ -125,7 +127,7 @@ func TestGetNumUnreadChats_Error(t *testing.T) {
 
 	// Создание мока для запроса
 	req := httptest.NewRequest("GET", "/api/chats/unread", nil)
-	req = req.WithContext(context.WithValue(req.Context(), "user", user))
+	req = req.WithContext(context.WithValue(req.Context(), logger.Username, user))
 
 	// Мокирование ответа
 	w := httptest.NewRecorder()

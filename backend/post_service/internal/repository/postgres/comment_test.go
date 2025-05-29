@@ -2,6 +2,7 @@ package postgres_test
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 	"time"
 
@@ -20,7 +21,12 @@ func TestAddComment_Success(t *testing.T) {
 	// Инициализация мока
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer db.Close()
+	defer func(db *sql.DB) {
+		err = db.Close()
+		if err != nil {
+			return
+		}
+	}(db)
 
 	// Создание репозитория
 	repo := postgres.NewPostgresCommentRepository(db)
@@ -52,7 +58,12 @@ func TestGetCommentFiles_Success(t *testing.T) {
 	// Инициализация мока
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer db.Close()
+	defer func(db *sql.DB) {
+		err = db.Close()
+		if err != nil {
+			return
+		}
+	}(db)
 
 	// Создание репозитория
 	repo := postgres.NewPostgresCommentRepository(db)
@@ -86,7 +97,12 @@ func TestDeleteComment_Success(t *testing.T) {
 	// Инициализация мока
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer db.Close()
+	defer func(db *sql.DB) {
+		err = db.Close()
+		if err != nil {
+			return
+		}
+	}(db)
 
 	// Создание репозитория
 	repo := postgres.NewPostgresCommentRepository(db)
@@ -114,7 +130,12 @@ func TestGetCommentsForPost_Success(t *testing.T) {
 	// Инициализация мока
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer db.Close()
+	defer func(db *sql.DB) {
+		err = db.Close()
+		if err != nil {
+			return
+		}
+	}(db)
 
 	// Создание репозитория
 	repo := postgres.NewPostgresCommentRepository(db)
@@ -143,7 +164,12 @@ func TestGetComment_Success(t *testing.T) {
 	// Инициализация мока
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer db.Close()
+	defer func(db *sql.DB) {
+		err = db.Close()
+		if err != nil {
+			return
+		}
+	}(db)
 
 	// Создание репозитория
 	repo := postgres.NewPostgresCommentRepository(db)
@@ -170,7 +196,12 @@ func TestLikeComment_Success(t *testing.T) {
 	// Инициализация мока
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer db.Close()
+	defer func(db *sql.DB) {
+		err = db.Close()
+		if err != nil {
+			return
+		}
+	}(db)
 
 	// Создание репозитория
 	repo := postgres.NewPostgresCommentRepository(db)
@@ -203,7 +234,12 @@ func TestUnlikeComment_Success(t *testing.T) {
 	// Инициализация мока
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer db.Close()
+	defer func(db *sql.DB) {
+		err = db.Close()
+		if err != nil {
+			return
+		}
+	}(db)
 
 	// Создание репозитория
 	repo := postgres.NewPostgresCommentRepository(db)
