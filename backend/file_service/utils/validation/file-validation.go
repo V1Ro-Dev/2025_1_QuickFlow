@@ -29,11 +29,11 @@ func (f *FileValidator) ValidateFile(file *models.File) error {
     }
 
     switch {
-    case isVideo(file.MimeType):
-        return f.validateFile(file, f.fileConfig.MaxVideoSize, f.fileConfig.AllowedVideoExt)
-    case isAudio(file.MimeType):
+    case file.DisplayType == models.DisplayTypeMedia:
+        return f.validateFile(file, f.fileConfig.MaxVideoSize, append(f.fileConfig.AllowedVideoExt, f.fileConfig.AllowedPictureExt...))
+    case file.DisplayType == models.DisplayTypeAudio:
         return f.validateFile(file, f.fileConfig.MaxAudioSize, f.fileConfig.AllowedAudioExt)
-    case isImage(file.MimeType):
+    case file.DisplayType == models.DisplayTypeSticker:
         return f.validateFile(file, f.fileConfig.MaxPictureSize, f.fileConfig.AllowedPictureExt)
     default:
         return f.validateFileSize(file.Size, f.fileConfig.MaxFileSize)
