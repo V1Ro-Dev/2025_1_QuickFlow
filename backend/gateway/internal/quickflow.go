@@ -109,6 +109,11 @@ func Run(cfg *config.Config) error {
 	stickerService := messenger_service.NewStickerServiceClient(grpcConnMessengerService)
 
 	connManager := ws.NewWSConnectionManager()
+	wsRouter := ws.NewWebSocketRouter()
+	wsMessageHander := ws.NewInternalWSMessageHandler(connManager, messageService, profileService, chatService)
+	wsFriendHandler := ws.NewInternalWSFriendsHandlerParams(connManager, profileService)
+	pingHandler := ws.NewPingHandlerWS()
+
 	sanitizerPolicy := bluemonday.UGCPolicy()
 
 	newAuthHandler := qfhttp.NewAuthHandler(UserService, sanitizerPolicy)
@@ -118,7 +123,7 @@ func Run(cfg *config.Config) error {
 	newProfileHandler := qfhttp.NewProfileHandler(profileService, FriendsService, UserService, chatService, connManager, sanitizerPolicy)
 	newMessageHandler := qfhttp.NewMessageHandler(messageService, UserService, profileService, sanitizerPolicy)
 	newChatHandler := qfhttp.NewChatHandler(chatService, profileService, messageService, connManager)
-	newFriendsHandler := qfhttp.NewFriendsHandler(FriendsService, connManager)
+	newFriendsHandler := qfhttp.NewFriendsHandler(FriendsService, connManager, wsFriendHandler)
 	newSearchHandler := qfhttp.NewSearchHandler(UserService, communityService, profileService)
 	newCommunityHandler := qfhttp.NewCommunityHandler(communityService, profileService, connManager, UserService, sanitizerPolicy)
 	newFileHandler := qfhttp.NewFileHandler(fileService, sanitizerPolicy)
@@ -126,10 +131,6 @@ func Run(cfg *config.Config) error {
 
 	CSRFHandler := qfhttp.NewCSRFHandler()
 	FeedbackHandler := qfhttp.NewFeedbackHandler(feedbackService, profileService, sanitizerPolicy)
-
-	wsRouter := ws.NewWebSocketRouter()
-	wsMessageHander := ws.NewInternalWSMessageHandler(connManager, messageService, profileService, chatService)
-	pingHandler := ws.NewPingHandlerWS()
 
 	// register handlers
 	wsRouter.RegisterHandler(ws.MessageEventSend, wsMessageHander.SendMessage)
