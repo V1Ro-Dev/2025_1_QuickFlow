@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"net/http"
 	"unicode/utf8"
 
@@ -17,25 +18,33 @@ import (
 	"quickflow/shared/models"
 )
 
+type WSLikeHandler interface {
+	NotifyPostLiked(ctx context.Context, senderId, receiverId uuid.UUID, post *models.Post) error
+	NotifyCommentLiked(ctx context.Context, senderId, receiverId uuid.UUID, comment *models.Comment) error
+	NotifyPostCommented(ctx context.Context, senderId, receiverId uuid.UUID, post *models.Post, comment *models.Comment) error
+}
+
 type PostHandler struct {
 	postUseCase      PostService
 	profileUseCase   ProfileUseCase
 	communityService CommunityService
 	friendsUseCase   FriendsUseCase
 	commentUseCase   CommentService
+	likeWSHandler    WSLikeHandler
 	policy           *bluemonday.Policy
 }
 
 // NewPostHandler creates new post handler.
 func NewPostHandler(postUseCase PostService, profileUseCase ProfileUseCase,
-	communityService CommunityService, friendsUseCase FriendsUseCase, commentUseCase CommentService, policy *bluemonday.Policy) *PostHandler {
+	communityService CommunityService, friendsUseCase FriendsUseCase, commentUseCase CommentService, likeHandler WSLikeHandler, policy *bluemonday.Policy) *PostHandler {
 	return &PostHandler{
 		postUseCase:      postUseCase,
 		profileUseCase:   profileUseCase,
 		communityService: communityService,
 		friendsUseCase:   friendsUseCase,
-		policy:           policy,
 		commentUseCase:   commentUseCase,
+		likeWSHandler:    likeHandler,
+		policy:           policy,
 	}
 }
 
@@ -328,6 +337,21 @@ func (p *PostHandler) LikePost(w http.ResponseWriter, r *http.Request) {
 	logger.Info(ctx, "User %s liked post %s", user.Username, postId.String())
 
 	err = p.postUseCase.LikePost(ctx, postId, user.Id)
+	if err != nil {
+		logger.Error(ctx, "Failed to like post: %s", err.Error())
+		http2.WriteJSONError(w, err)
+		return
+	}
+
+	post, err := p.postUseCase.GetPost(ctx, postId, user.Id)
+	if err != nil {
+		logger.Error(ctx, "Failed to get post: %s", err.Error())
+		http2.WriteJSONError(w, err)
+		return
+	}
+
+	// notify
+	err = p.likeWSHandler.NotifyPostLiked(ctx, user.Id, post.CreatorId, post)
 	if err != nil {
 		logger.Error(ctx, "Failed to like post: %s", err.Error())
 		http2.WriteJSONError(w, err)

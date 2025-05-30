@@ -34,14 +34,18 @@ type CommentService interface {
 type CommentHandler struct {
 	commentUseCase CommentService
 	profileService ProfileUseCase
+	likeWSHandler  WSLikeHandler
+	postService    PostService
 	policy         *bluemonday.Policy
 }
 
 // NewCommentHandler creates a new comment handler.
-func NewCommentHandler(commentUseCase CommentService, profileService ProfileUseCase, policy *bluemonday.Policy) *CommentHandler {
+func NewCommentHandler(commentUseCase CommentService, profileService ProfileUseCase, postService PostService, likeWSHandler WSLikeHandler, policy *bluemonday.Policy) *CommentHandler {
 	return &CommentHandler{
 		commentUseCase: commentUseCase,
 		profileService: profileService,
+		likeWSHandler:  likeWSHandler,
+		postService:    postService,
 		policy:         policy,
 	}
 }
@@ -120,6 +124,15 @@ func (c *CommentHandler) AddComment(w http.ResponseWriter, r *http.Request) {
 		http2.WriteJSONError(w, err)
 		return
 	}
+
+	post, err := c.postService.GetPost(ctx, postId, user.Id)
+	if err != nil {
+		logger.Error(ctx, "Failed to get post: %s", err.Error())
+		http2.WriteJSONError(w, err)
+		return
+	}
+
+	err = c.likeWSHandler.NotifyPostCommented(ctx, user.Id, post.CreatorId, post, newComment)
 
 	var commentOut forms.CommentOut
 	commentOut.FromComment(*newComment, publicUserInfo)
@@ -356,6 +369,20 @@ func (c *CommentHandler) LikeComment(w http.ResponseWriter, r *http.Request) {
 
 	// Пытаемся поставить лайк
 	err = c.commentUseCase.LikeComment(ctx, commentId, user.Id)
+	if err != nil {
+		logger.Error(ctx, "Failed to like comment: %s", err.Error())
+		http2.WriteJSONError(w, err)
+		return
+	}
+
+	comment, err := c.commentUseCase.GetComment(ctx, commentId, user.Id)
+	if err != nil {
+		logger.Error(ctx, "Failed to get comment: %s", err.Error())
+		http2.WriteJSONError(w, err)
+		return
+	}
+
+	err = c.likeWSHandler.NotifyCommentLiked(ctx, user.Id, comment.UserId, comment)
 	if err != nil {
 		logger.Error(ctx, "Failed to like comment: %s", err.Error())
 		http2.WriteJSONError(w, err)
